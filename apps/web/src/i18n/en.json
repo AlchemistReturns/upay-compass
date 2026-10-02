@@ -26,7 +26,8 @@
     "skip": "Skip",
     "finish": "Finish",
     "saving": "Saving…",
-    "simulated_note": "Simulated data. No real money is involved."
+    "simulated_note": "Simulated data. No real money is involved.",
+    "cancel": "Cancel"
   },
   "home": {
     "title": "Home",
@@ -35,7 +36,23 @@
   },
   "budgets": {
     "title": "Budgets",
-    "empty": "Budgets are coming soon."
+    "intro": "Set a monthly limit for a category. We alert you at your chosen level and again if you go over. Months follow Bangladesh time.",
+    "add": "Add budget",
+    "edit": "Edit budget",
+    "category": "Category",
+    "limit": "Monthly limit (৳)",
+    "threshold": "Alert me at {{pct}}% of the limit",
+    "threshold_hint": "The small tick on each bar shows where the alert fires.",
+    "save": "Save budget",
+    "delete": "Delete budget",
+    "confirm_delete": "Delete this budget?",
+    "invalid": "Choose a category and enter a limit above 0.",
+    "empty": "No budgets yet. Add one to get alerts and improve your health score.",
+    "status_ok": "On track",
+    "status_warning": "Near the limit",
+    "status_over": "Over budget",
+    "left": "{{amount}} left",
+    "over_by": "{{amount}} over"
   },
   "goals": {
     "title": "Goals",

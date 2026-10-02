@@ -138,3 +138,10 @@
   --chart-axis: #898781;
   --chart-cursor: rgba(11, 11, 11, 0.05);
 }
+
+/* Status colors are fixed. They always ship with an icon and a label, never color alone. */
+:root {
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-critical: #d03b3b;
+}

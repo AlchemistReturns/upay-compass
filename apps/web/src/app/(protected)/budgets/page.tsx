@@ -1,5 +1,5 @@
-import { PlaceholderPage } from "@/components/placeholder-page";
+import { BudgetsView } from "@/features/budgets/budgets-view";
 
 export default function Page() {
-  return <PlaceholderPage ns="budgets" />;
+  return <BudgetsView />;
 }

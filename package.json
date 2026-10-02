@@ -14,10 +14,16 @@
     "test": "pnpm -r --if-present test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "sb": "supabase"
+    "sb": "supabase",
+    "prepare": "husky"
   },
   "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
     "prettier": "^3.3.0",
     "supabase": "^2.0.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,mjs,json,css,yml,yaml}": "prettier --write"
   }
 }

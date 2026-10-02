@@ -55,7 +55,7 @@ A smaller, explainable, working product beats a broad unfinished one.
 4. Intelligence component: categorization, health score, forecast, AI coach
 5. User interface in Bangla and English
 6. Architecture diagram: data source → backend → intelligence → application
-7. Reproducible deployment
+7. Reproducible deployment (deferred until the core build is done; local dev runs on the Supabase CLI stack and the linked cloud project)
 8. Impact / business-value case for upay (metrics, user story)
 9. Final demo / pitch
 
@@ -202,7 +202,9 @@ alter table transactions enable row level security;
 create policy "own rows" on transactions for all
   using (auth.uid() = user_id) with check (auth.uid() = user_id);
 ```
-`categories` and `learn_modules` are read-only to authenticated users.
+`categories` is public read-only reference data (readable by `anon` and `authenticated`, so the pre-login shell can render it); `learn_modules` is read-only to authenticated users. Writes to both happen only through migrations.
+
+**Column-level grants on `profiles`:** authenticated users may update only `full_name`, `language`, `income_type`, `monthly_income`, `onboarded`. `id`, `phone` and `role` are server-controlled, so users cannot grant themselves admin.
 
 **Realtime-enabled:** `transactions, nudges, budgets, goals, health_scores`.
 
@@ -276,8 +278,9 @@ The screen shows "what moved your score" and the top 3 improvement actions.
 | LLM | OpenAI API (from Edge Functions only; models set by `OPENAI_COACH_MODEL` / `OPENAI_CATEGORIZE_MODEL` secrets) | Coach and categorization fallback |
 | Validation | zod | Input safety |
 | Testing | Vitest + Playwright (stretch) | Core logic and demo flow |
-| CI/CD | GitHub Actions | Lint, test, deploy previews |
-| Deployment | Vercel (client) + Supabase cloud | Fast, reproducible |
+| CI | GitHub Actions (lint, typecheck, test, format check on push) | Second check behind the local Husky hook |
+| Local tooling | pnpm workspaces, Husky + lint-staged, Supabase CLI as a dev dependency (`pnpm sb <cmd>`) | No global installs |
+| Deployment | Deferred. Planned: Vercel (client) + Supabase cloud | Added after the core build |
 
 ---
 
@@ -298,17 +301,23 @@ upay-compass/
 │  │  ├─ categorize-transaction/ ├─ compute-health-score/
 │  │  ├─ forecast-cashflow/      ├─ coach-chat/
 │  │  ├─ generate-nudges/        └─ seed-demo-user/
-│  ├─ seed.sql                   # categories, learn modules
-│  └─ config.toml
+│  ├─ seed.sql                   # dev-only data (optional)
+│  └─ config.toml                # local stack config incl. test OTP numbers
 ├─ packages/shared/              # shared types, zod schemas, score/forecast pure functions
 ├─ adapters/upay-sim/            # simulated transaction feed + persona generator
 ├─ docs/{architecture.png,demo-script.md}
+├─ .github/workflows/ci.yml
+├─ .husky/                       # pre-commit: lint-staged + lint
+├─ pnpm-workspace.yaml
 └─ .env.example
 ```
 
+Reference data (the 12 categories, and later the learn modules) is inserted by migrations, not `seed.sql`, because `supabase db push` does not run seeds.
+
 **Working rules**
-- Git: `main` always deployable; feature branches `feat/<feature-id>`; PR + one review; squash merge. Every PR gets a preview deploy.
-- Schema changes only through `supabase/migrations` (never edit tables in the dashboard).
+- Git (solo development): commit directly to `main`, small conventional commits (`feat(scope): ...`), `main` always passes lint, typecheck and tests. Branches, PRs and reviews are introduced only if more people join.
+- Schema changes only through `supabase/migrations` (never edit tables in the dashboard). Test locally with `pnpm sb start` first, then apply to the cloud project by hand with `pnpm sb db push`. Never edit a migration that has been pushed; add a new one.
+- Secrets: the browser only ever gets the `NEXT_PUBLIC_*` URL and anon key (`apps/web/.env.local`, gitignored). The service-role key, DB password and OpenAI key never go in the repo or in chat.
 - Business logic (score, forecast, categorization rules) lives as **pure TypeScript functions in `packages/shared`**, unit-tested, then wrapped by Edge Functions. This keeps AI/LLM out of anything numeric.
 - Each feature is built **vertically**: migration → function/logic → API call → UI → test, in that order.
 - Definition of done per feature: works in both languages, RLS verified, empty/error state handled, demo-able.
@@ -317,25 +326,27 @@ upay-compass/
 
 ### 11.2 Phases
 
+**Status:** Phase 0 complete. Phase 1 is next.
+
 ### Phase 0 — Foundations
 
 **Build process**
 1. **Bootstrap repo:** create monorepo (`pnpm` workspaces), Next.js App Router TS app, Tailwind, shadcn/ui, ESLint + Prettier, Husky pre-commit.
-2. **Supabase setup:** `supabase init`, link to cloud project, run local stack (`supabase start`) for dev. Store keys in `.env` (`.env.example` committed).
-3. **First migration:** `profiles`, `categories`, enable RLS, add `handle_new_user` trigger. Seed 12 categories (en/bn) in `seed.sql`.
+2. **Supabase setup:** Supabase CLI as a dev dependency (`pnpm sb ...`), `supabase init`, `pnpm sb login` and `pnpm sb link` (run in a real terminal), local stack with `pnpm sb start`. Keys go in `apps/web/.env.local` (`.env.example` committed).
+3. **First migrations:** `profiles` (RLS, column-level update grants, `handle_new_user` trigger) and `categories` with the 12 en/bn rows inserted in the migration itself; a second migration opens `categories` to `anon` reads.
 4. **Client wiring:** `lib/supabase.ts` creates the browser client from `NEXT_PUBLIC_*` env vars; TanStack Query provider; App Router route groups `(public)` and `(protected)`.
 5. **UI shell:** mobile-first layout, bottom navigation (Home, Budgets, Goals, Coach, Learn), theme tokens, Noto Sans Bengali font.
-6. **i18n:** `i18next` with `en.json`/`bn.json`; language stored in `profiles.language` and localStorage; all strings via `t()` from day one (no hardcoded text).
-7. **CI/CD:** GitHub Actions runs lint + typecheck + unit tests; Vercel preview on every PR; `supabase db push` on merge to main.
+6. **i18n:** `i18next` with `en.json`/`bn.json`, Bangla default; language stored in localStorage now and synced to `profiles.language` once login exists (Phase 1); all strings via `t()` from day one (no hardcoded text).
+7. **CI:** Husky pre-commit (lint-staged Prettier + lint) and a GitHub Actions workflow (lint, typecheck, test, format check on push). Deployment and automated `db push` are deferred; migrations are pushed manually.
 
-**Verify:** blank app deploys, reads `categories` from Supabase, language toggle switches the shell, CI is green.
+**Verify:** app runs locally, reads `categories` from Supabase, language toggle switches the shell, lint, typecheck, tests and build pass.
 
 ---
 
 ### Phase 1 — Auth & Onboarding (F1, F2)
 
 **Build process**
-1. **Enable phone auth** in Supabase; add **test phone numbers with fixed OTPs** for the team/demo; configure email magic link as fallback; set OTP rate limits.
+1. **Enable phone auth** in Supabase using **test phone numbers with fixed OTPs only** (no real SMS). GoTrue requires an SMS provider to be selected even for test numbers, so a dummy Twilio provider is enabled. Locally this is `[auth.sms.test_otp]` plus a dummy `[auth.sms.twilio]` in `config.toml` (dummy token in the gitignored `supabase/.env`). In the cloud project it is set in the dashboard (Authentication → Providers → Phone). Local test numbers: `+8801700000001` to `…03`, OTP `123456`. Configure email magic link as fallback; set OTP rate limits.
 2. **Login screen:** phone input with `+8801XXXXXXXXX` regex (zod), calls `supabase.auth.signInWithOtp({ phone })`, then OTP screen calls `verifyOtp`.
 3. **Profile creation:** the `handle_new_user` trigger inserts the `profiles` row; client then redirects to onboarding if `onboarded = false`.
 4. **PIN lock:**
@@ -434,7 +445,7 @@ upay-compass/
    - Service worker: precache app shell; stale-while-revalidate for read queries; cache last dashboard payload in IndexedDB for offline read.
    - Writes are disabled while offline (clear message); no offline queue.
    - Install prompt handling (`beforeinstallprompt`) and an offline banner.
-4. **Performance pass:** route-level code splitting, image/icon optimization, skeleton loaders, font subsetting; run Lighthouse CI and fix until mobile score ≥ 90.
+4. **Performance pass:** route-level code splitting, image/icon optimization, skeleton loaders, font subsetting; run Lighthouse locally against a production build and fix until mobile score ≥ 90.
 
 **Verify:** install to home screen, switch to airplane mode and the last dashboard still loads, offline banner shows and write actions are disabled with a clear message.
 
@@ -461,7 +472,9 @@ Phase 0 ──► Phase 1 ──► Phase 2 ──┬─► Phase 3 ──► Ph
                                    └─ (frontend can mock Phase 3/4 data contracts in parallel)
 ```
 
-| Role | Phase 0–1 | Phase 2 | Phase 3 | Phase 4 | Phase 5–6 |
+Development is currently solo (with Claude Code). The role table below is a map of the work streams, not a staffing plan; a native Bangla speaker on the team reviews all Bangla copy and the coach prompt.
+
+| Work stream | Phase 0–1 | Phase 2 | Phase 3 | Phase 4 | Phase 5–6 |
 |---|---|---|---|---|---|
 | Frontend lead | shell, i18n, login UI | dashboard, add/edit form | budget/goal/score screens | chat UI, forecast chart | PWA, learn, polish |
 | Backend/DB lead | migrations, RLS, auth | adapter, ingestion, realtime | RPCs, triggers, cron | nudges cron, rate limits | admin views, hardening |
@@ -507,9 +520,13 @@ Phase 0 ──► Phase 1 ──► Phase 2 ──┬─► Phase 3 ──► Ph
 
 ## 15. Deployment Plan
 
-- Client on Vercel, backend on Supabase; migrations and seed scripts committed.
+**Status: deferred.** Deployment happens after the core build (Phases 1–4). Until then everything runs locally against the Supabase CLI stack or the linked cloud project.
+
+Planned for later:
+- Client on Vercel, backend on the Supabase cloud project; migrations committed.
+- Optional: preview deploys and automated `db push` on merge, once secrets are stored in GitHub.
 - All config via env vars; `.env.example` committed; no secrets in repo.
-- One documented command sequence to go from clone to running demo.
+- One documented command sequence to go from clone to running demo (the README already covers local setup).
 - Edge Function secrets set via Supabase CLI.
 
 ---

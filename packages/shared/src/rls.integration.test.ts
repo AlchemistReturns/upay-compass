@@ -1,31 +1,15 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 import { beforeAll, describe, expect, it } from "vitest";
+import { anon, signIn, url, type TestUser } from "./integration-utils";
 
 /**
  * RLS check with two real users. Needs a running Supabase stack, so it only runs when
  * RLS_TEST_URL and RLS_TEST_ANON_KEY are set:
  *   RLS_TEST_URL=http://127.0.0.1:54321 RLS_TEST_ANON_KEY=<pnpm sb status> pnpm --filter @compass/shared test
  */
-const url = process.env.RLS_TEST_URL;
-const anon = process.env.RLS_TEST_ANON_KEY;
-
-async function signIn(phone: string): Promise<{ client: SupabaseClient; id: string }> {
-  const client = createClient(url!, anon!, { auth: { persistSession: false } });
-  let sent = await client.auth.signInWithOtp({ phone });
-  if (sent.error?.status === 429 || sent.error?.message.includes("only request this after")) {
-    // OTP resend limit (local: 5s per number); wait it out once.
-    await new Promise((r) => setTimeout(r, 5500));
-    sent = await client.auth.signInWithOtp({ phone });
-  }
-  if (sent.error) throw sent.error;
-  const { data, error } = await client.auth.verifyOtp({ phone, token: "123456", type: "sms" });
-  if (error || !data.user) throw error ?? new Error("no user");
-  return { client, id: data.user.id };
-}
-
 describe.skipIf(!url || !anon)("RLS with two users", () => {
-  let a: { client: SupabaseClient; id: string };
-  let b: { client: SupabaseClient; id: string };
+  let a: TestUser;
+  let b: TestUser;
 
   beforeAll(async () => {
     a = await signIn("+8801700000001");
@@ -78,7 +62,7 @@ describe.skipIf(!url || !anon)("RLS with two users", () => {
 });
 
 describe.skipIf(!url || !anon)("server-side PIN", () => {
-  let u: { client: SupabaseClient; id: string };
+  let u: TestUser;
 
   // 5 wrong attempts clear any existing PIN, giving every run a clean start and end.
   async function clearPin() {

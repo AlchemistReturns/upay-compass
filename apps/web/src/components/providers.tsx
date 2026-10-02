@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { I18nextProvider } from "react-i18next";
+import { AuthProvider } from "@/features/auth/auth-provider";
+import { LockProvider } from "@/features/auth/lock-provider";
 import i18n, { LANGUAGES, LANGUAGE_STORAGE_KEY, type Language } from "@/i18n";
 
 function readStoredLanguage(): Language | null {
@@ -33,7 +35,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <I18nextProvider i18n={i18n}>{children}</I18nextProvider>
+      <I18nextProvider i18n={i18n}>
+        <AuthProvider>
+          <LockProvider>{children}</LockProvider>
+        </AuthProvider>
+      </I18nextProvider>
     </QueryClientProvider>
   );
 }

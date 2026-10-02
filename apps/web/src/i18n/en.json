@@ -1,5 +1,8 @@
 {
-  "app": { "name": "upay Compass", "tagline": "Understand your money. Save with confidence." },
+  "app": {
+    "name": "upay Compass",
+    "tagline": "Understand your money. Save with confidence."
+  },
   "nav": {
     "home": "Home",
     "budgets": "Budgets",
@@ -7,17 +10,96 @@
     "coach": "Coach",
     "learn": "Learn"
   },
-  "language": { "label": "Language", "en": "English", "bn": "বাংলা" },
+  "language": {
+    "label": "Language",
+    "en": "English",
+    "bn": "বাংলা"
+  },
   "common": {
     "loading": "Loading…",
     "error": "Something went wrong. Please try again.",
     "retry": "Retry",
-    "simulated": "Simulated data"
+    "simulated": "Simulated data",
+    "logout": "Sign out",
+    "next": "Next",
+    "back": "Back",
+    "skip": "Skip",
+    "finish": "Finish",
+    "saving": "Saving…"
   },
-  "home": { "title": "Home", "categories": "Spending categories", "essential": "Essential" },
-  "budgets": { "title": "Budgets", "empty": "Budgets are coming soon." },
-  "goals": { "title": "Goals", "empty": "Savings goals are coming soon." },
-  "coach": { "title": "Coach", "empty": "Your AI coach is coming soon." },
-  "learn": { "title": "Learn", "empty": "Learning modules are coming soon." },
-  "login": { "title": "Sign in", "empty": "Phone sign-in is coming soon." }
+  "home": {
+    "title": "Home",
+    "categories": "Spending categories",
+    "essential": "Essential"
+  },
+  "budgets": {
+    "title": "Budgets",
+    "empty": "Budgets are coming soon."
+  },
+  "goals": {
+    "title": "Goals",
+    "empty": "Savings goals are coming soon."
+  },
+  "coach": {
+    "title": "Coach",
+    "empty": "Your AI coach is coming soon."
+  },
+  "learn": {
+    "title": "Learn",
+    "empty": "Learning modules are coming soon."
+  },
+  "login": {
+    "title": "Sign in",
+    "phone_label": "Mobile number",
+    "phone_hint": "e.g. 01XXXXXXXXX",
+    "send_code": "Send code",
+    "sending": "Sending…",
+    "otp_label": "6-digit code",
+    "otp_sent": "We sent a code to {{phone}}.",
+    "verify": "Verify",
+    "verifying": "Verifying…",
+    "change_number": "Use a different number",
+    "invalid_phone": "Enter a valid Bangladeshi mobile number.",
+    "invalid_otp": "Enter the 6-digit code.",
+    "otp_failed": "That code is wrong or expired.",
+    "send_failed": "Could not send the code. Please try again.",
+    "demo_note": "Demo mode: simulated data and test numbers only. No real SMS or money."
+  },
+  "pin": {
+    "title": "Set an app PIN",
+    "hint": "A 4 to 6 digit PIN locks the app when you leave it for a while.",
+    "new": "New PIN",
+    "confirm": "Confirm PIN",
+    "invalid": "PIN must be 4 to 6 digits.",
+    "mismatch": "PINs do not match.",
+    "save": "Save PIN"
+  },
+  "lock": {
+    "title": "App locked",
+    "enter": "Enter your PIN",
+    "unlock": "Unlock",
+    "wrong_one": "Wrong PIN. 1 attempt left.",
+    "signed_out": "Too many wrong attempts. Please sign in again.",
+    "wrong_other": "Wrong PIN. {{count}} attempts left."
+  },
+  "onboarding": {
+    "title": "Let's set you up",
+    "step": "Step {{current}} of {{total}}",
+    "language_title": "Choose your language",
+    "income_title": "Tell us about your income",
+    "income_type": "I am a",
+    "student": "Student",
+    "gig": "Gig / informal worker",
+    "salaried": "Salaried",
+    "monthly_income": "Typical monthly income (৳)",
+    "income_invalid": "Choose a type and enter an amount of 0 or more.",
+    "goal_title": "Your first savings goal",
+    "goal_optional": "Optional. You can add goals later.",
+    "goal_name": "Goal name",
+    "goal_name_hint": "e.g. New phone",
+    "goal_amount": "Target amount (৳)",
+    "goal_date": "Target date (optional)",
+    "goal_invalid": "Enter a name and a target amount above 0.",
+    "failed": "Could not save. Please try again."
+  }
 }

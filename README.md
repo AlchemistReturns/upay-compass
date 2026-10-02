@@ -6,17 +6,15 @@ Financial companion for the DIU CPC × upay AI Hackathon 2026 (Track 03).
 
 ## Quick start
 
-Requires Node 20+, pnpm, Docker Desktop (running).
+Requires Node 20+ and pnpm. Docker Desktop is optional (local Supabase stack only).
 
 ```bash
 pnpm install
-cp supabase/.env.example supabase/.env
-pnpm sb start          # local Supabase stack
-pnpm sb status         # copy the API URL and anon key into apps/web/.env.local
+# put the Supabase project URL + anon key in apps/web/.env.local (see spec.md Section 17.2)
 pnpm dev               # http://localhost:3000
 ```
 
-Details, test login numbers, the cloud option and the contribution workflow: spec.md Section 17.
+Setup details, test login numbers, the optional local stack, migration rules and the contribution workflow: spec.md Section 17.
 
 ## Layout
 

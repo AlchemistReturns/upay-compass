@@ -1,0 +1,23 @@
+{
+  "app": { "name": "upay Compass", "tagline": "Understand your money. Save with confidence." },
+  "nav": {
+    "home": "Home",
+    "budgets": "Budgets",
+    "goals": "Goals",
+    "coach": "Coach",
+    "learn": "Learn"
+  },
+  "language": { "label": "Language", "en": "English", "bn": "বাংলা" },
+  "common": {
+    "loading": "Loading…",
+    "error": "Something went wrong. Please try again.",
+    "retry": "Retry",
+    "simulated": "Simulated data"
+  },
+  "home": { "title": "Home", "categories": "Spending categories", "essential": "Essential" },
+  "budgets": { "title": "Budgets", "empty": "Budgets are coming soon." },
+  "goals": { "title": "Goals", "empty": "Savings goals are coming soon." },
+  "coach": { "title": "Coach", "empty": "Your AI coach is coming soon." },
+  "learn": { "title": "Learn", "empty": "Learning modules are coming soon." },
+  "login": { "title": "Sign in", "empty": "Phone sign-in is coming soon." }
+}

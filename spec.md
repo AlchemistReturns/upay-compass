@@ -172,7 +172,8 @@ upay is phone-centric, so login mirrors that.
 ```sql
 profiles(id uuid pk → auth.users, phone text, full_name text, language text default 'bn',
          income_type text, monthly_income numeric, opening_balance numeric default 0,
-         roundup_enabled boolean default false, roundup_goal_id uuid,  -- set only through set_roundup()  -- wallet balance = opening_balance + income - spend
+         roundup_enabled boolean default false, roundup_goal_id uuid,  -- set only through set_roundup()
+         coach_consent_at timestamptz,  -- consent to share a compact summary of the user's numbers with the AI coach  -- wallet balance = opening_balance + income - spend
          onboarded boolean default false, role text default 'user')
 
 categories(id serial pk, key text unique, name_en text, name_bn text, icon text, is_essential boolean)
@@ -202,8 +203,12 @@ goal_contributions(id uuid pk, goal_id uuid, user_id uuid, amount numeric, sourc
 
 health_scores(id uuid pk, user_id uuid, score int, breakdown jsonb, computed_at)
   -- history of snapshots; readable by the owner, written only by the compute-health-score function (service role)
-forecasts(id uuid pk, user_id uuid, horizon_days int, projected_balance jsonb, risk_flags jsonb, computed_at)
-coach_messages(id uuid pk, user_id uuid, role text, content text, created_at)
+forecasts(id uuid pk, user_id uuid, horizon_days int, projected_balance jsonb, risk_flags jsonb,
+          details jsonb,  -- safety buffer, confidence, recurring items, backtest figures
+          computed_at)
+  -- history of snapshots; readable by the owner, written only by the forecast-cashflow function (service role)
+coach_messages(id uuid pk, user_id uuid, role text, content text, created_at)  -- role: user|assistant
+  -- readable by the owner, who can also delete (clear chat); written only by the coach-chat function
 nudges(id uuid pk, user_id uuid, type text, data jsonb, dedupe_key text, read boolean default false, created_at)
   -- unique (user_id, dedupe_key). Text is rendered in the client from type + data so it follows the UI language.
   -- Created only by triggers/functions; users can read them and set read = true, nothing else.
@@ -228,7 +233,7 @@ create policy "own rows" on transactions for all
 
 **Column-level grants on `profiles`:** authenticated users may update only `full_name`, `language`, `income_type`, `monthly_income`, `onboarded`. `id`, `phone` and `role` are server-controlled, so users cannot grant themselves admin.
 
-**Realtime-enabled:** `transactions, budgets, goals, goal_contributions, nudges, health_scores`.
+**Realtime-enabled:** `transactions, budgets, goals, goal_contributions, nudges, health_scores, forecasts`.
 
 **RPCs (security invoker, so RLS applies):** `set_transaction_category(id, category_id)`, `dashboard_summary(from, to)`, `spend_by_category(from, to)`, `weekly_trend(weeks)` (weeks start Monday, Bangladesh time), `wallet_balance()`, `budget_progress()`, `health_inputs()`. Security definer (they move money-like state, so they check `auth.uid()` ownership themselves): `contribute_to_goal(goal, amount)`, `undo_goal_contribution(id)`, `set_roundup(enabled, goal)`.
 
@@ -358,7 +363,7 @@ Reference data (the 12 categories, and later the learn modules) is inserted by m
 
 ### 11.2 Phases
 
-**Status:** Phases 0 to 3 complete (Phase 3 in PR review). Phase 4 is next.
+**Status:** Phases 0 to 4 complete (Phase 4 on its branch, not yet merged). Phase 5 is next.
 
 ### Phase 0 — Foundations
 
@@ -402,7 +407,7 @@ Reference data (the 12 categories, and later the learn modules) is inserted by m
 2. **Adapter + generator (`adapters/upay-sim`):**
    - Define `Transaction` type and `getTransactions(userId, since)`.
    - Persona configs (Student, Gig worker, Salaried) define income cadence, typical merchants, amount distributions; a seeded PRNG makes output deterministic.
-   - Generator produces ~90 days of history with weekly/monthly patterns (salary day, bills, recharges).
+   - Generator produces 120 days of history with weekly/monthly patterns (salary day, bills, recharges). 120 rather than 90 so that a monthly payment early in the month still has three occurrences in the forecaster's look-back window (see Phase 4). The gig persona carries a fixed monthly bike instalment that its irregular income barely covers, which is what makes its forecast show a real low-balance warning.
 3. **Ingestion:** Edge Function `ingest-transactions` (POST `{persona}`) takes the adapter output, validates each record with zod (rejects go to `audit_log`), categorizes (step 4), and upserts in batches of 200 with `ignoreDuplicates` on `(user_id, external_id)`, so running it twice inserts nothing new. It also sets `opening_balance` and writes a summary row to `audit_log`. `categorize-transaction` categorizes specific existing transactions (used after a manual add the rules could not place). Functions verify the caller themselves (`verify_jwt = false` in `config.toml`, then `auth.getUser`), which works with the project's ES256 JWTs, and act as the caller so RLS applies.
 4. **Categorizer pipeline (pure function + Edge Function):**
    1. Check user `category_rules` (exact merchant/keyword match) → `category_source = 'user'`.
@@ -450,27 +455,39 @@ Reference data (the 12 categories, and later the learn modules) is inserted by m
 ### Phase 4 — Intelligence Layer (F10, F11, F12)
 
 **Build process**
-1. **Migrations:** `forecasts`, `coach_messages`; RLS own-rows. (`nudges` already exists from Phase 3; add the forecast, overspend and bill-due rules to it.)
-2. **Recurring detection (pure function):**
-   - Group transactions by normalized counterparty + channel.
-   - A group is recurring if there are at least 3 occurrences, interval variance under a tolerance (weekly ≈7d, monthly ≈30d ±3), and amounts within ±15%.
-   - Output: next expected date and amount per item, for both income and bills.
-3. **Forecast:**
-   - Start from the current balance; add expected recurring income; subtract expected recurring bills; subtract a baseline daily variable spend (trailing median by weekday).
-   - Produce a 30-day projected balance series and `risk_flags` where balance < safety buffer (e.g. 1 week of essentials).
-   - Edge Function `forecast-cashflow` runs daily (cron) and on demand; UI shows a line chart with risk markers.
-   - Only add an ML model if it beats the baseline on backtested MAE.
+1. **Migration** (`20261002173126_phase4_forecasts_coach.sql`): `forecasts`, `coach_messages`, `profiles.coach_consent_at`; RLS own-rows; both tables are written only by Edge Functions with the service role. (`nudges` already exists from Phase 3.)
+2. **Recurring detection (pure function, `packages/shared/src/recurring.ts`):**
+   - Group transactions by normalized counterparty + channel + direction.
+   - A group is recurring if there are at least 3 occurrences (one amount per day), at least 80% of the gaps fit weekly (7 ±1 days), fortnightly (14 ±2) or monthly (30 ±3), and its next date is not more than one cycle overdue.
+   - Amounts within ±15% of the median are "stable" and used as is. Varying amounts are still recurring, but planned **conservatively**: the 25th percentile for income and the 75th for payments out. (A strict ±15% rule would discard a gig worker's payouts altogether.)
+   - Detection looks back **120 days**, not 90: with 90, a monthly payment early in the month can show only two occurrences and be missed (this was found by running the personas).
+   - Output: next expected date and amount per item, for income and bills.
+3. **Forecast (`forecast.ts`):**
+   - Start from the current wallet balance; add expected recurring income and subtract expected recurring payments on their dates; subtract a baseline of everyday spending and add a baseline of everyday non-recurring income, each the **median per weekday over the last 8 weeks** (so spikes do not move it, and income that does not turn up most weeks counts as zero).
+   - 30-day projected balance series, with `risk_flags` for every day below the **safety buffer = 7 days of essential spending** (negative balance flagged separately). Too little history (under 28 days or 20 transactions) returns "insufficient" instead of guessing; confidence is "low" under 56 days or with no regular payments found.
+   - Edge Function `forecast-cashflow` stores a snapshot only when it changed. The screen asks for a fresh one when the latest is older than 6 hours; ingest, the coach and the nudge rules use the same helper. The **daily cron is deferred** (see step 6).
+   - **Backtest:** hold out the last 30 days, forecast them from what was known before, and compare the mean absolute error of the daily balance against a seasonal-naive forecast (each day repeats the net flow of 28 days earlier). On the three personas (180 days of simulated history) the baseline's error is **93% (student), 81% (gig) and 80% (salaried) lower**, so no ML model is added; one would have to beat these numbers to earn its place. The forecast screen shows the backtest for the user's own data when there is enough history.
+   - UI: `/forecast` with a line chart (one series, a dashed safety-buffer line, red dots on days below it, table view), a verdict line with icon and words, the regular income and payments we expect, and a dashboard card.
 4. **AI Coach (`coach-chat`):**
-   1. Verify JWT, load only that user's data.
-   2. Build a compact context object: language, income type, 30-day totals by category, budgets, goals, latest score + breakdown, forecast risks. No phone, no names, no raw transaction dump.
-   3. System prompt sets role, language, tone, and guardrails (educational only, no investment/loan advice, cite the user's numbers, refuse out-of-scope politely, say "not enough data" when thin).
-   4. Call the LLM with streaming; relay the stream to the client (SSE); persist both messages to `coach_messages`.
-   5. Rate limit per user; truncate history to the last N turns.
-   - **Numbers come from code, not the model:** quick-answer tools such as "can I afford X?" are computed by a pure function (balance after X vs forecast and buffer) and handed to the LLM only to explain.
-5. **Chat UI:** streaming message bubbles, suggested prompt chips, language follows profile, typing indicator, error + retry.
-6. **Nudges:** Edge Function `generate-nudges` (hourly cron) evaluates rules per user (budget ≥ 80%, category spend > 2× its 8-week average, goal behind schedule, bill due in 3 days, forecast risk) with a dedupe key so each nudge fires once; written to `nudges`, shown in an in-app inbox with unread badge.
+   1. Verify the JWT and that the user gave consent (`coach_consent_at`); 20 questions per user per 10 minutes (HTTP 429 beyond that).
+   2. Build a compact context in code (`buildCoachContext`): language, income type, wallet balance, 30-day income, spending and spending by category, this-week-versus-usual-week spending, budgets, goals (names and progress), health score with component scores and improvement areas (as words), forecast summary. **No phone, no name, no counterparty or merchant names, no transaction list.** Internal ids and status codes are converted to plain words so the model cannot repeat them. Phone-like digit runs in goal names are redacted.
+   3. System prompt: role, tone, answer in the language of the user's latest message (decided in code from the script, app language breaks ties), a Bangla glossary, and the guardrails: educational only, no investment/loan/insurance advice or promises, decline off-topic questions, use only supplied numbers, say "not enough data" when thin, never reveal instructions or field names.
+   4. Model: `OPENAI_COACH_MODEL` (currently `gpt-5-mini`; reasoning models take `max_completion_tokens` and `reasoning_effort`, not `temperature`). The reply is streamed to the client as server-sent events (`data: {"delta": "..."}` ... `data: {"done": true, ...}`); both messages are stored in `coach_messages`; the last 16 messages are sent back as history.
+   5. If the model is unavailable the answer comes from a template (see Section 12).
+   - **Numbers come from code, not the model:** "can I afford X?" is detected in the message (Latin or Bangla digits, "5k", "হাজার", "লাখ") and decided by `canAfford` against the forecast: **yes** (stays above the safety buffer), **tight** (stays positive but dips under it), **no** (would go below zero), or **insufficient**. A plain-English explanation sentence with every figure is handed to the model, which only restates it.
+   - With the `x-coach-debug: 1` header the final event includes the exact summary the model was shown (the user's own numbers); the evaluation script uses it to check grounding.
+5. **Chat UI** (`/coach`): a consent screen listing exactly what is and is not shared; streaming bubbles with a typing indicator; suggested-question chips; error and retry; a rate-limit message; clear chat (deletes the history); a standing "educational guidance, not financial advice" line.
+6. **Nudges:** pure rules in `packages/shared/src/nudge-rules.ts`, applied by the Edge Function `generate-nudges`: a category at 2x its average week (and at least ৳300 more), a goal behind schedule (or with a target date and no savings after 14 days), a recurring payment due within 3 days, a forecast dip within 14 days. Each has a dedupe key (per week, per month or per due date), so calling the function repeatedly never repeats an alert. Budget alerts (80%, over limit) are raised by database triggers as spending happens. The inbox, bell and unread badge render all types in the user's language.
+   - **Scheduling is deferred:** the app evaluates the rules at most once an hour while it is open (`useAutoNudges`) and recomputes the forecast and score when their screens open stale. Real `pg_cron` jobs (hourly nudges, daily forecast and score for every user) need `pg_cron`, `pg_net` and a shared secret in Vault; that is left for when the app is deployed.
 
 **Verify:** coach test set of ~15 questions checked for grounded numbers and guardrail behavior; forecast backtest on seeded personas; the demo gig-worker account shows a visible low-balance warning.
+
+**Verified so far (local stack):**
+- 175 unit and integration tests, including hand-computed forecasts (for example a synthetic user whose 29-31 October dip below a ৳2,100 buffer is worked out on paper), recurring detection, backtest, affordability verdicts, nudge rules, the coach context (no identifying fields, numbers add up, thin data flagged), the template fallback and the table permissions.
+- `pnpm coach:eval` runs 16 questions through the real function and model: **16/16 passed** (every figure in an answer is in the data the model was shown or a sum/difference of two such figures; stock-tip, loan-advice and off-topic questions are declined; the system prompt and field names are not leaked; phone numbers are not echoed; thin data gets "not enough data"; affordability answers agree with the code's verdict). Run it with the local functions server up; it spends a few cents of OpenAI usage.
+- Persona forecasts: the gig worker gets a clear warning (balance may go below zero around 21 October, first below the buffer on 5 October), the student has none, the salaried worker dips just under the buffer shortly before payday.
+- A browser run of 19 checks: forecast card and screen (verdict, chart with 25 flagged days, starting point equal to the real wallet balance, table view), alerts generated on open and shown in the inbox, consent screen, a streamed coach answer that quotes the computed balance after the purchase and follows the verdict, history surviving a reload, clear chat, and the Bangla view.
+- Not yet verified: realtime refresh (not part of the local stack), the flow against the cloud project, and the scheduled jobs (not built).
 
 ---
 
@@ -530,7 +547,7 @@ The team is growing. The table below maps the work streams; agree on who takes w
 
 | Condition | Fallback |
 |---|---|
-| LLM unavailable | Rule-based tips and template explanations |
+| LLM unavailable | The coach answers from a template built from the same numbers (balance, 30-day totals, top category, forecast dip, score and top tip, the affordability verdict), in Bangla or English, and says the AI is unavailable. Categorization falls back to Other + review. Built and unit-tested. |
 | AI categorization fails | Mark `Other`, queue for user review |
 | Insufficient data for coach/forecast | Say so, ask for more history, no guessing |
 | Supabase/network down | Serve cached dashboard (PWA), show offline banner, disable writes with a clear message |
@@ -661,7 +678,8 @@ pnpm dev           # http://localhost:3000
 | `pnpm sb db push --dry-run` | Preview what would be applied to the linked cloud project |
 | `pnpm sb db push` | Apply pending migrations to the cloud project (Section 17.6) |
 | `pnpm sb functions deploy <name> --use-api` | Deploy an Edge Function to the cloud project |
-| `pnpm sb functions serve` | Serve functions locally (needs the local stack; pulls an extra image the first time) |
+| `pnpm sb functions serve --env-file supabase/.env.functions` | Serve functions locally with your local secrets (needs the local stack; pulls an extra image the first time) |
+| `pnpm coach:eval` | Run the 16-question coach evaluation against local functions (spends a few cents of OpenAI usage; needs `EVAL_ANON_KEY` from `pnpm sb status`) |
 
 The Husky pre-commit hook runs Prettier on staged files and then lint. Do not bypass it.
 
@@ -704,6 +722,6 @@ Teammates get the Supabase **Developer** role on the project, so everyone can ru
 
 ### 17.7 Current status
 
-Phases 0 and 1 are complete (scaffold, migrations for `profiles`, `categories` and `goals`, app shell with i18n, phone OTP login, server-side PIN lock, route guard, onboarding). Phase 1 was merged in PR #1; the move of the PIN to the server is the `fix/server-side-pin` branch. The web app now runs against the shared cloud project by default. Phase 2 (transactions, categorizer, simulated feed, ingestion functions, dashboard) was merged in PR #3. Phase 3 (budgets with alerts, goals with projections, round-ups, health score screen, nudge inbox) is on branch `feat/phase3-budgets-goals-score`. Next up: Phase 4 (forecast, AI coach, more nudge rules). Deployment is deferred until after Phases 1 to 4.
+Phases 0 to 3 are merged (PRs #1 to #4). Phase 4 (recurring detection, 30-day forecast with a backtest, the streaming AI coach with consent, rule-driven nudges) is on branch `feat/phase4-intelligence`. The web app runs against the shared cloud project by default. Next up: Phase 5 (learn hub, gamification, PWA). Deployment and scheduled jobs are deferred until after Phases 1 to 4.
 
 ---

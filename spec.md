@@ -5,7 +5,7 @@ Track: 03 — Customer Innovation & Financial Independence
 Document type: Self-contained team specification (problem + decisions + features + roadmap)
 Stack decided: Responsive web app (Next.js, installable PWA), Supabase (Postgres + Auth + Realtime + RLS + Edge Functions), LLM-powered coach via OpenAI API
 
-**New to the project? Start at Section 17 (Developer Guide).** It covers setup, daily workflow, conventions and ownership.
+**New to the project? Start at Section 17 (Developer Guide).** It covers setup, daily workflow, conventions and the shared cloud project.
 
 > ⚠️ Items marked with this symbol are assumptions. The official track brief, judging weights and deliverable list were not available when this was written. Replace them with the real values.
 
@@ -318,7 +318,7 @@ Reference data (the 12 categories, and later the learn modules) is inserted by m
 
 **Working rules**
 - Git (team workflow, see Section 17): `main` is protected in spirit, always passes lint, typecheck and tests. Work on short-lived branches `feat/<feature-id>-<slug>` (for example `feat/f6-budgets`), open a PR, get one review, squash merge. Conventional commit messages (`feat(scope): ...`, `fix`, `chore`, `docs`, `test`).
-- Schema changes only through `supabase/migrations` (never edit tables in the dashboard). Create files with `pnpm sb migration new <name>`, test locally with `pnpm sb start` / `pnpm sb db reset`, never edit a migration that has been merged (add a new one). Only the DB owner pushes to the shared cloud project (`pnpm sb db push`), after the PR is merged.
+- Schema changes only through `supabase/migrations` (never edit tables in the dashboard). Create files with `pnpm sb migration new <name>`, test locally with `pnpm sb start` / `pnpm sb db reset`, never edit a migration that has been merged (add a new one). Pushes to the shared cloud project (`pnpm sb db push`) happen only from an up-to-date `main` after the PR is merged (Section 17.6).
 - Secrets: the browser only ever gets the `NEXT_PUBLIC_*` URL and anon key. The service-role key, DB password and OpenAI key never go in the repo, in chat or in screenshots.
 - Business logic (score, forecast, categorization rules) lives as **pure TypeScript functions in `packages/shared`**, unit-tested, then wrapped by Edge Functions. This keeps AI/LLM out of anything numeric.
 - Each feature is built **vertically**: migration → function/logic → API call → UI → test, in that order.
@@ -474,7 +474,7 @@ Phase 0 ──► Phase 1 ──► Phase 2 ──┬─► Phase 3 ──► Ph
                                    └─ (frontend can mock Phase 3/4 data contracts in parallel)
 ```
 
-The team is growing. The table below maps the work streams; assign one owner per stream at kickoff (record names in Section 17.6). A native Bangla speaker on the team reviews all Bangla copy and the coach prompt.
+The team is growing. The table below maps the work streams; agree on who takes which stream at kickoff. A native Bangla speaker on the team reviews all Bangla copy and the coach prompt.
 
 | Work stream | Phase 0–1 | Phase 2 | Phase 3 | Phase 4 | Phase 5–6 |
 |---|---|---|---|---|---|
@@ -592,7 +592,7 @@ Local login uses test phone numbers `+8801700000001`, `+8801700000002`, `+880170
 
 **Option B: shared cloud project**
 
-Ask the DB owner (Section 17.6) for the project URL and anon key, and to invite you to the Supabase organization. Put them in `apps/web/.env.local`. The anon key is public by design but is still not committed. Cloud test phone numbers are configured in the dashboard (Authentication → Providers → Phone, dummy Twilio credentials, same test numbers and OTP).
+Ask whoever created the Supabase project to invite you with the Developer role, then copy the project URL and anon key from the dashboard (Project Settings → API). Put them in `apps/web/.env.local`. The anon key is public by design but is still not committed. Cloud test phone numbers are configured in the dashboard (Authentication → Providers → Phone, dummy Twilio credentials, same test numbers and OTP).
 
 **Run the app**
 
@@ -621,7 +621,7 @@ The Husky pre-commit hook runs Prettier on staged files and then lint. Do not by
 3. Build vertically (migration, shared pure logic with unit tests, API call, UI, test), in both languages.
 4. Before pushing: `pnpm lint && pnpm typecheck && pnpm test`.
 5. Open a PR with: what changed, how you verified it, screenshots for UI. One review required. Squash merge.
-6. If the PR contains a migration, say so in the PR title. After merge, the DB owner runs `pnpm sb db push` against the cloud project.
+6. If the PR contains a migration, say so in the PR title. After merge, push it following Section 17.6.
 
 CI (`.github/workflows/ci.yml`) runs lint, typecheck, tests and the Prettier check on every push and PR once the repo is on GitHub. A red CI blocks merge.
 
@@ -638,15 +638,15 @@ CI (`.github/workflows/ci.yml`) runs lint, typecheck, tests and the Prettier che
 - **Windows login quirk.** `pnpm sb login` and `pnpm sb link` need an interactive terminal. Run them in your own terminal window, not through a tool that runs without a TTY.
 - **Ports.** Local Supabase uses 54321 (API) and 54322 (DB); the web app uses 3000. Stop other local Supabase stacks first.
 
-### 17.6 Ownership (fill in at kickoff)
+### 17.6 Shared cloud project and migrations
 
-| Role | Owner | Responsibility |
-|---|---|---|
-| DB owner | _TBD_ | Holds the cloud project admin and DB password, pushes merged migrations, sets Edge Function secrets, invites teammates |
-| Frontend | _TBD_ | App shell, screens, i18n wiring |
-| Backend / DB | _TBD_ | Migrations, RLS, Edge Functions, adapter |
-| Intelligence | _TBD_ | Pure functions, categorizer, score, forecast, coach prompts and tests |
-| Product / pitch / Bangla | _TBD_ | Copy and Bangla review, learn content, demo script, impact case |
+Teammates get the Supabase **Developer** role on the project, so everyone can run migrations. Because the cloud database is shared, follow these rules to avoid clobbering each other:
+
+- Push only from an up-to-date `main`, after the migration PR is merged. Never push from a feature branch.
+- Before pushing: `git switch main && git pull`, then `pnpm sb migration list` (local and remote should differ only by the new migration) and `pnpm sb db push --dry-run`. Then `pnpm sb db push`.
+- Say in the team chat when you push, so two people never push at once.
+- Link the CLI once per machine: `pnpm sb login` (your own access token), then `pnpm sb link --project-ref <ref>`. The link step may ask for the database password; get it from the team password manager, never from chat.
+- Edge Function secrets (`pnpm sb secrets set ...`) are set the same way, by whoever needs them changed; tell the team.
 
 ### 17.7 Current status
 

@@ -15,6 +15,11 @@ export type CoachContextInput = {
     spend: number;
     byCategory: { category: string; total: number }[];
   };
+  /** Spending in the last 7 days, and the average week over the 8 weeks before it. */
+  week: {
+    thisWeek: { category: string; total: number }[];
+    usualWeek: { category: string; total: number }[];
+  };
   budgets: { category: string; limit: number; spent: number }[];
   goals: {
     title: string;
@@ -48,6 +53,12 @@ export type CoachContext = {
     saved: number;
     spendingByCategory: { category: string; total: number }[];
   };
+  weekComparison: {
+    thisWeekSpending: number;
+    usualWeeklySpending: number;
+    thisWeekByCategory: { category: string; total: number }[];
+    usualWeekByCategory: { category: string; total: number }[];
+  };
   budgetsThisMonth: {
     category: string;
     limit: number;
@@ -59,7 +70,7 @@ export type CoachContext = {
     score: number;
     confidence: "low" | "ok";
     componentScores: Record<ComponentKey, number>;
-    topImprovementAreas: ActionId[];
+    topImprovementAreas: string[];
   } | null;
   forecast30Days:
     | { available: false }
@@ -103,6 +114,15 @@ export function explainAffordability(a: Affordability): string {
   return `If the user spends ${taka(a.amount)} today, the wallet balance goes from ${taka(a.balanceNow)} to ${taka(a.balanceAfter)}.${lowest}${negative} ${verdict}`;
 }
 
+/** Improvement areas in plain words, so the model never repeats an internal id like build_buffer. */
+export const ACTION_WORDS: Record<ActionId, string> = {
+  save_more: "saving a bit more each month",
+  set_budgets: "setting a budget for the biggest spending category",
+  fix_budget: "bringing an over-limit budget back under control",
+  build_buffer: "building up an emergency buffer",
+  smooth_income: "putting money aside in better weeks to cover leaner ones",
+};
+
 /** Below this the coach must say there is not enough data instead of guessing. */
 export const THIN_TRANSACTIONS = 15;
 export const THIN_HISTORY_DAYS = 14;
@@ -134,6 +154,20 @@ export function buildCoachContext(
         .slice(0, 8)
         .map((c) => ({ category: c.category, total: r(c.total) })),
     },
+    weekComparison: {
+      thisWeekSpending: input.week.thisWeek.reduce((n, c) => n + r(c.total), 0),
+      usualWeeklySpending: input.week.usualWeek.reduce((n, c) => n + r(c.total), 0),
+      thisWeekByCategory: input.week.thisWeek
+        .filter((c) => c.total > 0)
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 6)
+        .map((c) => ({ category: c.category, total: r(c.total) })),
+      usualWeekByCategory: input.week.usualWeek
+        .filter((c) => c.total > 0)
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 6)
+        .map((c) => ({ category: c.category, total: r(c.total) })),
+    },
     budgetsThisMonth: input.budgets.map((b) => ({
       category: b.category,
       limit: r(b.limit),
@@ -152,7 +186,7 @@ export function buildCoachContext(
           componentScores: Object.fromEntries(
             Object.entries(input.health.components).map(([k, v]) => [k, r(v)]),
           ) as Record<ComponentKey, number>,
-          topImprovementAreas: input.health.actions,
+          topImprovementAreas: input.health.actions.map((a) => ACTION_WORDS[a]),
         }
       : null,
     forecast30Days:
@@ -177,6 +211,13 @@ export function buildCoachContext(
 /* ------------------------------------------------------------------------------------------ */
 /* Reading "can I afford X?" out of a message                                                  */
 /* ------------------------------------------------------------------------------------------ */
+
+/** The language to answer in: whatever script the user wrote in, else their app language. */
+export function detectReplyLanguage(message: string, fallback: "bn" | "en"): "bn" | "en" {
+  if (/[ঀ-৿]/.test(message)) return "bn";
+  if (/[A-Za-z]{2,}/.test(message)) return "en";
+  return fallback;
+}
 
 const BN_DIGITS = "০১২৩৪৫৬৭৮৯";
 const toAscii = (s: string) => s.replace(/[০-৯]/g, (d) => String(BN_DIGITS.indexOf(d)));

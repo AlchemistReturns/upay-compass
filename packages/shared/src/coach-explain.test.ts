@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { buildCoachContext, explainAffordability, type CoachContextInput } from "./coach-context";
+import {
+  buildCoachContext,
+  detectReplyLanguage,
+  explainAffordability,
+  type CoachContextInput,
+} from "./coach-context";
 import { fallbackReply } from "./coach-fallback";
 import { addDays } from "./dates";
 import { canAfford, forecastCashflow } from "./forecast";
@@ -49,6 +54,7 @@ const input = (
     spend: 18000,
     byCategory: [{ category: "food", total: 9000 }],
   },
+  week: { thisWeek: [], usualWeek: [] },
   budgets: [],
   goals: [],
   health: {
@@ -103,6 +109,7 @@ describe("fallbackReply (when the AI is unavailable)", () => {
     expect(text).toContain("may fall to ৳1,300 on 2026-10-31, below your safety buffer of ৳2,100");
     expect(text).toContain("financial health score is 62/100");
     expect(text).toContain("building up an emergency buffer");
+    expect(text).not.toMatch(/build_buffer|save_more/);
     expect(text).toContain("AI assistant is unavailable");
   });
 
@@ -124,5 +131,48 @@ describe("fallbackReply (when the AI is unavailable)", () => {
     const text = fallbackReply(buildCoachContext(input("en", { txCount: 3, historyDays: 4 })));
     expect(text).toContain("don't have enough transaction history");
     expect(text).not.toContain("wallet balance is");
+  });
+});
+
+describe("detectReplyLanguage", () => {
+  it("follows the script the user wrote in, and falls back to the app language", () => {
+    expect(detectReplyLanguage("Why did I overspend this week?", "bn")).toBe("en");
+    expect(detectReplyLanguage("এই সপ্তাহে কেন বেশি খরচ হলো?", "en")).toBe("bn");
+    expect(detectReplyLanguage("Can I afford ৫০০০ টাকা?", "en")).toBe("bn");
+    expect(detectReplyLanguage("5000?", "bn")).toBe("bn");
+    expect(detectReplyLanguage("5000?", "en")).toBe("en");
+  });
+});
+
+describe("week comparison in the coach context", () => {
+  it("gives this week against the usual week, rounded and sorted", () => {
+    const c = buildCoachContext(
+      input("en", {
+        week: {
+          thisWeek: [
+            { category: "food", total: 1500.4 },
+            { category: "transport", total: 2200.6 },
+          ],
+          usualWeek: [
+            { category: "food", total: 700.2 },
+            { category: "transport", total: 900.4 },
+          ],
+        },
+      }),
+    );
+    expect(c.weekComparison.thisWeekSpending).toBe(3701); // 1500 + 2201
+    expect(c.weekComparison.usualWeeklySpending).toBe(1600); // 700 + 900
+    expect(c.weekComparison.thisWeekByCategory.map((x) => x.category)).toEqual([
+      "transport",
+      "food",
+    ]);
+  });
+});
+
+describe("coach context never exposes internal ids", () => {
+  it("describes improvement areas in words", () => {
+    const c = buildCoachContext(input("en"));
+    expect(c.healthScore?.topImprovementAreas).toEqual(["building up an emergency buffer"]);
+    expect(JSON.stringify(c)).not.toMatch(/build_buffer|save_more|set_budgets|smooth_income/);
   });
 });

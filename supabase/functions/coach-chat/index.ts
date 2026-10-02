@@ -1,5 +1,11 @@
 import { z } from "zod";
-import { buildCoachContext, canAfford, detectAffordIntent, fallbackReply } from "@compass/shared";
+import {
+  buildCoachContext,
+  canAfford,
+  detectAffordIntent,
+  detectReplyLanguage,
+  fallbackReply,
+} from "@compass/shared";
 import { adminClient, authenticate, corsHeaders, json } from "../_shared/http.ts";
 import { loadFlow, refreshForecast } from "../_shared/flow.ts";
 import {
@@ -35,6 +41,7 @@ Deno.serve(async (req) => {
   const body = bodySchema.safeParse(await req.json().catch(() => null));
   if (!body.success) return json({ error: "invalid_body" }, 400);
   const message = body.data.message;
+  const debug = req.headers.get("x-coach-debug") === "1";
 
   const admin = adminClient();
 
@@ -57,7 +64,11 @@ Deno.serve(async (req) => {
     ({ forecast } = await refreshForecast(client, user.id, flow));
     const loaded = await loadCoachInput(client, forecast, flow.balance);
     if (!loaded.consent) return json({ error: "consent_required" }, 403);
-    contextInput = loaded.input;
+    // Answer in the language of the question; the app language only breaks ties.
+    contextInput = {
+      ...loaded.input,
+      language: detectReplyLanguage(message, loaded.input.language),
+    };
   } catch (e) {
     return json(
       { error: "context_failed", detail: e instanceof Error ? e.message : String(e) },
@@ -116,7 +127,14 @@ Deno.serve(async (req) => {
       await admin
         .from("coach_messages")
         .insert({ user_id: user.id, role: "assistant", content: reply });
-      send({ done: true, fallback: usedFallback, affordability: affordability?.verdict ?? null });
+      // The summary is the user's own numbers. With the debug header they can see exactly what the
+      // model was shown (used by the evaluation script to check that every figure is grounded).
+      send({
+        done: true,
+        fallback: usedFallback,
+        affordability: affordability?.verdict ?? null,
+        ...(debug ? { context } : {}),
+      });
       controller.close();
     },
   });

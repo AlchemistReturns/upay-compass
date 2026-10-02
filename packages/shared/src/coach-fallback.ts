@@ -1,5 +1,5 @@
 import type { ActionId } from "./health.ts";
-import type { CoachContext } from "./coach-context.ts";
+import { ACTION_WORDS, type CoachContext } from "./coach-context.ts";
 
 /**
  * A plain template answer, used when the language model is unavailable (or no key is set), so the
@@ -78,7 +78,8 @@ export function fallbackReply(ctx: CoachContext): string {
 
   const h = ctx.healthScore;
   if (h) {
-    const tip = h.topImprovementAreas[0];
+    const word = h.topImprovementAreas[0];
+    const tip = (Object.keys(ACTION_WORDS) as ActionId[]).find((k) => ACTION_WORDS[k] === word);
     lines.push(
       bn
         ? `আপনার আর্থিক স্বাস্থ্য স্কোর ${h.score}/১০০।${tip ? ` উন্নতির সবচেয়ে ভালো উপায়: ${TIP.bn[tip]}।` : ""}`

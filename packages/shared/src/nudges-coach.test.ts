@@ -184,6 +184,7 @@ describe("buildCoachContext", () => {
         { category: "other", total: 0 },
       ],
     },
+    week: { thisWeek: [], usualWeek: [] },
     budgets: [{ category: "food", limit: 5000, spent: 4100 }],
     goals: [
       {

@@ -32,3 +32,13 @@ export async function authenticate(
   if (error || !data.user) return json({ error: "unauthorized" }, 401);
   return { client, user: data.user };
 }
+
+/**
+ * Service-role client for the few writes users must not be able to forge (health score snapshots).
+ * Only call it after `authenticate` has verified who the caller is.
+ */
+export function adminClient(): SupabaseClient {
+  return createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
+    auth: { persistSession: false },
+  });
+}

@@ -1,5 +1,5 @@
-import { PlaceholderPage } from "@/components/placeholder-page";
+import { GoalsView } from "@/features/goals/goals-view";
 
 export default function Page() {
-  return <PlaceholderPage ns="goals" />;
+  return <GoalsView />;
 }

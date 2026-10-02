@@ -11,6 +11,7 @@ import {
 import { SimulatedFeed } from "@compass/upay-sim";
 import { aiCategorize, type AiItem } from "../_shared/ai-categorize.ts";
 import { authenticate, corsHeaders, json } from "../_shared/http.ts";
+import { refreshHealthScore } from "../_shared/health.ts";
 
 const bodySchema = z.object({ persona: z.enum(["student", "gig", "salaried"]) });
 const BATCH_SIZE = 200;
@@ -158,5 +159,8 @@ Deno.serve(async (req) => {
     detail: { persona: body.data.persona, ...summary },
   });
 
-  return json(summary);
+  // Best effort: a failed score refresh must not fail the ingestion itself.
+  const health = await refreshHealthScore(client, user.id).catch(() => null);
+
+  return json({ ...summary, health_score: health?.score ?? null });
 });

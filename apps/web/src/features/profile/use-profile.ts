@@ -10,6 +10,9 @@ export type Profile = {
   income_type: IncomeType | null;
   monthly_income: number | null;
   onboarded: boolean;
+  opening_balance: number;
+  roundup_enabled: boolean;
+  roundup_goal_id: string | null;
   role: "user" | "admin";
 };
 

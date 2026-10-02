@@ -13,6 +13,7 @@ export type Profile = {
   opening_balance: number;
   roundup_enabled: boolean;
   roundup_goal_id: string | null;
+  coach_consent_at: string | null;
   role: "user" | "admin";
 };
 

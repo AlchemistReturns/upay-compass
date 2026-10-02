@@ -270,6 +270,7 @@ max_frequency = "5s"
 8801700000001 = "123456"
 8801700000002 = "123456"
 8801700000003 = "123456"
+8801700000004 = "123456"
 
 # Configure logged in session timeouts.
 # [auth.sessions]
@@ -434,4 +435,10 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.coach-chat]
+verify_jwt = false
+
+[functions.reset-demo]
+verify_jwt = false
+
+[functions.seed-demo]
 verify_jwt = false

@@ -8,12 +8,13 @@ export type AuthStatus =
 /** Single source of truth for where a visitor belongs. Pages redirect based on this. */
 export function useAuthStatus() {
   const { userId, loading } = useAuth();
-  const { pinState, locked } = useLock();
+  const { pinState, locked, reload: reloadLock } = useLock();
   const profile = useProfile(userId);
 
   let status: AuthStatus;
   if (loading) status = "loading";
   else if (!userId) status = "signed-out";
+  else if (pinState === "error") status = "error";
   else if (pinState === "unknown") status = "loading";
   else if (pinState === "none") status = "needs-pin";
   else if (locked) status = "locked";
@@ -22,5 +23,10 @@ export function useAuthStatus() {
   else if (!profile.data.onboarded) status = "needs-onboarding";
   else status = "ready";
 
-  return { status, profile: profile.data ?? null, refetchProfile: profile.refetch };
+  const retry = () => {
+    reloadLock();
+    void profile.refetch();
+  };
+
+  return { status, profile: profile.data ?? null, retry };
 }

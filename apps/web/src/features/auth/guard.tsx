@@ -24,7 +24,7 @@ const DESTINATION: Record<Own, string> = {
 export function Guard({ own, children }: { own: Own; children: React.ReactNode }) {
   const router = useRouter();
   const { t, i18n } = useTranslation();
-  const { status, profile, refetchProfile } = useAuthStatus();
+  const { status, profile, retry } = useAuthStatus();
   const syncedLanguage = useRef<string | null>(null);
 
   // Once per user, adopt the language saved on their profile.
@@ -54,7 +54,7 @@ export function Guard({ own, children }: { own: Own; children: React.ReactNode }
     return (
       <div className="mx-auto w-full max-w-md px-4 py-8">
         <p className="mb-2">{t("common.error")}</p>
-        <Button onClick={() => void refetchProfile()}>{t("common.retry")}</Button>
+        <Button onClick={retry}>{t("common.retry")}</Button>
       </div>
     );
   }

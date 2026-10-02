@@ -304,7 +304,7 @@ upay-compass/
 │  │  ├─ forecast-cashflow/      ├─ coach-chat/
 │  │  ├─ generate-nudges/        └─ seed-demo-user/
 │  ├─ seed.sql                   # dev-only data (optional)
-│  └─ config.toml                # local stack config incl. test OTP numbers
+│  └─ config.toml                # Supabase CLI config (also used by the optional local stack)
 ├─ packages/shared/              # shared types, zod schemas, score/forecast pure functions
 ├─ adapters/upay-sim/            # simulated transaction feed + persona generator
 ├─ docs/{architecture.png,demo-script.md}
@@ -318,7 +318,7 @@ Reference data (the 12 categories, and later the learn modules) is inserted by m
 
 **Working rules**
 - Git (team workflow, see Section 17): `main` is protected in spirit, always passes lint, typecheck and tests. Work on short-lived branches `feat/<feature-id>-<slug>` (for example `feat/f6-budgets`), open a PR, get one review, squash merge. Conventional commit messages (`feat(scope): ...`, `fix`, `chore`, `docs`, `test`).
-- Schema changes only through `supabase/migrations` (never edit tables in the dashboard). Create files with `pnpm sb migration new <name>`, test locally with `pnpm sb start` / `pnpm sb db reset`, never edit a migration that has been merged (add a new one). Pushes to the shared cloud project (`pnpm sb db push`) happen only from an up-to-date `main` after the PR is merged (Section 17.6).
+- Schema changes only through `supabase/migrations` (never edit tables in the dashboard). Create files with `pnpm sb migration new <name>`, never edit a migration that has been pushed or merged (add a new one). The shared cloud project is the primary database, so migrations are applied to it with `pnpm sb db push` following the rules in Section 17.6. Risky or destructive migrations are tried on the optional local stack first.
 - Secrets: the browser only ever gets the `NEXT_PUBLIC_*` URL and anon key. The service-role key, DB password and OpenAI key never go in the repo, in chat or in screenshots.
 - Business logic (score, forecast, categorization rules) lives as **pure TypeScript functions in `packages/shared`**, unit-tested, then wrapped by Edge Functions. This keeps AI/LLM out of anything numeric.
 - Each feature is built **vertically**: migration → function/logic → API call → UI → test, in that order.
@@ -334,14 +334,14 @@ Reference data (the 12 categories, and later the learn modules) is inserted by m
 
 **Build process**
 1. **Bootstrap repo:** create monorepo (`pnpm` workspaces), Next.js App Router TS app, Tailwind, shadcn/ui, ESLint + Prettier, Husky pre-commit.
-2. **Supabase setup:** Supabase CLI as a dev dependency (`pnpm sb ...`), `supabase init`, `pnpm sb login` and `pnpm sb link` (run in a real terminal), local stack with `pnpm sb start`. Keys go in `apps/web/.env.local` (`.env.example` committed).
+2. **Supabase setup:** Supabase CLI as a dev dependency (`pnpm sb ...`), `supabase init`, `pnpm sb login` and `pnpm sb link` (run in a real terminal), the cloud project is the primary database (an optional local stack with `pnpm sb start` is available for risky migrations). Keys go in `apps/web/.env.local` (`.env.example` committed).
 3. **First migrations:** `profiles` (RLS, column-level update grants, `handle_new_user` trigger) and `categories` with the 12 en/bn rows inserted in the migration itself; a second migration opens `categories` to `anon` reads.
 4. **Client wiring:** `lib/supabase.ts` creates the browser client from `NEXT_PUBLIC_*` env vars; TanStack Query provider; App Router route groups `(public)` and `(protected)`.
 5. **UI shell:** mobile-first layout, bottom navigation (Home, Budgets, Goals, Coach, Learn), theme tokens, Noto Sans Bengali font.
 6. **i18n:** `i18next` with `en.json`/`bn.json`, Bangla default; language stored in localStorage now and synced to `profiles.language` once login exists (Phase 1); all strings via `t()` from day one (no hardcoded text).
 7. **CI:** Husky pre-commit (lint-staged Prettier + lint) and a GitHub Actions workflow (lint, typecheck, test, format check on push). Deployment and automated `db push` are deferred; migrations are pushed manually.
 
-**Verify:** app runs locally, reads `categories` from Supabase, language toggle switches the shell, lint, typecheck, tests and build pass.
+**Verify:** app runs locally against the cloud project, reads `categories` from Supabase, language toggle switches the shell, lint, typecheck, tests and build pass.
 
 ---
 
@@ -361,7 +361,7 @@ Reference data (the 12 categories, and later the learn modules) is inserted by m
 
 **Verify:** sign up → onboard → background app 2 min → PIN prompt → relogin works; with two test accounts, account A cannot read account B's rows (automated RLS test using two JWTs: `packages/shared/src/rls.integration.test.ts`, runs only when `RLS_TEST_URL` and `RLS_TEST_ANON_KEY` are set).
 
-**Verified so far:** unit tests for phone, OTP, PIN and PBKDF2 hashing; the RLS integration test against the local stack; and a browser smoke run (login → PIN → onboarding → home → forced re-lock → wrong and right PIN → language toggle → logout). Not yet verified: the 2-minute background lock timing and the 5-wrong-PINs sign-out in a browser, and the same flow against the cloud project.
+**Verified so far:** unit tests for phone, OTP, PIN and PBKDF2 hashing; the RLS integration test (run against the local stack); and a browser smoke run (login → PIN → onboarding → home → forced re-lock → wrong and right PIN → language toggle → logout). Not yet verified: the 2-minute background lock timing and the 5-wrong-PINs sign-out in a browser, and the same flow against the cloud project.
 
 ---
 
@@ -524,7 +524,7 @@ The team is growing. The table below maps the work streams; agree on who takes w
 
 ## 15. Deployment Plan
 
-**Status: deferred.** Deployment happens after the core build (Phases 1–4). Until then everything runs locally against the Supabase CLI stack or the linked cloud project.
+**Status: deferred.** Deployment happens after the core build (Phases 1–4). Until then the web app runs locally (`pnpm dev`) against the shared Supabase cloud project.
 
 Planned for later:
 - Client on Vercel, backend on the Supabase cloud project; migrations committed.
@@ -561,7 +561,7 @@ Everything a new teammate needs to get running and contribute. If something here
 
 - Node.js 20+ (22 recommended), Git
 - pnpm 11 (`corepack enable` or `npm i -g pnpm`)
-- Docker Desktop, running (needed for the local Supabase stack; first start pulls several images and can take 10+ minutes)
+- Docker Desktop is **optional**. It is only needed for the local Supabase stack, which you use to try risky migrations or to run the RLS test without touching shared data (first start pulls several images and can take 10+ minutes).
 - Windows, macOS and Linux all work. On Windows use PowerShell or Git Bash.
 
 You do **not** install the Supabase CLI globally. It is a dev dependency, run as `pnpm sb <command>`.
@@ -574,27 +574,35 @@ cd upay-compass
 pnpm install
 ```
 
-Then pick how the web app talks to Supabase.
+**Connect to the shared cloud project (primary database)**
 
-**Option A: local stack (default for day-to-day work)**
+1. Ask whoever created the Supabase project to invite you with the Developer role.
+2. From the dashboard (Project Settings → API) copy the project URL and the anon key into `apps/web/.env.local`:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon key>
+```
+
+The anon key is public by design but is still not committed.
+
+3. Link the CLI once per machine, in your own terminal (see Section 17.6): `pnpm sb login`, then `pnpm sb link --project-ref <project-ref>`.
+
+Login uses **test phone numbers only** (no real SMS). They are configured once in the dashboard (Authentication → Providers → Phone, dummy Twilio credentials, test numbers with fixed OTPs). The team uses `+8801700000001`, `+8801700000002` and `+8801700000003` with OTP `123456`. Cloud OTP resends are rate limited, so wait a minute if you see HTTP 429.
+
+Because the database is shared, every test login creates real rows (auth user, profile, goals) that teammates can see. Use the test numbers, and clean up in the dashboard if needed. There is no database reset.
+
+**Optional: local stack (for risky migrations and the RLS test)**
 
 ```bash
-pnpm sb start      # starts Postgres, Auth, REST in Docker and applies all migrations
-pnpm sb status     # prints the local API URL and anon key
+cp supabase/.env.example supabase/.env   # dummy Twilio token, no real SMS is ever sent
+pnpm sb start      # Postgres, Auth, REST in Docker; applies all migrations
+pnpm sb status     # local API URL and anon key
+pnpm sb db reset   # rebuild the local DB from migrations
+pnpm sb stop       # stop it when you are done
 ```
 
-Create `apps/web/.env.local`:
-
-```
-NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon key from pnpm sb status>
-```
-
-Local login uses test phone numbers `+8801700000001`, `+8801700000002`, `+8801700000003` with OTP `123456` (configured in `supabase/config.toml`). Create `supabase/.env` containing `SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN=dummy` (gitignored; the dummy Twilio provider is required by Supabase Auth for test OTPs, and no real SMS is ever sent). Reset the local database at any time with `pnpm sb db reset`.
-
-**Option B: shared cloud project**
-
-Ask whoever created the Supabase project to invite you with the Developer role, then copy the project URL and anon key from the dashboard (Project Settings → API). Put them in `apps/web/.env.local`. The anon key is public by design but is still not committed. Cloud test phone numbers are configured in the dashboard (Authentication → Providers → Phone, dummy Twilio credentials, same test numbers and OTP).
+To point the web app at it, use `http://127.0.0.1:54321` and the anon key from `pnpm sb status` in `.env.local` (keep a copy of your cloud values so you can switch back). Local test numbers and OTP are the same, set in `supabase/config.toml`. Restart `pnpm dev` after changing env files.
 
 **Run the app**
 
@@ -609,10 +617,12 @@ pnpm dev           # http://localhost:3000
 | `pnpm dev` | Start the web app |
 | `pnpm lint` / `pnpm typecheck` / `pnpm test` | Checks across all workspaces |
 | `pnpm format` | Prettier write (the pre-commit hook also does this for staged files) |
-| `pnpm sb start` / `pnpm sb stop` | Start or stop the local Supabase stack |
+| `pnpm sb start` / `pnpm sb stop` | Start or stop the optional local Supabase stack |
 | `pnpm sb migration new <name>` | Create a new timestamped migration file |
-| `pnpm sb db reset` | Rebuild the local DB from migrations (and `seed.sql` if present) |
+| `pnpm sb db reset` | Rebuild the local DB from migrations (local stack only) |
+| `pnpm sb migration list` | Compare local migration files with the cloud project |
 | `pnpm sb db push --dry-run` | Preview what would be applied to the linked cloud project |
+| `pnpm sb db push` | Apply pending migrations to the cloud project (Section 17.6) |
 
 The Husky pre-commit hook runs Prettier on staged files and then lint. Do not bypass it.
 
@@ -623,7 +633,7 @@ The Husky pre-commit hook runs Prettier on staged files and then lint. Do not by
 3. Build vertically (migration, shared pure logic with unit tests, API call, UI, test), in both languages.
 4. Before pushing: `pnpm lint && pnpm typecheck && pnpm test`.
 5. Open a PR with: what changed, how you verified it, screenshots for UI. One review required. Squash merge.
-6. If the PR contains a migration, say so in the PR title. After merge, push it following Section 17.6.
+6. If the PR contains a migration, say so in the PR title and apply it to the cloud project following Section 17.6.
 
 CI (`.github/workflows/ci.yml`) runs lint, typecheck, tests and the Prettier check on every push and PR once the repo is on GitHub. A red CI blocks merge.
 
@@ -638,20 +648,23 @@ CI (`.github/workflows/ci.yml`) runs lint, typecheck, tests and the Prettier che
 - **Secrets.** Never commit `.env*` files other than `.env.example`. The service-role key, the DB password and `OPENAI_API_KEY` never go in the repo, in chat, in screenshots or in client code. Share them through a password manager. Edge Function secrets live in `supabase/.env.functions` (gitignored) locally and are set in the cloud with `pnpm sb secrets set`.
 - **Privacy.** No phone numbers or raw identifiers in LLM prompts. Simulated data is labelled as simulated in the UI.
 - **Windows login quirk.** `pnpm sb login` and `pnpm sb link` need an interactive terminal. Run them in your own terminal window, not through a tool that runs without a TTY.
-- **Ports.** Local Supabase uses 54321 (API) and 54322 (DB); the web app uses 3000. Stop other local Supabase stacks first.
+- **Ports.** The web app uses 3000. The optional local Supabase stack uses 54321 (API) and 54322 (DB); stop other local Supabase stacks first.
+- **Stop what you start.** Stop dev servers and the local stack when you are done (`pnpm sb stop`).
 
 ### 17.6 Shared cloud project and migrations
 
 Teammates get the Supabase **Developer** role on the project, so everyone can run migrations. Because the cloud database is shared, follow these rules to avoid clobbering each other:
 
-- Push only from an up-to-date `main`, after the migration PR is merged. Never push from a feature branch.
-- Before pushing: `git switch main && git pull`, then `pnpm sb migration list` (local and remote should differ only by the new migration) and `pnpm sb db push --dry-run`. Then `pnpm sb db push`.
-- Say in the team chat when you push, so two people never push at once.
+- The cloud project is the shared development database, so you apply your migration to it while the feature is still on its branch. Keep it small and **additive** (new tables, new columns, new policies).
+- Always: `pnpm sb migration list` (local files and remote should differ only by your new migration), then `pnpm sb db push --dry-run`, then `pnpm sb db push`. If the dry run lists a migration you did not write, stop and ask the team.
+- Say in the team chat before and after you push, so two people never push at once and everyone pulls your migration file.
+- **Destructive or hard-to-reverse changes** (dropping or renaming columns or tables, rewriting data, changing existing policies) are tried on the local stack first (`pnpm sb start`, `pnpm sb db reset`) and pushed only after the PR is approved.
+- A pushed migration is never edited. A mistake is fixed with a new migration. Merge the PR promptly so `main` always matches the cloud database.
 - Link the CLI once per machine: `pnpm sb login` (your own access token), then `pnpm sb link --project-ref <ref>`. The link step may ask for the database password; get it from the team password manager, never from chat.
 - Edge Function secrets (`pnpm sb secrets set ...`) are set the same way, by whoever needs them changed; tell the team.
 
 ### 17.7 Current status
 
-Phases 0 and 1 are complete (scaffold, migrations for `profiles`, `categories` and `goals`, app shell with i18n, phone OTP login, PIN lock, route guard, onboarding). Phase 1 lives on branch `feat/f1-auth` until it is merged. Next up: Phase 2 (transactions and dashboard). Deployment is deferred until after Phases 1 to 4.
+Phases 0 and 1 are complete (scaffold, migrations for `profiles`, `categories` and `goals`, app shell with i18n, phone OTP login, PIN lock, route guard, onboarding). Phase 1 is in PR #1 (`feat/f1-auth`) until merged. The web app now runs against the shared cloud project by default. Next up: Phase 2 (transactions and dashboard). Deployment is deferred until after Phases 1 to 4.
 
 ---

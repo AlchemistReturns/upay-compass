@@ -171,7 +171,8 @@ upay is phone-centric, so login mirrors that.
 
 ```sql
 profiles(id uuid pk → auth.users, phone text, full_name text, language text default 'bn',
-         income_type text, monthly_income numeric, opening_balance numeric default 0,  -- wallet balance = opening_balance + income - spend
+         income_type text, monthly_income numeric, opening_balance numeric default 0,
+         roundup_enabled boolean default false, roundup_goal_id uuid,  -- set only through set_roundup()  -- wallet balance = opening_balance + income - spend
          onboarded boolean default false, role text default 'user')
 
 categories(id serial pk, key text unique, name_en text, name_bn text, icon text, is_essential boolean)
@@ -188,16 +189,24 @@ category_rules(id uuid pk, user_id uuid, keyword text, category_id int, unique (
   -- learned from user corrections; keyword = lower-cased counterparty. Global rules live in code, not in the table.
 
 budgets(id uuid pk, user_id uuid, category_id int, limit_amount numeric,
-        period text default 'monthly', alert_threshold numeric default 0.8)
+        period text default 'monthly', alert_threshold numeric default 0.8,
+        unique (user_id, category_id))
 
 goals(id uuid pk, user_id uuid, title text, target_amount numeric, saved_amount numeric default 0,
       target_date date, status text default 'active')
-goal_contributions(id uuid pk, goal_id uuid, user_id uuid, amount numeric, source text, created_at) -- manual|roundup
+goal_contributions(id uuid pk, goal_id uuid, user_id uuid, amount numeric, source text,  -- manual|roundup
+                    transaction_id uuid,  -- set for round-ups; deleting the transaction removes its round-up
+                    created_at)
+  -- clients can read their own rows only. Rows are written by RPCs/triggers, and triggers keep goals.saved_amount
+  -- (and the active/completed status) in step on insert and delete, so the total can never drift.
 
 health_scores(id uuid pk, user_id uuid, score int, breakdown jsonb, computed_at)
+  -- history of snapshots; readable by the owner, written only by the compute-health-score function (service role)
 forecasts(id uuid pk, user_id uuid, horizon_days int, projected_balance jsonb, risk_flags jsonb, computed_at)
 coach_messages(id uuid pk, user_id uuid, role text, content text, created_at)
-nudges(id uuid pk, user_id uuid, type text, title text, body text, read boolean default false, created_at)
+nudges(id uuid pk, user_id uuid, type text, data jsonb, dedupe_key text, read boolean default false, created_at)
+  -- unique (user_id, dedupe_key). Text is rendered in the client from type + data so it follows the UI language.
+  -- Created only by triggers/functions; users can read them and set read = true, nothing else.
 
 learn_modules(id serial pk, slug text, title_en text, title_bn text, body_md_en text, body_md_bn text, level int)
 user_progress(user_id uuid, module_id int, completed_at timestamptz, primary key (user_id, module_id))
@@ -219,9 +228,9 @@ create policy "own rows" on transactions for all
 
 **Column-level grants on `profiles`:** authenticated users may update only `full_name`, `language`, `income_type`, `monthly_income`, `onboarded`. `id`, `phone` and `role` are server-controlled, so users cannot grant themselves admin.
 
-**Realtime-enabled:** `transactions` (done), and later `nudges, budgets, goals, health_scores`.
+**Realtime-enabled:** `transactions, budgets, goals, goal_contributions, nudges, health_scores`.
 
-**RPCs (security invoker, so RLS applies):** `set_transaction_category(id, category_id)`, `dashboard_summary(from, to)`, `spend_by_category(from, to)`, `weekly_trend(weeks)` (weeks start Monday, Bangladesh time), `wallet_balance()`.
+**RPCs (security invoker, so RLS applies):** `set_transaction_category(id, category_id)`, `dashboard_summary(from, to)`, `spend_by_category(from, to)`, `weekly_trend(weeks)` (weeks start Monday, Bangladesh time), `wallet_balance()`, `budget_progress()`, `health_inputs()`. Security definer (they move money-like state, so they check `auth.uid()` ownership themselves): `contribute_to_goal(goal, amount)`, `undo_goal_contribution(id)`, `set_roundup(enabled, goal)`.
 
 ---
 
@@ -262,11 +271,19 @@ create policy "own rows" on transactions for all
 | Emergency buffer (months of essentials) | 25% |
 | Income stability | 20% |
 
-The screen shows "what moved your score" and the top 3 improvement actions.
+Each component is normalized to 0-100 over the last 90 days, then weighted. The rules (all in `packages/shared/src/health.ts`, tested with hand-computed values):
+
+- **Savings rate:** (income - spending) / income, where transfers into the Savings category count as saving, not spending. 20% saved scores 100, linear from 0%.
+- **Budget adherence:** average over this month's budgets; within the limit scores 100, 50% over scores 0.
+- **Emergency buffer:** wallet balance divided by monthly essential spending; 3 months scores 100.
+- **Income stability:** coefficient of variation of income across three 30-day periods; 0% variation scores 100, 50% or more scores 0.
+- A component that cannot be measured yet (no income, no budgets, under two 30-day periods) counts as a neutral 50 and is labelled as such. Confidence is "low" under 15 transactions or 28 days of history, and the screen says so.
+
+The screen shows "what moved your score" (change per component against the previous snapshot) and the top 3 improvement actions, ranked by how many score points each could win. Actions are data (`id` + numbers) rendered through i18n templates, never free text from a model.
 
 **Forecast (F10).** Detect recurring income and bills by interval and amount similarity, project 30-day balance, flag days where balance dips under a safety buffer. Seasonal-naive baseline first; model upgrade only if it measurably improves error.
 
-**Round-up (F8).** Each outgoing transaction rounds up to the next ৳10; the difference is credited to the chosen goal (simulated, opt-in, reversible).
+**Round-up (F8).** Each outgoing transaction rounds up to the next ৳10; the difference is credited to the chosen goal (simulated, opt-in, reversible). It is done by a database trigger, so ingested and manual payments behave the same; a payment already on a multiple of 10 sets nothing aside. It earmarks money inside the demo: the wallet balance is not reduced.
 
 **AI Coach (F11).**
 - Edge Function builds a compact context: profile, 30-day summary, budgets, goals, score. No raw PII.
@@ -341,7 +358,7 @@ Reference data (the 12 categories, and later the learn modules) is inserted by m
 
 ### 11.2 Phases
 
-**Status:** Phases 0 to 2 complete (Phase 2 in PR review). Phase 3 is next.
+**Status:** Phases 0 to 3 complete (Phase 3 in PR review). Phase 4 is next.
 
 ### Phase 0 — Foundations
 
@@ -407,30 +424,33 @@ Reference data (the 12 categories, and later the learn modules) is inserted by m
 ### Phase 3 — Budgets, Goals, Health Score (F6, F7, F8, F9)
 
 **Build process**
-1. **Migrations:** `budgets`, `goals`, `goal_contributions`, `health_scores`; RLS own-rows; Realtime on `budgets`, `goals`, `health_scores`.
+1. **Migration** (`20261002165340_phase3_budgets_goals_score.sql`): `budgets`, `goal_contributions`, `health_scores`, and `nudges` (moved up from Phase 4, because budget alerts need it), round-up columns on `profiles`; RLS; Realtime on `budgets, goals, goal_contributions, nudges, health_scores`. `goals` already exists from Phase 1.
 2. **Budgets:**
    - UI to set monthly limit per category with alert threshold slider.
    - Progress = `spent_this_month / limit`, computed by an RPC; progress bar turns amber at threshold, red at 100%.
-   - A DB trigger/Edge Function on transaction insert checks thresholds and inserts a `nudges` row once per budget per month.
+   - A DB trigger on transaction insert/update and on budget insert/update checks thresholds and inserts a `nudges` row once per budget per month per level (`budget_threshold`, then `budget_exceeded`), using `dedupe_key`. Only spending from the current Bangladesh-time month raises alerts, so back-filled history never does. Setting a budget below what is already spent alerts immediately.
 3. **Goals:** create with target amount/date; projected completion = remaining / average monthly contribution (pure function in `packages/shared`); manual contribution creates a `goal_contributions` row and updates `saved_amount` in one transaction (RPC).
 4. **Round-up:**
    - Per-user setting (on/off, target goal).
    - On each outgoing transaction, compute `roundup = ceil(amount/10)*10 - amount`; insert a `goal_contributions` row with `source = 'roundup'`.
-   - Fully reversible: toggle off stops it, history shows each round-up, user can undo.
+   - Fully reversible: toggle off stops it, history shows each round-up, user can undo. The target goal is validated server-side by `set_roundup`; clients cannot write the setting or `saved_amount` directly.
 5. **Health score:**
    - Implement `computeHealthScore(inputs)` as a pure function: savings rate (30), budget adherence (25), emergency buffer in months (25), income stability via coefficient of variation (20); each normalized to 0–100.
    - Edge Function `compute-health-score` reads last 90 days, calls the function, stores score + `breakdown` JSON.
-   - Triggered after ingestion, after budget changes, and by a daily cron.
-6. **Score screen:** gauge, four component bars, "what moved your score" (diff vs previous snapshot), top 3 actions generated from the weakest components by templates.
+   - Triggered after ingestion (the ingest function calls the same helper), after budget changes (the client invokes the function), and when the score screen opens with a snapshot older than 6 hours. A snapshot is stored only when the score or breakdown changed; otherwise only its timestamp is refreshed. The **daily cron is deferred** to Phase 4, where the other scheduled jobs (forecast, nudges) need `pg_cron` anyway.
+6. **Score screen** (`/score`, with a card on the dashboard): gauge, four component bars with a plain-language line each, "what moved your score" (diff vs previous snapshot), top 3 actions from templates with links to the right screen, low-confidence note.
+7. **Alerts:** a bell with an unread count in every header and an inbox (`/nudges`); tapping an alert opens the budget and marks it read. Phase 4 adds more nudge types to the same table.
 
 **Verify:** unit tests with fixed inputs → fixed scores; changing a transaction visibly changes the score and the explanation; round-up totals reconcile with transaction math.
+
+**Verified so far (local stack):** 118 unit and integration tests (hand-computed scores and projections, alert dedupe, past-month handling, forged-write attempts on nudges, contributions, saved_amount and scores, round-up reconciliation including undo and transaction deletion); `compute-health-score` (401 without a token, no-op on an empty account, unchanged recompute stores nothing, a budget change stores a new snapshot); and a browser run covering a budget alert firing once, the inbox marking it read, a goal with contribution and projection, a round-up of 123 setting aside 7 and undoing cleanly, the score screen equalling the stored score, the score changing after a real transaction, and the Bangla view. Not yet verified: realtime refresh of these screens (the realtime service is not part of the local stack), and the flow against the cloud project. Not done: the daily score cron (see step 5).
 
 ---
 
 ### Phase 4 — Intelligence Layer (F10, F11, F12)
 
 **Build process**
-1. **Migrations:** `forecasts`, `coach_messages`, `nudges`; RLS own-rows; Realtime on `nudges`.
+1. **Migrations:** `forecasts`, `coach_messages`; RLS own-rows. (`nudges` already exists from Phase 3; add the forecast, overspend and bill-due rules to it.)
 2. **Recurring detection (pure function):**
    - Group transactions by normalized counterparty + channel.
    - A group is recurring if there are at least 3 occurrences, interval variance under a tolerance (weekly ≈7d, monthly ≈30d ±3), and amounts within ±15%.
@@ -684,6 +704,6 @@ Teammates get the Supabase **Developer** role on the project, so everyone can ru
 
 ### 17.7 Current status
 
-Phases 0 and 1 are complete (scaffold, migrations for `profiles`, `categories` and `goals`, app shell with i18n, phone OTP login, server-side PIN lock, route guard, onboarding). Phase 1 was merged in PR #1; the move of the PIN to the server is the `fix/server-side-pin` branch. The web app now runs against the shared cloud project by default. Phase 2 (transactions, categorizer, simulated feed, ingestion functions, dashboard) is on branch `feat/phase2-transactions`. Next up: Phase 3 (budgets, goals, health score). Deployment is deferred until after Phases 1 to 4.
+Phases 0 and 1 are complete (scaffold, migrations for `profiles`, `categories` and `goals`, app shell with i18n, phone OTP login, server-side PIN lock, route guard, onboarding). Phase 1 was merged in PR #1; the move of the PIN to the server is the `fix/server-side-pin` branch. The web app now runs against the shared cloud project by default. Phase 2 (transactions, categorizer, simulated feed, ingestion functions, dashboard) was merged in PR #3. Phase 3 (budgets with alerts, goals with projections, round-ups, health score screen, nudge inbox) is on branch `feat/phase3-budgets-goals-score`. Next up: Phase 4 (forecast, AI coach, more nudge rules). Deployment is deferred until after Phases 1 to 4.
 
 ---

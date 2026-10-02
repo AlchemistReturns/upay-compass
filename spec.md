@@ -367,7 +367,7 @@ Reference data (the 12 categories, and later the learn modules) is inserted by m
 
 ### 11.2 Phases
 
-**Status:** Phases 0 to 5 complete (Phase 5 on its branch, not yet merged). Phase 6 is next.
+**Status:** Phases 0 to 6 complete (Phase 6 on its branch, not yet merged). Remaining: Bangla copy review, backup video, a dry run on the real phone, and deployment.
 
 ### Phase 0 — Foundations
 
@@ -524,14 +524,26 @@ Reference data (the 12 categories, and later the learn modules) is inserted by m
 ### Phase 6 — Admin, Polish & Demo (F16, F17)
 
 **Build process**
-1. **Admin insights:** role-gated route; SQL views over aggregates only (no user-level rows, minimum group size to avoid re-identification): top spend categories, average score, goal completion rate, round-up total; simple charts.
-2. **Demo mode:** `seed-demo-user` Edge Function (admin-only) creates/reset three personas with deterministic data, budgets, goals and a pre-seeded forecast risk; a "Reset demo" button.
-3. **Quality pass:** empty/loading/error states on every screen; accessibility checks (contrast AA, tap targets ≥ 44px, screen-reader labels); native-speaker review of all Bangla copy and the coach prompt; copy that labels simulated data.
-4. **Hardening:** re-audit RLS on every table with a script, confirm no service-role key in the client bundle, run dependency audit.
-5. **Pitch assets:** architecture diagram, impact metrics slide (from Section 14), 3-minute demo script, backup screen recording, fallback plan for offline venue Wi-Fi.
-6. **Rehearsal:** two full dry runs of the Section 16 script on a clean account; fix any step that takes manual DB edits.
+1. **Admin insights (F16):** migration `20261003120000_phase6_admin_demo.sql`.
+   - `admin_insights()` is a security definer function that only a profile with `role = 'admin'` can call (anyone else gets "forbidden"). It returns **aggregates over groups of people only** and hides any figure computed from **fewer than 5 people** (`min_group_size`); each call is written to `audit_log`. Contents: spending share by category over the last 30 days (a category is listed only if 5 or more people spent in it), average health score (overall and per income type), goal completion rate, round-up savings total, learning progress (average modules finished, number who finished all). No phone, name, id or per-person row ever leaves the function.
+   - `/admin` page: privacy line, bars and tiles, "hidden: fewer than 5 people" for suppressed figures, a table-free layout that reads on a phone. Non-admins are told the page is not for them. The link appears in the Demo tools card for admins only.
+   - **Becoming an admin** is a deliberate manual step, because `role` is server-controlled: run `update public.profiles set role = 'admin' where phone = '<digits without +>';` in the Supabase SQL editor (or `docker exec ... psql` locally).
+2. **Demo mode (F17):**
+   - **Reset demo:** Home has a "Demo tools" card (for everyone, since all data is simulated). Choosing a persona calls the `reset-demo` Edge Function, which runs `reset_demo()` (deletes the caller's transactions, rules, budgets, goals, nudges, scores, forecasts, coach messages, learning progress, streak and coach consent; keeps the account, phone, PIN and onboarding), loads the persona's 120 days again through the shared ingest pipeline, and adds a "Phone fund" goal with some savings. It only ever touches the caller's own rows.
+   - **Demo cohort:** the admin-only `seed-demo` function creates (or refreshes) 15 clearly synthetic people (3 personas x 5, phones `+88019900000NN`, throwaway passwords nobody keeps), each with their own simulated history, a goal at a different stage, a budget, round-ups and learning progress, so the admin figures have enough people to show. The ingest pipeline moved to `supabase/functions/_shared/ingest.ts` so `ingest-transactions`, `reset-demo` and `seed-demo` share it.
+   - **The demo storyline holds on any day.** The simulated histories are generated for "today", so the starting wallet balance now follows the history (the persona's usual figure, raised if needed so the wallet never goes below zero at any point). A test sweeps 45 consecutive days and checks that the gig worker's forecast shows a low-balance warning on every one. (Before this, the warning appeared on 87 of 90 days and not on the day of the first rehearsal.)
+3. **Quality pass:**
+   - Accessibility, checked with axe-core on 12 screens in English and Bangla (WCAG 2.0/2.1 A and AA plus best practices): fixed low-contrast muted text (darker token), unnamed progress bars, and every button, input, tab and link now has a tap target of at least 44 px (the shared Button and Input sizes were raised). Result: no violations, no targets under 44 px except two links 39 to 40 px wide that were then widened.
+   - Empty, loading and error states exist on every screen; offline and "not saved yet" states were added in Phase 5.
+   - Simulated data is labelled in the app. **Still needed from the team:** a native-speaker review of all Bangla copy (including the 8 learn modules and the coach prompt).
+4. **Hardening** (`pnpm audit:rls`, `pnpm audit:bundle`, `pnpm audit --prod`):
+   - `scripts/audit-rls.mjs` checks the local database: RLS on every public table (16), table privileges for `anon`, security definer functions (fixed `search_path`, not callable by `anon`) and which profile columns users can update.
+   - It found real problems, fixed by `20261003130000_phase6_hardening.sql`: users could update their own `opening_balance` (their wallet balance) from the browser, `anon` had default table privileges (blocked by RLS, but now removed except for the public category list), and trigger functions were executable. The loading function now writes `opening_balance` with the service role.
+   - `scripts/audit-bundle.mjs` scans the built client bundle: no service-role key, secret key or server env var name (only the public anon key). `pnpm audit --prod`: no known vulnerabilities.
+5. **Pitch assets** in `docs/pitch/`: `architecture.md` (diagram and talking points), `impact-metrics.md` (every claim with how to reproduce it), `demo-script.md` (3 minutes with timings and recovery steps), `fallback-plan.md` (bad venue Wi-Fi, backup recording). **Still to do by hand:** record the backup video and take the screenshots.
+6. **Rehearsal:** the Section 16 script was run by a browser script on a brand-new account (steps 3 to 12), then again after pressing Reset demo, then the admin step: **23 checks, all passing, twice in a row**, with no manual database edits. The checks include a corrected category saved as a rule, a budget alert firing, a goal with round-ups, the score breakdown, the forecast warning, a Bangla coach answer that quotes the user's real number, nudges in the inbox, the dashboard loading offline, a clean account after reset (310 transactions, one goal, no budgets, no chat), the admin aggregates with no personal data, and a regular user being refused the admin page.
 
-**Verify:** full demo runs end to end, repeatable from a reset, with no manual database changes.
+**Verify:** the full demo runs end to end and repeats from a reset with no manual database changes (done, above). Remaining before the pitch: the Bangla copy review, the backup video, and one dry run on the real phone against the cloud project.
 
 ---
 
@@ -691,6 +703,8 @@ pnpm dev           # http://localhost:3000
 | `pnpm sb db push` | Apply pending migrations to the cloud project (Section 17.6) |
 | `pnpm sb functions deploy <name> --use-api` | Deploy an Edge Function to the cloud project |
 | `pnpm sb functions serve --env-file supabase/.env.functions` | Serve functions locally with your local secrets (needs the local stack; pulls an extra image the first time) |
+| `pnpm audit:rls` | Security audit of the local database (RLS, anon grants, security definer functions, user-writable columns); needs the local stack up |
+| `pnpm audit:bundle` | Scan the built client bundle (`pnpm build` first) for secrets |
 | `pnpm coach:eval` | Run the 16-question coach evaluation against local functions (spends a few cents of OpenAI usage; needs `EVAL_ANON_KEY` from `pnpm sb status`) |
 
 The Husky pre-commit hook runs Prettier on staged files and then lint. Do not bypass it.
@@ -734,6 +748,6 @@ Teammates get the Supabase **Developer** role on the project, so everyone can ru
 
 ### 17.7 Current status
 
-Phases 0 to 4 are merged (PRs #1 to #5). Phase 5 (learn hub with 8 bilingual modules, streaks and badges, installable PWA with cached offline reading, performance pass) is on branch `feat/phase5-engagement`. The web app runs against the shared cloud project by default. Next up: Phase 6 (admin insights, demo mode and reset, polish). Deployment and scheduled jobs are deferred until after the feature phases.
+Phases 0 to 5 are merged (PRs #1 to #6). Phase 6 (admin insights, demo reset and cohort, accessibility pass, security hardening, pitch assets, rehearsal) is on branch `feat/phase6-admin-demo`. The web app runs against the shared cloud project by default. Remaining: native-speaker Bangla review, backup video, a dry run on the real phone, then deployment and scheduled jobs.
 
 ---

@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { formatMoney, formatSignedMoney } from "@/lib/format";
 import { useAuth } from "@/features/auth/auth-provider";
 import { useProfile } from "@/features/profile/use-profile";
+import { HealthCard } from "@/features/health/health-card";
 import { CategoryBars } from "./category-bars";
 import { DemoLoader } from "./demo-loader";
 import { PeriodTabs } from "./period-tabs";
@@ -84,6 +85,8 @@ export function Dashboard() {
             />
             <Tile label={t("dashboard.net")} value={formatSignedMoney(net, lang)} />
           </div>
+
+          <HealthCard />
 
           {trend.data && <WeeklyChart data={trend.data} />}
           <CategoryBars data={byCategory.data ?? []} />

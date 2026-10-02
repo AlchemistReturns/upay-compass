@@ -328,7 +328,7 @@ Reference data (the 12 categories, and later the learn modules) is inserted by m
 
 ### 11.2 Phases
 
-**Status:** Phase 0 complete. Phase 1 is next.
+**Status:** Phases 0 and 1 complete. Phase 2 is next.
 
 ### Phase 0 — Foundations
 
@@ -348,18 +348,20 @@ Reference data (the 12 categories, and later the learn modules) is inserted by m
 ### Phase 1 — Auth & Onboarding (F1, F2)
 
 **Build process**
-1. **Enable phone auth** in Supabase using **test phone numbers with fixed OTPs only** (no real SMS). GoTrue requires an SMS provider to be selected even for test numbers, so a dummy Twilio provider is enabled. Locally this is `[auth.sms.test_otp]` plus a dummy `[auth.sms.twilio]` in `config.toml` (dummy token in the gitignored `supabase/.env`). In the cloud project it is set in the dashboard (Authentication → Providers → Phone). Local test numbers: `+8801700000001` to `…03`, OTP `123456`. Configure email magic link as fallback; set OTP rate limits.
-2. **Login screen:** phone input with `+8801XXXXXXXXX` regex (zod), calls `supabase.auth.signInWithOtp({ phone })`, then OTP screen calls `verifyOtp`.
+1. **Enable phone auth** in Supabase using **test phone numbers with fixed OTPs only** (no real SMS). GoTrue requires an SMS provider to be selected even for test numbers, so a dummy Twilio provider is enabled. Locally this is `[auth.sms.test_otp]` plus a dummy `[auth.sms.twilio]` in `config.toml` (dummy token in the gitignored `supabase/.env`). In the cloud project it is set in the dashboard (Authentication → Providers → Phone). Local test numbers: `+8801700000001` to `…03`, OTP `123456`. Local OTP resend is limited to once per 5 seconds (`max_frequency`). The email magic link fallback is **not built yet** (open item, see Section 12).
+2. **Login screen:** phone input accepts `01XXXXXXXXX`, `8801…` or `+8801…` (Bangla digits too) and normalizes to `+8801[3-9]XXXXXXXX` with zod (`packages/shared/src/auth.ts`), calls `supabase.auth.signInWithOtp({ phone })`, then OTP screen calls `verifyOtp`.
 3. **Profile creation:** the `handle_new_user` trigger inserts the `profiles` row; client then redirects to onboarding if `onboarded = false`.
 4. **PIN lock:**
    - On first login, user sets a 4–6 digit PIN; derive a hash with Web Crypto (PBKDF2 + random salt), store hash+salt in IndexedDB (never the raw PIN).
-   - `useAppLock` hook tracks `visibilitychange`; after 2 minutes hidden, show the PIN screen.
+   - `LockProvider` tracks `visibilitychange`; after 2 minutes hidden, show the PIN screen. A brand-new browser session (new tab or restart) also asks for the PIN; a plain reload does not (flag kept in `sessionStorage`).
    - 5 failed attempts → force full OTP re-login.
-5. **Route guard:** `<ProtectedRoute>` checks session + unlocked state; `onAuthStateChange` keeps session in sync; logout wipes IndexedDB and the Query cache.
-6. **Onboarding wizard (3 steps):** language → income type & monthly income → first goal (optional). Writes to `profiles` and `goals`, then sets `onboarded = true`.
+5. **Route guard:** a single `useAuthStatus` hook derives `signed-out | needs-pin | locked | needs-onboarding | ready`, and `<Guard own="…">` redirects each route group to where that state belongs (a locked app shows the PIN screen on every route); `onAuthStateChange` keeps session in sync; logout wipes IndexedDB and the Query cache.
+6. **Onboarding wizard (3 steps):** language → income type & monthly income → first goal (optional). Writes to `goals` (if filled in) and `profiles`, then sets `onboarded = true`. The `goals` table is created in Phase 1 (migration `20260102000000_goals.sql`) with column-level grants so clients cannot write `saved_amount`; Phase 3 adds contributions and the RPCs. The saved language on `profiles.language` is adopted on login and kept in sync by the language toggle.
 7. **RLS policies:** `profiles` select/update only where `id = auth.uid()`.
 
-**Verify:** sign up → onboard → background app 2 min → PIN prompt → relogin works; with two test accounts, account A cannot read account B's rows (automated RLS test using two JWTs).
+**Verify:** sign up → onboard → background app 2 min → PIN prompt → relogin works; with two test accounts, account A cannot read account B's rows (automated RLS test using two JWTs: `packages/shared/src/rls.integration.test.ts`, runs only when `RLS_TEST_URL` and `RLS_TEST_ANON_KEY` are set).
+
+**Verified so far:** unit tests for phone, OTP, PIN and PBKDF2 hashing; the RLS integration test against the local stack; and a browser smoke run (login → PIN → onboarding → home → forced re-lock → wrong and right PIN → language toggle → logout). Not yet verified: the 2-minute background lock timing and the 5-wrong-PINs sign-out in a browser, and the same flow against the cloud project.
 
 ---
 
@@ -496,7 +498,7 @@ The team is growing. The table below maps the work streams; agree on who takes w
 | Insufficient data for coach/forecast | Say so, ask for more history, no guessing |
 | Supabase/network down | Serve cached dashboard (PWA), show offline banner, disable writes with a clear message |
 | Invalid transaction from adapter | Reject, log to `audit_log`, skip without crashing |
-| OTP/SMS unavailable | Email magic link fallback |
+| OTP/SMS unavailable | Email magic link fallback (not built yet) |
 
 ---
 
@@ -650,6 +652,6 @@ Teammates get the Supabase **Developer** role on the project, so everyone can ru
 
 ### 17.7 Current status
 
-Phase 0 is complete (repo scaffold, Supabase migrations for `profiles` and `categories`, app shell with i18n, categories read from Supabase). Next up: Phase 1 (auth and onboarding). Deployment is deferred until after Phases 1 to 4.
+Phases 0 and 1 are complete (scaffold, migrations for `profiles`, `categories` and `goals`, app shell with i18n, phone OTP login, PIN lock, route guard, onboarding). Phase 1 lives on branch `feat/f1-auth` until it is merged. Next up: Phase 2 (transactions and dashboard). Deployment is deferred until after Phases 1 to 4.
 
 ---

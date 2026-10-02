@@ -426,3 +426,12 @@ verify_jwt = false
 
 [functions.compute-health-score]
 verify_jwt = false
+
+[functions.forecast-cashflow]
+verify_jwt = false
+
+[functions.generate-nudges]
+verify_jwt = false
+
+[functions.coach-chat]
+verify_jwt = false

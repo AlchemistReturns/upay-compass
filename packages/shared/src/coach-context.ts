@@ -74,8 +74,34 @@ export type CoachContext = {
         expectedRecurringPayments: number;
       };
   /** Present only when the user asked "can I afford X?"; computed by code. */
-  affordability?: Affordability;
+  affordability?: Affordability & { explanation: string };
 };
+
+const taka = (n: number) => `৳${Math.round(n).toLocaleString("en-US")}`;
+
+/**
+ * The affordability result as one plain English sentence, so the coach can restate it without
+ * quoting field names. Every figure in it comes from `canAfford`.
+ */
+export function explainAffordability(a: Affordability): string {
+  if (a.verdict === "insufficient") {
+    return `There is not enough transaction history to say whether ${taka(a.amount)} is affordable. Ask the user to add more transactions.`;
+  }
+  const lowest =
+    a.lowestAfter !== null && a.lowestDay
+      ? ` Over the next 30 days the balance would bottom out at ${taka(a.lowestAfter)} on ${a.lowestDay}, against a safety buffer of ${taka(a.safetyBuffer)}.`
+      : "";
+  const negative = a.firstNegativeDay
+    ? ` It would first drop below zero on ${a.firstNegativeDay}.`
+    : "";
+  const verdict = {
+    yes: "Answer: yes, the user can afford it; the balance stays above the safety buffer.",
+    tight:
+      "Answer: it is possible but tight; the balance stays above zero but dips below the safety buffer.",
+    no: "Answer: no, not comfortably; the balance would go below zero.",
+  }[a.verdict];
+  return `If the user spends ${taka(a.amount)} today, the wallet balance goes from ${taka(a.balanceNow)} to ${taka(a.balanceAfter)}.${lowest}${negative} ${verdict}`;
+}
 
 /** Below this the coach must say there is not enough data instead of guessing. */
 export const THIN_TRANSACTIONS = 15;
@@ -142,7 +168,9 @@ export function buildCoachContext(
             expectedRecurringPayments: r(f.expectedBills),
           }
         : { available: false },
-    ...(affordability ? { affordability } : {}),
+    ...(affordability
+      ? { affordability: { ...affordability, explanation: explainAffordability(affordability) } }
+      : {}),
   };
 }
 

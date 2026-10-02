@@ -423,3 +423,6 @@ verify_jwt = false
 
 [functions.categorize-transaction]
 verify_jwt = false
+
+[functions.compute-health-score]
+verify_jwt = false

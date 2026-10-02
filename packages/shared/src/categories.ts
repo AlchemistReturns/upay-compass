@@ -16,6 +16,18 @@ export const CATEGORY_KEYS = [
 
 export type CategoryKey = (typeof CATEGORY_KEYS)[number];
 
+/** Categories counted as essential spending; mirrors `categories.is_essential` in the database. */
+export const ESSENTIAL_CATEGORY_KEYS: readonly CategoryKey[] = [
+  "food",
+  "transport",
+  "recharge_data",
+  "bills",
+  "education",
+  "health",
+];
+
+export const isEssentialCategory = (key: CategoryKey) => ESSENTIAL_CATEGORY_KEYS.includes(key);
+
 export const isCategoryKey = (v: unknown): v is CategoryKey =>
   typeof v === "string" && (CATEGORY_KEYS as readonly string[]).includes(v);
 

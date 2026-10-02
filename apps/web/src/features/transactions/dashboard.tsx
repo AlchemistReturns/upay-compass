@@ -11,7 +11,9 @@ import { cn } from "@/lib/utils";
 import { formatMoney, formatSignedMoney } from "@/lib/format";
 import { useAuth } from "@/features/auth/auth-provider";
 import { useProfile } from "@/features/profile/use-profile";
+import { ForecastCard } from "@/features/forecast/forecast-card";
 import { HealthCard } from "@/features/health/health-card";
+import { useAutoNudges } from "@/features/nudges/use-auto-nudges";
 import { CategoryBars } from "./category-bars";
 import { DemoLoader } from "./demo-loader";
 import { PeriodTabs } from "./period-tabs";
@@ -40,6 +42,7 @@ export function Dashboard() {
   const lang = i18n.language;
 
   useTransactionsRealtime();
+  useAutoNudges(recent.isSuccess && recent.data.length > 0);
 
   const noTransactions = recent.isSuccess && recent.data.length === 0;
   const hasSimulated = recent.data?.some((r) => r.is_simulated) ?? false;
@@ -86,6 +89,7 @@ export function Dashboard() {
             <Tile label={t("dashboard.net")} value={formatSignedMoney(net, lang)} />
           </div>
 
+          <ForecastCard />
           <HealthCard />
 
           {trend.data && <WeeklyChart data={trend.data} />}

@@ -114,6 +114,8 @@ describe.skipIf(!url || !anon)("server-side PIN", () => {
 
   it("users cannot see each other's PIN state", { timeout: 20_000 }, async () => {
     const other = await signIn("+8801700000001");
+    // Start the other user from "no PIN" (five wrong attempts clear any existing one).
+    for (let i = 0; i < 5; i++) await other.client.rpc("verify_pin", { pin: "000000" });
     expect((await u.client.rpc("set_pin", { new_pin: "2468" })).error).toBeNull();
     expect((await other.client.rpc("has_pin")).data).toBe(false);
     await clearPin();

@@ -1,7 +1,9 @@
 const locale = (lang: string) => (lang === "bn" ? "bn-BD" : "en-US");
 
 export function formatMoney(amount: number, lang: string): string {
-  return `৳${Math.round(amount).toLocaleString(locale(lang))}`;
+  const rounded = Math.round(amount);
+  // Negative amounts read "−৳947", not "৳-947".
+  return `${rounded < 0 ? "−" : ""}৳${Math.abs(rounded).toLocaleString(locale(lang))}`;
 }
 
 export function formatSignedMoney(amount: number, lang: string): string {

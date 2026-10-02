@@ -122,6 +122,8 @@ const gig: DayFn = (day, rng) => {
   if (dayOfMonth === 10) d.push(out("send_money", "Ammu", 4000, "", 12));
   if (dayOfMonth === 12) d.push(out("bill", "DESCO", rng.amount(650, 900), "electricity"));
   if (dayOfMonth === 18) d.push(out("bill", "Titas Gas", 400));
+  // A fixed commitment that irregular income has to cover: the forecast sees it coming.
+  if (dayOfMonth === 20) d.push(out("bill", "Bike Installment", 6500, "emi", 12));
   if (rng.chance(0.03)) d.push(out("merchant", "Lazz Pharma", rng.amount(200, 600), "medicine"));
   d.push(...unknownMerchant(rng, 0.04, 150, 500));
   return d;
@@ -167,6 +169,6 @@ const salaried: DayFn = (day, rng) => {
 
 export const PERSONA_CONFIGS: Record<Persona, PersonaConfig> = {
   student: { openingBalance: 1500, day: student },
-  gig: { openingBalance: 8000, day: gig },
-  salaried: { openingBalance: 30000, day: salaried },
+  gig: { openingBalance: 14100, day: gig },
+  salaried: { openingBalance: 31400, day: salaried },
 };

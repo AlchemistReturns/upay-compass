@@ -169,6 +169,6 @@ const salaried: DayFn = (day, rng) => {
 
 export const PERSONA_CONFIGS: Record<Persona, PersonaConfig> = {
   student: { openingBalance: 1500, day: student },
-  gig: { openingBalance: 14100, day: gig },
+  gig: { openingBalance: 9000, day: gig },
   salaried: { openingBalance: 31400, day: salaried },
 };

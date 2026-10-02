@@ -16,7 +16,9 @@
     "format:check": "prettier --check .",
     "sb": "supabase",
     "prepare": "husky",
-    "coach:eval": "node scripts/coach-eval.mjs"
+    "coach:eval": "node scripts/coach-eval.mjs",
+    "audit:rls": "node scripts/audit-rls.mjs",
+    "audit:bundle": "node scripts/audit-bundle.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7",

@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { categorize, transactionSchema } from "@compass/shared";
-import { PERSONAS, PERSONA_CONFIGS, SimulatedFeed, addDays, generateTransactions } from "./index";
+import {
+  PERSONAS,
+  PERSONA_CONFIGS,
+  SimulatedFeed,
+  addDays,
+  generateTransactions,
+  walletOpeningBalance,
+} from "./index";
 
 const END = "2026-10-02";
 
@@ -37,7 +44,7 @@ describe.each(PERSONAS)("%s persona", (persona) => {
   });
 
   it("never lets the wallet go negative", () => {
-    let balance = PERSONA_CONFIGS[persona].openingBalance;
+    let balance = walletOpeningBalance(persona, txs);
     for (const t of txs) {
       balance += t.direction === "in" ? t.amount : -t.amount;
       expect(balance).toBeGreaterThanOrEqual(0);

@@ -258,6 +258,7 @@ export function ScoreView() {
                     <div
                       className="bg-muted mt-1 h-2.5 rounded-r-full rounded-l-sm"
                       role="progressbar"
+                      aria-label={t(`score.component_${k}`)}
                       aria-valuemin={0}
                       aria-valuemax={100}
                       aria-valuenow={Math.round(c.score)}
@@ -322,7 +323,10 @@ export function ScoreView() {
                       <div className="flex-1">
                         <p>{text}</p>
                         {href && (
-                          <Link href={href} className="text-primary text-xs">
+                          <Link
+                            href={href}
+                            className="text-primary inline-flex min-h-11 items-center text-xs"
+                          >
                             {t("score.take_action")}
                           </Link>
                         )}

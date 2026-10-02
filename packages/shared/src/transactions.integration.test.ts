@@ -7,6 +7,7 @@ describe.skipIf(!url || !anon)("transactions, rules and dashboard RPCs", () => {
   let b: TestUser;
   let foodId: number;
   let transportId: number;
+  let base = 0;
   const day = (offset: number) => new Date(Date.now() - offset * 86_400_000).toISOString();
 
   async function cleanup() {
@@ -21,12 +22,12 @@ describe.skipIf(!url || !anon)("transactions, rules and dashboard RPCs", () => {
     foodId = cats.data!.find((c) => c.key === "food")!.id;
     transportId = cats.data!.find((c) => c.key === "transport")!.id;
     await cleanup();
-    await a.client.from("profiles").update({ opening_balance: 500 }).eq("id", a.id);
+    // opening_balance is server-controlled, so measure from whatever it is rather than set it
+    base = Number((await a.client.rpc("wallet_balance")).data);
   });
 
   afterAll(async () => {
     await cleanup();
-    await a.client.from("profiles").update({ opening_balance: 0 }).eq("id", a.id);
   });
 
   it("inserts own transactions and hides them from other users", async () => {
@@ -109,7 +110,7 @@ describe.skipIf(!url || !anon)("transactions, rules and dashboard RPCs", () => {
     const cats = await a.client.rpc("spend_by_category", { p_from: from, p_to: to });
     expect(cats.data).toEqual([{ category_id: foodId, total: 500, tx_count: 2 }]);
 
-    expect((await a.client.rpc("wallet_balance")).data).toBe(500 + 1000 - 500);
+    expect((await a.client.rpc("wallet_balance")).data).toBe(base + 1000 - 500);
 
     const trend = await a.client.rpc("weekly_trend", { p_weeks: 8 });
     expect(trend.data).toHaveLength(8);

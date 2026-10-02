@@ -16,10 +16,10 @@ export default function TransactionsPage() {
     <>
       <PageHeader title={t("transactions.list_title")} />
       <div className="mb-3 flex gap-2">
-        <Link href="/" className="text-primary min-h-10 content-center text-sm">
+        <Link href="/" className="text-primary min-h-11 min-w-11 content-center text-sm">
           {t("nav.home")}
         </Link>
-        <Link href="/transactions/new" className={cn(buttonVariants(), "ml-auto h-10")}>
+        <Link href="/transactions/new" className={cn(buttonVariants(), "ml-auto h-11")}>
           {t("transactions.add")}
         </Link>
       </div>

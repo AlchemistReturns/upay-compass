@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
+import { OfflineNote } from "@/features/pwa/offline-note";
+import { useOnline } from "@/features/pwa/use-online";
 import { z } from "zod";
 import { CHANNELS } from "@compass/shared";
 import { Button } from "@/components/ui/button";
@@ -26,6 +28,7 @@ const formSchema = z.object({
 /** Add (no `existing`) or edit a transaction. Changing the category of an existing one teaches the app. */
 export function TransactionForm({ existing }: { existing?: TransactionRow }) {
   const { t, i18n } = useTranslation();
+  const online = useOnline();
   const router = useRouter();
   const { data: categories } = useCategories();
   const add = useAddTransaction();
@@ -191,11 +194,18 @@ export function TransactionForm({ existing }: { existing?: TransactionRow }) {
         </p>
       )}
 
-      <Button type="submit" className="h-11 w-full" disabled={busy}>
+      <OfflineNote />
+      <Button type="submit" className="h-11 w-full" disabled={busy || !online}>
         {busy ? t("common.saving") : t("transactions.save")}
       </Button>
       {existing && (
-        <Button type="button" variant="ghost" className="w-full" disabled={busy} onClick={onDelete}>
+        <Button
+          type="button"
+          variant="ghost"
+          className="w-full"
+          disabled={busy || !online}
+          onClick={onDelete}
+        >
           {t("transactions.delete")}
         </Button>
       )}

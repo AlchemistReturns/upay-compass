@@ -11,7 +11,7 @@ import {
 } from "react";
 import { LOCK_AFTER_HIDDEN_MS } from "@compass/shared";
 import { supabase } from "@/lib/supabase";
-import { readUnlockFlag, writeUnlockFlag } from "@/lib/unlock-flag";
+import { readPinFlag, readUnlockFlag, writePinFlag, writeUnlockFlag } from "@/lib/unlock-flag";
 import { useAuth } from "./auth-provider";
 
 export type UnlockResult =
@@ -55,9 +55,16 @@ export function LockProvider({ children }: { children: React.ReactNode }) {
     void supabase.rpc("has_pin").then(({ data, error }) => {
       if (cancelled) return;
       if (error) {
+        // Offline with a known PIN: stay in the app if this browser session was already unlocked.
+        if (!navigator.onLine && readPinFlag(userId)) {
+          setPinState("set");
+          setLocked(!readUnlockFlag());
+          return;
+        }
         setPinState("error");
         return;
       }
+      if (data) writePinFlag(userId);
       setPinState(data ? "set" : "none");
       // An OTP login or earlier unlock in this browser session skips the PIN prompt;
       // a brand-new browser session (new tab or restart) must enter it.
@@ -87,13 +94,17 @@ export function LockProvider({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener("visibilitychange", onVisibility);
   }, [pinState]);
 
-  const setPin = useCallback(async (pin: string) => {
-    const { error } = await supabase.rpc("set_pin", { new_pin: pin });
-    if (error) throw error;
-    writeUnlockFlag(true);
-    setPinState("set");
-    setLocked(false);
-  }, []);
+  const setPin = useCallback(
+    async (pin: string) => {
+      const { error } = await supabase.rpc("set_pin", { new_pin: pin });
+      if (error) throw error;
+      writeUnlockFlag(true);
+      if (userId) writePinFlag(userId);
+      setPinState("set");
+      setLocked(false);
+    },
+    [userId],
+  );
 
   const unlock = useCallback(
     async (pin: string): Promise<UnlockResult> => {

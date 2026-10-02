@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { OfflineNote } from "@/features/pwa/offline-note";
+import { useOnline } from "@/features/pwa/use-online";
 import { projectGoal } from "@compass/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +26,7 @@ export function GoalCard({
   contributions: GoalContribution[];
 }) {
   const { t, i18n } = useTranslation();
+  const online = useOnline();
   const lang = i18n.language;
   const contribute = useContribute();
   const undo = useUndoContribution();
@@ -140,11 +143,12 @@ export function GoalCard({
               {error}
             </p>
           )}
+          <OfflineNote />
           <div className="flex gap-2">
             <Button type="button" variant="outline" onClick={() => setAdding(false)}>
               {t("common.cancel")}
             </Button>
-            <Button type="submit" className="flex-1" disabled={contribute.isPending}>
+            <Button type="submit" className="flex-1" disabled={contribute.isPending || !online}>
               {t("goals.add")}
             </Button>
           </div>
@@ -163,7 +167,7 @@ export function GoalCard({
           <Button
             size="sm"
             variant="ghost"
-            disabled={remove.isPending}
+            disabled={remove.isPending || !online}
             onClick={() => window.confirm(t("goals.confirm_delete")) && remove.mutate(goal.id)}
           >
             {t("goals.delete")}
@@ -187,7 +191,7 @@ export function GoalCard({
               <Button
                 size="sm"
                 variant="ghost"
-                disabled={undo.isPending}
+                disabled={undo.isPending || !online}
                 onClick={() => undo.mutate(c.id)}
               >
                 {t("goals.undo")}

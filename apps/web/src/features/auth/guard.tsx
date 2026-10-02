@@ -21,7 +21,16 @@ const DESTINATION: Record<Own, string> = {
  * Renders children only when the visitor's auth state matches `own`; otherwise redirects
  * to the page that state belongs on. A locked app shows the PIN screen on every route.
  */
-export function Guard({ own, children }: { own: Own; children: React.ReactNode }) {
+export function Guard({
+  own,
+  optimistic = false,
+  children,
+}: {
+  own: Own;
+  /** Render the page while the auth state is still loading (for pages that are fine to show to anyone, like login). */
+  optimistic?: boolean;
+  children: React.ReactNode;
+}) {
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const { status, profile, retry } = useAuthStatus();
@@ -59,7 +68,7 @@ export function Guard({ own, children }: { own: Own; children: React.ReactNode }
     );
   }
 
-  if (status !== own) {
+  if (status !== own && !(optimistic && status === "loading")) {
     return (
       <p className="text-muted-foreground p-8 text-center" role="status">
         {t("common.loading")}

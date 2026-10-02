@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { ShieldCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { OfflineNote } from "@/features/pwa/offline-note";
+import { useOnline } from "@/features/pwa/use-online";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -86,6 +88,7 @@ function ConsentCard({ onDone }: { onDone: () => void }) {
 
 export function CoachView() {
   const { t } = useTranslation();
+  const online = useOnline();
   const { userId } = useAuth();
   const profile = useProfile(userId);
   const history = useCoachHistory();
@@ -189,11 +192,12 @@ export function CoachView() {
               <Button
                 type="submit"
                 className="h-11"
-                disabled={chat.status !== "idle" || !text.trim()}
+                disabled={chat.status !== "idle" || !online || !text.trim()}
               >
                 {t("coach.send")}
               </Button>
             </form>
+            <OfflineNote />
             <div className="flex items-center justify-between">
               <p className="text-muted-foreground text-[11px]">{t("coach.disclaimer")}</p>
               {messages.length > 0 && (

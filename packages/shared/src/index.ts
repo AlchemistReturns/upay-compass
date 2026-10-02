@@ -7,3 +7,8 @@ export * from "./period.ts";
 export * from "./health.ts";
 export * from "./goals.ts";
 export * from "./budgets.ts";
+export * from "./dates.ts";
+export * from "./recurring.ts";
+export * from "./forecast.ts";
+export * from "./nudge-rules.ts";
+export * from "./coach-context.ts";

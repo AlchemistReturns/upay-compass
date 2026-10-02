@@ -18,7 +18,7 @@ describe.each(PERSONAS)("%s persona", (persona) => {
   it("agrees on overlapping days when the window moves forward", () => {
     const later = generateTransactions({ persona, endDay: addDays(END, 3) });
     const laterIds = new Map(later.map((t) => [t.id, t]));
-    const cutoff = addDays(END, -85); // well inside both windows
+    const cutoff = addDays(END, -115); // well inside both windows
     const shared = txs.filter((t) => t.occurred_at.slice(0, 10) >= cutoff);
     expect(shared.length).toBeGreaterThan(20);
     for (const t of shared) expect(laterIds.get(t.id)).toEqual(t);
@@ -32,8 +32,8 @@ describe.each(PERSONAS)("%s persona", (persona) => {
     const times = txs.map((t) => t.occurred_at);
     expect([...times].sort()).toEqual(times);
     const spanDays = (Date.parse(times.at(-1)!) - Date.parse(times[0]!)) / 86_400_000;
-    expect(spanDays).toBeGreaterThan(80);
-    expect(spanDays).toBeLessThan(91);
+    expect(spanDays).toBeGreaterThan(110);
+    expect(spanDays).toBeLessThan(121);
   });
 
   it("never lets the wallet go negative", () => {
@@ -55,7 +55,7 @@ describe("persona traits", () => {
   it("the salaried persona gets a salary on the 1st of each month", () => {
     const txs = generateTransactions({ persona: "salaried", endDay: END });
     const salaries = txs.filter((t) => t.direction === "in");
-    expect(salaries).toHaveLength(3);
+    expect(salaries).toHaveLength(4);
     expect(salaries.every((t) => t.amount === 42000 && t.note === "salary")).toBe(true);
   });
 
@@ -69,7 +69,7 @@ describe("persona traits", () => {
 
   it("the student persona gets a monthly allowance", () => {
     const txs = generateTransactions({ persona: "student", endDay: END });
-    expect(txs.filter((t) => t.note === "monthly allowance")).toHaveLength(3);
+    expect(txs.filter((t) => t.note === "monthly allowance")).toHaveLength(4);
   });
 });
 
@@ -89,6 +89,6 @@ describe("SimulatedFeed", () => {
   });
 
   it("exposes the persona's opening balance", () => {
-    expect(new SimulatedFeed("salaried").openingBalance).toBe(30000);
+    expect(new SimulatedFeed("salaried").openingBalance).toBe(31400);
   });
 });

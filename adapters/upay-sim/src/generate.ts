@@ -9,12 +9,12 @@ export type GenerateOptions = {
   seed?: string | number;
   /** Last day to generate, "YYYY-MM-DD" in Dhaka time (inclusive). */
   endDay: string;
-  /** How many days of history to generate (default 90). */
+  /** How many days of history to generate (default 120). */
   days?: number;
 };
 
 export const DEFAULT_SEED = "compass-demo";
-export const DEFAULT_DAYS = 90;
+export const DEFAULT_DAYS = 120;
 
 /**
  * Deterministic transaction history for a persona. Every day is drawn from its own PRNG keyed by

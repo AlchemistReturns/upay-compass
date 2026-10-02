@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/features/auth/auth-provider";
+import { requestBadgeCheck } from "@/features/gamification/gamification";
 
 export type Goal = {
   id: string;
@@ -80,7 +81,10 @@ export function useCreateGoal() {
       const { error } = await supabase.from("goals").insert({ user_id: userId, ...input });
       if (error) throw error;
     },
-    onSuccess: invalidate,
+    onSuccess: async () => {
+      await invalidate();
+      requestBadgeCheck();
+    },
   });
 }
 

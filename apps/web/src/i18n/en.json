@@ -27,7 +27,8 @@
     "finish": "Finish",
     "saving": "Saving…",
     "simulated_note": "Simulated data. No real money is involved.",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "close": "Close"
   },
   "home": {
     "title": "Home",
@@ -118,7 +119,18 @@
   },
   "learn": {
     "title": "Learn",
-    "empty": "Learning modules are coming soon."
+    "progress_title": "Your learning",
+    "progress_hint": "Finish a short module to get started.",
+    "progress_label": "{{done}} of {{total}} modules finished",
+    "minutes_one": "{{count}} min read",
+    "minutes_other": "{{count}} min read",
+    "done": "Finished",
+    "back": "All modules",
+    "mark_done": "Mark as finished",
+    "completed": "You finished this module",
+    "next": "Next module",
+    "not_found": "We could not find that module.",
+    "disclaimer": "General education only, not financial advice."
   },
   "login": {
     "title": "Sign in",
@@ -230,7 +242,7 @@
   },
   "demo": {
     "title": "Connect upay (simulated)",
-    "body": "Pick the kind of user you are. We will load 90 days of simulated upay transactions.",
+    "body": "Pick the kind of user you are. We will load 120 days of simulated upay transactions.",
     "suggested": "(suggested for you)",
     "loading": "Loading transactions… this can take a few seconds."
   },
@@ -327,5 +339,38 @@
     "estimated_note": "~ means the amount varies, so we plan with a cautious estimate (lower for income, higher for payments).",
     "backtest": "Tested on your own recent history, this forecast was {{pct}}% closer to what really happened than a simple repeat-last-month guess (average error {{mae}} against {{naive}}).",
     "how": "A forecast is an estimate, not a promise. It is calculated by code from your own numbers and is for learning, not financial advice."
+  },
+  "gamification": {
+    "streak_one": "{{count}}-day streak",
+    "streak_other": "{{count}}-day streak",
+    "shelf": "Your badges",
+    "earned": "New badge earned!",
+    "unlocked": "Earned",
+    "badges": {
+      "first_goal": {
+        "title": "First Goal",
+        "how": "Create your first savings goal."
+      },
+      "streak_7": {
+        "title": "7-Day Streak",
+        "how": "Open the app 7 days in a row."
+      },
+      "budget_master": {
+        "title": "Budget Master",
+        "how": "Keep every budget under its limit for a week or more."
+      },
+      "module_graduate": {
+        "title": "Module Graduate",
+        "how": "Finish every learn module."
+      }
+    }
+  },
+  "pwa": {
+    "offline_banner": "You are offline. Showing your last saved data. Changes are paused.",
+    "offline_write": "You are offline. Reconnect to make changes.",
+    "install_title": "Install Compass",
+    "install_hint": "Add it to your home screen to open it like an app.",
+    "install": "Install",
+    "offline_no_data": "This has not been saved on this phone yet. Reconnect to load it."
   }
 }

@@ -3,7 +3,7 @@
 import { useTranslation } from "react-i18next";
 import { PageHeader } from "@/components/page-header";
 
-export function PlaceholderPage({ ns }: { ns: "budgets" | "goals" | "coach" | "learn" | "login" }) {
+export function PlaceholderPage({ ns }: { ns: "budgets" | "goals" | "coach" | "login" }) {
   const { t } = useTranslation();
   return (
     <>

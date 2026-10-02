@@ -146,8 +146,10 @@ upay is phone-centric, so login mirrors that.
 1. User enters a Bangladeshi mobile number (`+8801XXXXXXXXX`, regex-validated).
 2. Supabase phone OTP. For the hackathon use **Supabase test phone numbers with fixed OTPs** to avoid SMS cost; **email magic link** as fallback.
 3. Trigger on `auth.users` insert creates a `profiles` row.
-4. User sets a 4–6 digit **app PIN** (salted hash, verified locally). The Supabase JWT stays the real session.
-5. Session persisted and auto-refreshed; PIN lock after 2 minutes in background.
+4. User sets a 4–6 digit **app PIN once**. It is stored **on the server** (bcrypt hash plus a failed-attempt counter in `user_pins`) and verified by the server, so it survives logout and follows the user to any device. The Supabase JWT stays the real session; the PIN is a UI lock on top of it. Logging in with an OTP counts as unlocking, so a returning user with a PIN goes straight into the app.
+5. Session persisted and auto-refreshed; PIN lock after 2 minutes in the background, and in any brand-new browser session.
+
+> Design note: this is a competition prototype with simulated data and test accounts, so a server-side PIN is acceptable. The PIN does not protect data (RLS and the JWT do); it only locks the screen. A 4–6 digit PIN is weak by nature, which is why attempts are counted on the server and the 5th failure clears it.
 
 **Roles**
 
@@ -159,8 +161,9 @@ upay is phone-centric, so login mirrors that.
 **Rules**
 - RLS on every table, policies keyed on `auth.uid() = user_id`.
 - No service-role key in the client or the repo; `.env.example` only.
-- OTP rate limiting; PIN locks after 5 failed attempts.
-- Logout clears local cache and IndexedDB.
+- OTP rate limiting. 5 wrong PIN attempts clear the PIN, sign the user out, and require an OTP login plus a new PIN. Attempts are counted in the database, not in the browser.
+- Logout clears the session, the query cache and the unlock flag. The PIN is kept on the server.
+- PIN storage is only reachable through the `has_pin`, `set_pin` and `verify_pin` functions (Section 7); clients cannot read or write `user_pins`.
 
 ---
 
@@ -195,6 +198,8 @@ learn_modules(id serial pk, slug text, title_en text, title_bn text, body_md_en 
 user_progress(user_id uuid, module_id int, completed_at timestamptz, primary key (user_id, module_id))
 gamification(user_id uuid pk, streak_days int default 0, last_active date, badges jsonb default '[]')
 
+user_pins(user_id uuid pk → auth.users, pin_hash text, failed_attempts int, updated_at)
+  -- RLS on, NO policies, NO grants: reachable only via security definer functions has_pin(), set_pin(pin), verify_pin(pin)
 audit_log(id bigserial pk, user_id uuid, action text, entity text, entity_id text, detail jsonb, created_at)
 ```
 
@@ -352,16 +357,16 @@ Reference data (the 12 categories, and later the learn modules) is inserted by m
 2. **Login screen:** phone input accepts `01XXXXXXXXX`, `8801…` or `+8801…` (Bangla digits too) and normalizes to `+8801[3-9]XXXXXXXX` with zod (`packages/shared/src/auth.ts`), calls `supabase.auth.signInWithOtp({ phone })`, then OTP screen calls `verifyOtp`.
 3. **Profile creation:** the `handle_new_user` trigger inserts the `profiles` row; client then redirects to onboarding if `onboarded = false`.
 4. **PIN lock:**
-   - On first login, user sets a 4–6 digit PIN; derive a hash with Web Crypto (PBKDF2 + random salt), store hash+salt in IndexedDB (never the raw PIN).
+   - A user without a PIN is sent to `/set-pin` after login and sets a 4–6 digit PIN through the `set_pin` RPC (bcrypt via pgcrypto, set once; the raw PIN is never stored). A user who already has one is not asked again: the OTP login unlocks the session.
+   - `verify_pin` returns `{ok, attempts_left, reset}`; it counts failures per user in the database and, on the 5th wrong attempt, deletes the PIN (`reset: true`). The client then signs the user out, so the next login sets a new PIN.
    - `LockProvider` tracks `visibilitychange`; after 2 minutes hidden, show the PIN screen. A brand-new browser session (new tab or restart) also asks for the PIN; a plain reload does not (flag kept in `sessionStorage`).
-   - 5 failed attempts → force full OTP re-login.
-5. **Route guard:** a single `useAuthStatus` hook derives `signed-out | needs-pin | locked | needs-onboarding | ready`, and `<Guard own="…">` redirects each route group to where that state belongs (a locked app shows the PIN screen on every route); `onAuthStateChange` keeps session in sync; logout wipes IndexedDB and the Query cache.
+5. **Route guard:** a single `useAuthStatus` hook derives `signed-out | needs-pin | locked | needs-onboarding | ready`, and `<Guard own="…">` redirects each route group to where that state belongs (a locked app shows the PIN screen on every route); `onAuthStateChange` keeps session in sync; logout clears the session, the Query cache and the unlock flag (the PIN stays on the server).
 6. **Onboarding wizard (3 steps):** language → income type & monthly income → first goal (optional). Writes to `goals` (if filled in) and `profiles`, then sets `onboarded = true`. The `goals` table is created in Phase 1 (migration `20260102000000_goals.sql`) with column-level grants so clients cannot write `saved_amount`; Phase 3 adds contributions and the RPCs. The saved language on `profiles.language` is adopted on login and kept in sync by the language toggle.
 7. **RLS policies:** `profiles` select/update only where `id = auth.uid()`.
 
-**Verify:** sign up → onboard → background app 2 min → PIN prompt → relogin works; with two test accounts, account A cannot read account B's rows (automated RLS test using two JWTs: `packages/shared/src/rls.integration.test.ts`, runs only when `RLS_TEST_URL` and `RLS_TEST_ANON_KEY` are set).
+**Verify:** sign up → onboard → background app 2 min → PIN prompt → relogin works; with two test accounts, account A cannot read account B's rows (automated test using real users: `packages/shared/src/rls.integration.test.ts`, covering profile and goal RLS and the PIN functions; it runs only when `RLS_TEST_URL` and `RLS_TEST_ANON_KEY` are set and the test phone numbers exist on that project).
 
-**Verified so far:** unit tests for phone, OTP, PIN and PBKDF2 hashing; the RLS integration test (run against the local stack); and a browser smoke run (login → PIN → onboarding → home → forced re-lock → wrong and right PIN → language toggle → logout). Not yet verified: the 2-minute background lock timing and the 5-wrong-PINs sign-out in a browser, and the same flow against the cloud project.
+**Verified so far:** unit tests for phone and OTP validation; the integration test against the local stack (25 tests); and browser smoke runs against the local stack covering login → PIN → onboarding → home → logout → login again (PIN kept, no PIN screen) → new browser session shows the lock → wrong PIN counts down on the server → 5 wrong PINs sign the user out and the next login asks for a new PIN. Not yet verified: the 2-minute background lock timing, and the PIN flow end to end against the cloud project with the cloud test numbers.
 
 ---
 
@@ -588,7 +593,7 @@ The anon key is public by design but is still not committed.
 
 3. Link the CLI once per machine, in your own terminal (see Section 17.6): `pnpm sb login`, then `pnpm sb link --project-ref <project-ref>`.
 
-Login uses **test phone numbers only** (no real SMS). They are configured once in the dashboard (Authentication → Providers → Phone, dummy Twilio credentials, test numbers with fixed OTPs). The team uses `+8801700000001`, `+8801700000002` and `+8801700000003` with OTP `123456`. Cloud OTP resends are rate limited, so wait a minute if you see HTTP 429.
+Login uses **test phone numbers only** (no real SMS). They are configured once in the dashboard (Authentication → Providers → Phone, dummy Twilio credentials, test numbers with fixed OTPs). The numbers and OTP are whatever is listed under that dashboard page (keep them in sync with `supabase/config.toml`, which defines `+8801700000001` to `…03` with OTP `123456` for the local stack). Cloud OTP resends are rate limited, so wait a minute if you see HTTP 429.
 
 Because the database is shared, every test login creates real rows (auth user, profile, goals) that teammates can see. Use the test numbers, and clean up in the dashboard if needed. There is no database reset.
 
@@ -665,6 +670,6 @@ Teammates get the Supabase **Developer** role on the project, so everyone can ru
 
 ### 17.7 Current status
 
-Phases 0 and 1 are complete (scaffold, migrations for `profiles`, `categories` and `goals`, app shell with i18n, phone OTP login, PIN lock, route guard, onboarding). Phase 1 is in PR #1 (`feat/f1-auth`) until merged. The web app now runs against the shared cloud project by default. Next up: Phase 2 (transactions and dashboard). Deployment is deferred until after Phases 1 to 4.
+Phases 0 and 1 are complete (scaffold, migrations for `profiles`, `categories` and `goals`, app shell with i18n, phone OTP login, server-side PIN lock, route guard, onboarding). Phase 1 was merged in PR #1; the move of the PIN to the server is the `fix/server-side-pin` branch. The web app now runs against the shared cloud project by default. Next up: Phase 2 (transactions and dashboard). Deployment is deferred until after Phases 1 to 4.
 
 ---

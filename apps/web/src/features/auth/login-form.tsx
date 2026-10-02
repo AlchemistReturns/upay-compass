@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { otpSchema, phoneSchema } from "@compass/shared";
 import { supabase } from "@/lib/supabase";
+import { writeUnlockFlag } from "@/lib/unlock-flag";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,10 +44,16 @@ export function LoginForm() {
       return;
     }
     setBusy(true);
+    // Proving the OTP counts as unlocking: set the flag first so the app does not ask for the
+    // PIN straight after login (the session change fires before verifyOtp resolves).
+    writeUnlockFlag(true);
     const { error: err } = await supabase.auth.verifyOtp({ phone, token: otp, type: "sms" });
     setBusy(false);
     // On success the auth provider picks up the session and the page redirects.
-    if (err) setError(t("login.otp_failed"));
+    if (err) {
+      writeUnlockFlag(false);
+      setError(t("login.otp_failed"));
+    }
   }
 
   if (!phone) {

@@ -25,8 +25,12 @@ export function SetPinForm() {
     if (pin !== confirm) return setError(t("pin.mismatch"));
     setError(null);
     setBusy(true);
-    await setPin(pin);
-    setBusy(false);
+    try {
+      await setPin(pin);
+    } catch {
+      setError(t("common.error"));
+      setBusy(false);
+    }
   }
 
   return (
@@ -81,9 +85,9 @@ export function LockScreen() {
     setBusy(false);
     setPin("");
     if (result.ok) return;
-    setError(
-      result.signedOut ? t("lock.signed_out") : t("lock.wrong", { count: result.attemptsLeft }),
-    );
+    if (result.reason === "reset") setError(t("lock.signed_out"));
+    else if (result.reason === "wrong") setError(t("lock.wrong", { count: result.attemptsLeft }));
+    else setError(t("common.error"));
   }
 
   return (

@@ -9,68 +9,64 @@ import {
   useRef,
   useState,
 } from "react";
-import {
-  LOCK_AFTER_HIDDEN_MS,
-  MAX_PIN_ATTEMPTS,
-  createPinRecord,
-  verifyPin,
-} from "@compass/shared";
-import { UNLOCKED_FLAG, deletePin, loadPin, savePin } from "@/lib/pin-store";
+import { LOCK_AFTER_HIDDEN_MS } from "@compass/shared";
+import { supabase } from "@/lib/supabase";
+import { readUnlockFlag, writeUnlockFlag } from "@/lib/unlock-flag";
 import { useAuth } from "./auth-provider";
 
-export type UnlockResult = { ok: true } | { ok: false; attemptsLeft: number; signedOut: boolean };
+export type UnlockResult =
+  | { ok: true }
+  | { ok: false; reason: "wrong"; attemptsLeft: number }
+  | { ok: false; reason: "reset" }
+  | { ok: false; reason: "error" };
+
+type PinState = "unknown" | "none" | "set" | "error";
 
 type LockContextValue = {
-  /** "unknown" until IndexedDB has been read for the current user. */
-  pinState: "unknown" | "none" | "set";
+  /** Whether the signed-in user has a PIN on the server ("unknown" while loading). */
+  pinState: PinState;
   locked: boolean;
   setPin: (pin: string) => Promise<void>;
   unlock: (pin: string) => Promise<UnlockResult>;
+  /** Re-read the PIN state after an error. */
+  reload: () => void;
 };
 
 const LockContext = createContext<LockContextValue | null>(null);
 
-const readFlag = () => {
-  try {
-    return sessionStorage.getItem(UNLOCKED_FLAG) === "1";
-  } catch {
-    return false;
-  }
-};
-const writeFlag = (on: boolean) => {
-  try {
-    if (on) sessionStorage.setItem(UNLOCKED_FLAG, "1");
-    else sessionStorage.removeItem(UNLOCKED_FLAG);
-  } catch {
-    // ignore
-  }
-};
+type VerifyPinResponse = { ok: boolean; attempts_left: number; reset: boolean };
 
 export function LockProvider({ children }: { children: React.ReactNode }) {
   const { userId, signOut } = useAuth();
-  const [pinState, setPinState] = useState<LockContextValue["pinState"]>("unknown");
+  const [pinState, setPinState] = useState<PinState>("unknown");
   const [locked, setLocked] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const hiddenAt = useRef<number | null>(null);
 
-  // Load the PIN record whenever the signed-in user changes.
+  // Ask the server whether this user has a PIN whenever the signed-in user changes.
   useEffect(() => {
     let cancelled = false;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset while the next user's PIN loads
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset while the PIN state loads
     setPinState("unknown");
     if (!userId) {
       setLocked(false);
       return;
     }
-    void loadPin(userId).then((rec) => {
+    void supabase.rpc("has_pin").then(({ data, error }) => {
       if (cancelled) return;
-      setPinState(rec ? "set" : "none");
-      // A fresh browser session (new tab or restart) must enter the PIN again.
-      setLocked(Boolean(rec) && !readFlag());
+      if (error) {
+        setPinState("error");
+        return;
+      }
+      setPinState(data ? "set" : "none");
+      // An OTP login or earlier unlock in this browser session skips the PIN prompt;
+      // a brand-new browser session (new tab or restart) must enter it.
+      setLocked(Boolean(data) && !readUnlockFlag());
     });
     return () => {
       cancelled = true;
     };
-  }, [userId]);
+  }, [userId, reloadKey]);
 
   // Lock after 2 minutes in the background.
   useEffect(() => {
@@ -82,7 +78,7 @@ export function LockProvider({ children }: { children: React.ReactNode }) {
         const away = Date.now() - hiddenAt.current;
         hiddenAt.current = null;
         if (away >= LOCK_AFTER_HIDDEN_MS) {
-          writeFlag(false);
+          writeUnlockFlag(false);
           setLocked(true);
         }
       }
@@ -91,45 +87,39 @@ export function LockProvider({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener("visibilitychange", onVisibility);
   }, [pinState]);
 
-  const setPin = useCallback(
-    async (pin: string) => {
-      if (!userId) throw new Error("Not signed in");
-      const rec = await createPinRecord(pin);
-      await savePin(userId, { ...rec, failed: 0 });
-      writeFlag(true);
-      setPinState("set");
-      setLocked(false);
-    },
-    [userId],
-  );
+  const setPin = useCallback(async (pin: string) => {
+    const { error } = await supabase.rpc("set_pin", { new_pin: pin });
+    if (error) throw error;
+    writeUnlockFlag(true);
+    setPinState("set");
+    setLocked(false);
+  }, []);
 
   const unlock = useCallback(
     async (pin: string): Promise<UnlockResult> => {
-      if (!userId) return { ok: false, attemptsLeft: 0, signedOut: true };
-      const rec = await loadPin(userId);
-      if (!rec) return { ok: false, attemptsLeft: 0, signedOut: true };
-      if (await verifyPin(pin, rec)) {
-        await savePin(userId, { ...rec, failed: 0 });
-        writeFlag(true);
+      const { data, error } = await supabase.rpc("verify_pin", { pin });
+      if (error || !data) return { ok: false, reason: "error" };
+      const res = data as VerifyPinResponse;
+      if (res.ok) {
+        writeUnlockFlag(true);
         setLocked(false);
         return { ok: true };
       }
-      const failed = rec.failed + 1;
-      if (failed >= MAX_PIN_ATTEMPTS) {
-        // Too many tries: drop the PIN and force a full OTP login.
-        await deletePin(userId);
+      if (res.reset) {
+        // Too many wrong tries: the server cleared the PIN, so force a full OTP login.
         await signOut();
-        return { ok: false, attemptsLeft: 0, signedOut: true };
+        return { ok: false, reason: "reset" };
       }
-      await savePin(userId, { ...rec, failed });
-      return { ok: false, attemptsLeft: MAX_PIN_ATTEMPTS - failed, signedOut: false };
+      return { ok: false, reason: "wrong", attemptsLeft: res.attempts_left };
     },
-    [userId, signOut],
+    [signOut],
   );
 
+  const reload = useCallback(() => setReloadKey((k) => k + 1), []);
+
   const value = useMemo(
-    () => ({ pinState, locked, setPin, unlock }),
-    [pinState, locked, setPin, unlock],
+    () => ({ pinState, locked, setPin, unlock, reload }),
+    [pinState, locked, setPin, unlock, reload],
   );
 
   return <LockContext.Provider value={value}>{children}</LockContext.Provider>;

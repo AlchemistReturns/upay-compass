@@ -11,7 +11,12 @@ const anon = process.env.RLS_TEST_ANON_KEY;
 
 async function signIn(phone: string): Promise<{ client: SupabaseClient; id: string }> {
   const client = createClient(url!, anon!, { auth: { persistSession: false } });
-  const sent = await client.auth.signInWithOtp({ phone });
+  let sent = await client.auth.signInWithOtp({ phone });
+  if (sent.error?.status === 429 || sent.error?.message.includes("only request this after")) {
+    // OTP resend limit (local: 5s per number); wait it out once.
+    await new Promise((r) => setTimeout(r, 5500));
+    sent = await client.auth.signInWithOtp({ phone });
+  }
   if (sent.error) throw sent.error;
   const { data, error } = await client.auth.verifyOtp({ phone, token: "123456", type: "sms" });
   if (error || !data.user) throw error ?? new Error("no user");
@@ -69,5 +74,64 @@ describe.skipIf(!url || !anon)("RLS with two users", () => {
     expect(cheat.error).not.toBeNull();
 
     await a.client.from("goals").delete().eq("id", ins.data!.id);
+  });
+});
+
+describe.skipIf(!url || !anon)("server-side PIN", () => {
+  let u: { client: SupabaseClient; id: string };
+
+  // 5 wrong attempts clear any existing PIN, giving every run a clean start and end.
+  async function clearPin() {
+    for (let i = 0; i < 5; i++) await u.client.rpc("verify_pin", { pin: "000000" });
+  }
+
+  beforeAll(async () => {
+    u = await signIn("+8801700000003");
+    await clearPin();
+  });
+
+  it("the PIN table is not readable or writable by clients", async () => {
+    const read = await u.client.from("user_pins").select("*");
+    expect(read.error).not.toBeNull();
+    const write = await u.client.from("user_pins").insert({ user_id: u.id, pin_hash: "x" });
+    expect(write.error).not.toBeNull();
+  });
+
+  it("anonymous callers cannot use the PIN functions", async () => {
+    const anonClient = createClient(url!, anon!, { auth: { persistSession: false } });
+    expect((await anonClient.rpc("has_pin")).error).not.toBeNull();
+    expect((await anonClient.rpc("verify_pin", { pin: "1234" })).error).not.toBeNull();
+  });
+
+  it("rejects malformed PINs", async () => {
+    expect((await u.client.rpc("set_pin", { new_pin: "12" })).error).not.toBeNull();
+    expect((await u.client.rpc("set_pin", { new_pin: "12ab" })).error).not.toBeNull();
+    expect((await u.client.rpc("has_pin")).data).toBe(false);
+  });
+
+  it("sets once, verifies, counts failures and resets after 5", async () => {
+    expect((await u.client.rpc("set_pin", { new_pin: "4321" })).error).toBeNull();
+    expect((await u.client.rpc("has_pin")).data).toBe(true);
+    expect((await u.client.rpc("set_pin", { new_pin: "1111" })).error).not.toBeNull();
+
+    const wrong = await u.client.rpc("verify_pin", { pin: "9999" });
+    expect(wrong.data).toMatchObject({ ok: false, attempts_left: 4, reset: false });
+
+    // a correct PIN resets the counter
+    expect((await u.client.rpc("verify_pin", { pin: "4321" })).data).toMatchObject({ ok: true });
+    const again = await u.client.rpc("verify_pin", { pin: "9999" });
+    expect(again.data).toMatchObject({ attempts_left: 4 });
+
+    let last: unknown;
+    for (let i = 0; i < 4; i++) last = (await u.client.rpc("verify_pin", { pin: "9999" })).data;
+    expect(last).toMatchObject({ ok: false, attempts_left: 0, reset: true });
+    expect((await u.client.rpc("has_pin")).data).toBe(false);
+  });
+
+  it("users cannot see each other's PIN state", { timeout: 20_000 }, async () => {
+    const other = await signIn("+8801700000001");
+    expect((await u.client.rpc("set_pin", { new_pin: "2468" })).error).toBeNull();
+    expect((await other.client.rpc("has_pin")).data).toBe(false);
+    await clearPin();
   });
 });

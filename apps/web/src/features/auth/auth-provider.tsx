@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { useQueryClient } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
-import { wipeLocalData } from "@/lib/pin-store";
+import { writeUnlockFlag } from "@/lib/unlock-flag";
 
 type AuthContextValue = {
   session: Session | null;
@@ -34,7 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
-    await wipeLocalData();
+    writeUnlockFlag(false);
     queryClient.clear();
   }, [queryClient]);
 

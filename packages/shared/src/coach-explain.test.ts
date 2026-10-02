@@ -74,7 +74,7 @@ describe("explainAffordability", () => {
     const text = explainAffordability(canAfford(5000, 20000, forecast));
     expect(text).toContain("৳5,000");
     expect(text).toContain("from ৳20,000 to ৳15,000");
-    expect(text).toContain("bottom out at ৳-3,700 on 2026-10-31");
+    expect(text).toContain("bottom out at −৳3,700 on 2026-10-31");
     expect(text).toContain("safety buffer of ৳2,100");
     expect(text).toContain("first drop below zero on 2026-10-19");
     expect(text).toContain("Answer: no");

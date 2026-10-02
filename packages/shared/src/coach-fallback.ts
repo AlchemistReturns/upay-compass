@@ -25,8 +25,11 @@ const TIP: Record<"en" | "bn", Record<ActionId, string>> = {
 
 export function fallbackReply(ctx: CoachContext): string {
   const bn = ctx.language === "bn";
-  const money = (n: number) =>
-    `৳${Math.round(n).toLocaleString(bn ? "bn-BD" : "en-US", { maximumFractionDigits: 0 })}`;
+  const money = (n: number) => {
+    const rounded = Math.round(n);
+    const digits = Math.abs(rounded).toLocaleString(bn ? "bn-BD" : "en-US");
+    return `${rounded < 0 ? "−" : ""}৳${digits}`;
+  };
   const lines: string[] = [];
 
   if (ctx.dataSufficiency === "thin") {

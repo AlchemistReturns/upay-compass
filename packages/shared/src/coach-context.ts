@@ -88,7 +88,10 @@ export type CoachContext = {
   affordability?: Affordability & { explanation: string };
 };
 
-const taka = (n: number) => `৳${Math.round(n).toLocaleString("en-US")}`;
+const taka = (n: number) => {
+  const rounded = Math.round(n);
+  return `${rounded < 0 ? "−" : ""}৳${Math.abs(rounded).toLocaleString("en-US")}`;
+};
 
 /**
  * The affordability result as one plain English sentence, so the coach can restate it without

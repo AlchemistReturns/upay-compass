@@ -75,7 +75,9 @@ describe.skipIf(!url || !anon)("phase 6: admin insights, demo reset", () => {
 
       const r = await admin.client.rpc("admin_insights");
       expect(r.error).toBeNull();
-      const out = r.data as Record<string, Record<string, unknown>>;
+      const sections = ["spending", "health", "goals", "roundups", "learning"] as const;
+      type Insights = Record<(typeof sections)[number], Record<string, unknown>>;
+      const out = r.data as Insights;
       expect(out.spending.suppressed).toBeUndefined();
       expect((out.spending.top_categories as unknown[]).length).toBeGreaterThan(0);
       expect(out.health.avg_score).toBeGreaterThan(0);

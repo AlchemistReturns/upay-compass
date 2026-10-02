@@ -171,16 +171,21 @@ upay is phone-centric, so login mirrors that.
 
 ```sql
 profiles(id uuid pk → auth.users, phone text, full_name text, language text default 'bn',
-         income_type text, monthly_income numeric, onboarded boolean default false, role text default 'user')
+         income_type text, monthly_income numeric, opening_balance numeric default 0,  -- wallet balance = opening_balance + income - spend
+         onboarded boolean default false, role text default 'user')
 
 categories(id serial pk, key text unique, name_en text, name_bn text, icon text, is_essential boolean)
 
-transactions(id uuid pk, user_id uuid, amount numeric, direction text, channel text,
+transactions(id uuid pk, user_id uuid, external_id text,  -- id from the upstream feed
+             amount numeric, direction text, channel text,
              counterparty text, note text, category_id int, category_source text,  -- rule|ai|user
+             needs_review boolean,   -- AI unavailable or unsure: filed under Other, flagged for the user
+             is_simulated boolean,   -- labelled "simulated" in the UI
              occurred_at timestamptz, created_at)
-  -- index (user_id, occurred_at desc)
+  -- index (user_id, occurred_at desc); unique (user_id, external_id) makes re-ingesting idempotent
 
-category_rules(id uuid pk, user_id uuid null, keyword text, category_id int)  -- learned from user overrides
+category_rules(id uuid pk, user_id uuid, keyword text, category_id int, unique (user_id, keyword))
+  -- learned from user corrections; keyword = lower-cased counterparty. Global rules live in code, not in the table.
 
 budgets(id uuid pk, user_id uuid, category_id int, limit_amount numeric,
         period text default 'monthly', alert_threshold numeric default 0.8)
@@ -201,6 +206,7 @@ gamification(user_id uuid pk, streak_days int default 0, last_active date, badge
 user_pins(user_id uuid pk → auth.users, pin_hash text, failed_attempts int, updated_at)
   -- RLS on, NO policies, NO grants: reachable only via security definer functions has_pin(), set_pin(pin), verify_pin(pin)
 audit_log(id bigserial pk, user_id uuid, action text, entity text, entity_id text, detail jsonb, created_at)
+  -- append-only for users: they can insert and read their own rows, never update or delete
 ```
 
 **RLS pattern**
@@ -213,7 +219,9 @@ create policy "own rows" on transactions for all
 
 **Column-level grants on `profiles`:** authenticated users may update only `full_name`, `language`, `income_type`, `monthly_income`, `onboarded`. `id`, `phone` and `role` are server-controlled, so users cannot grant themselves admin.
 
-**Realtime-enabled:** `transactions, nudges, budgets, goals, health_scores`.
+**Realtime-enabled:** `transactions` (done), and later `nudges, budgets, goals, health_scores`.
+
+**RPCs (security invoker, so RLS applies):** `set_transaction_category(id, category_id)`, `dashboard_summary(from, to)`, `spend_by_category(from, to)`, `weekly_trend(weeks)` (weeks start Monday, Bangladesh time), `wallet_balance()`.
 
 ---
 
@@ -243,7 +251,7 @@ create policy "own rows" on transactions for all
 
 ## 9. Intelligence Design
 
-**Categorization (F4).** 1) user override rules, 2) channel + keyword map, 3) Edge Function LLM fallback for unknowns, returning a category key only. Overrides are stored as `category_rules` so the same merchant is right next time.
+**Categorization (F4).** 1) user override rules, 2) channel + keyword map, 3) Edge Function LLM fallback for unknowns, returning a category key only (the key is validated against the allowed list; phone numbers and long digit runs are redacted before anything is sent; with no `OPENAI_API_KEY` the fallback is skipped and the transaction is filed under Other with `needs_review`). Overrides are stored as `category_rules` so the same merchant is right next time. Recharge and bill channels map directly; otherwise the longest matching keyword wins (very short Bangla keywords such as the word for mother only match as whole words); `send_money` and `cash_out` have weak defaults (Family & Transfers, Other) applied after keywords.
 
 **Health Score (F9), 0–100, transparent formula**
 
@@ -333,7 +341,7 @@ Reference data (the 12 categories, and later the learn modules) is inserted by m
 
 ### 11.2 Phases
 
-**Status:** Phases 0 and 1 complete. Phase 2 is next.
+**Status:** Phases 0 to 2 complete (Phase 2 in PR review). Phase 3 is next.
 
 ### Phase 0 — Foundations
 
@@ -373,22 +381,26 @@ Reference data (the 12 categories, and later the learn modules) is inserted by m
 ### Phase 2 — Transactions & Dashboard (F3, F4, F5)
 
 **Build process**
-1. **Migration:** `transactions` (with `(user_id, occurred_at desc)` index), `category_rules`, RLS "own rows" policy; enable Realtime on `transactions`.
+1. **Migration** (`20261002155900_phase2_transactions.sql`): `transactions` (with `(user_id, occurred_at desc)` index and a unique `(user_id, external_id)` index; not partial, because PostgREST upserts cannot infer a partial index), `category_rules`, `audit_log`, `profiles.opening_balance`, RLS "own rows" policies, Realtime on `transactions`, and the dashboard RPCs listed in Section 7.
 2. **Adapter + generator (`adapters/upay-sim`):**
    - Define `Transaction` type and `getTransactions(userId, since)`.
    - Persona configs (Student, Gig worker, Salaried) define income cadence, typical merchants, amount distributions; a seeded PRNG makes output deterministic.
    - Generator produces ~90 days of history with weekly/monthly patterns (salary day, bills, recharges).
-3. **Ingestion:** Edge Function `ingest-transactions` takes the adapter output, validates with zod (reject malformed → `audit_log`), inserts in batches, then triggers categorization.
+3. **Ingestion:** Edge Function `ingest-transactions` (POST `{persona}`) takes the adapter output, validates each record with zod (rejects go to `audit_log`), categorizes (step 4), and upserts in batches of 200 with `ignoreDuplicates` on `(user_id, external_id)`, so running it twice inserts nothing new. It also sets `opening_balance` and writes a summary row to `audit_log`. `categorize-transaction` categorizes specific existing transactions (used after a manual add the rules could not place). Functions verify the caller themselves (`verify_jwt = false` in `config.toml`, then `auth.getUser`), which works with the project's ES256 JWTs, and act as the caller so RLS applies.
 4. **Categorizer pipeline (pure function + Edge Function):**
    1. Check user `category_rules` (exact merchant/keyword match) → `category_source = 'user'`.
    2. Channel map (`recharge` → Recharge & Data, `bill` → Bills & Utilities).
    3. Keyword dictionary (en + bn terms, e.g. "bkash" "pathao", "tuition").
    4. Remaining unknowns → batch call to LLM with a strict prompt returning only a category key from the allowed list (JSON, validated; invalid → `Other`) → `category_source = 'ai'`.
-5. **Manual add/edit UI:** form with amount, direction, channel, note, date; editing a category writes a `category_rules` row so the next similar transaction is correct.
-6. **Dashboard queries:** SQL views/RPCs for monthly income vs expense, spend by category, 8-week trend; fetched via TanStack Query; charts with Recharts; period filter (week/month/3 months).
+5. **Manual add/edit UI:** form with amount, direction, channel, note, date. The client runs the same pure categorizer; unknown merchants are filed under Other with `needs_review` and sent to `categorize-transaction`. Editing a category calls `set_transaction_category`, which saves a `category_rules` row and re-applies it to the user's other transactions from that merchant, so the next similar transaction is right.
+6. **Dashboard:** wallet balance, income / spent / net tiles, period tabs (week = since Monday, month, 3 months = current month plus two), a grouped weekly income-vs-spend column chart (Recharts), and category spend as sorted horizontal bars. Both charts have a table view, a legend, and use the validated blue/orange pair. Period boundaries are computed in Bangladesh time by `getPeriodRange` in `packages/shared`. Empty accounts see a one-tap loader for the simulated feed (Student, Gig worker, Salaried).
 7. **Realtime:** subscribe to `transactions` inserts for the user, invalidate dashboard queries on event.
 
-**Verify:** unit tests for categorizer (golden set of ~50 labelled transactions, target >85% correct); seeded persona shows correct totals vs a SQL check; correcting a category persists and applies to the next matching transaction.
+**Edge Function plumbing:** each function folder has a `deno.json` import map pointing `@compass/shared` and `@compass/upay-sim` at the workspace sources (so there is one copy of the logic), and relative imports inside those packages carry `.ts` extensions because Deno requires them (`allowImportingTsExtensions` is on in the tsconfigs). Deploy with `pnpm sb functions deploy <name> --use-api` (bundles server-side, no Docker needed). Optional secrets: `pnpm sb secrets set OPENAI_API_KEY=... OPENAI_CATEGORIZE_MODEL=...`.
+
+**Verify:** unit tests for categorizer (golden set of 50 labelled transactions, 94% correct with the 3 unknowable merchants counted as misses); adapter determinism tests; seeded persona shows correct totals vs a SQL check; correcting a category persists and applies to the next matching transaction.
+
+**Verified so far (local stack):** 49 unit and integration tests; the ingest function (401 without a token, 400 on bad input, 228 rows for the gig persona, 0 new rows on a second run); and a browser run in which the income, spent and balance figures on screen equalled SQL totals, a corrected category was saved as a rule and applied to the next matching transaction, an unknown merchant was filed under Other with a review badge, and the dashboard rendered in Bangla. Not yet verified: realtime refresh (the realtime service is not part of the local stack we run), the AI fallback with a real `OPENAI_API_KEY`, and the full flow against the cloud project with its test phone numbers. The migration and both functions are deployed to the cloud project.
 
 ---
 
@@ -628,6 +640,8 @@ pnpm dev           # http://localhost:3000
 | `pnpm sb migration list` | Compare local migration files with the cloud project |
 | `pnpm sb db push --dry-run` | Preview what would be applied to the linked cloud project |
 | `pnpm sb db push` | Apply pending migrations to the cloud project (Section 17.6) |
+| `pnpm sb functions deploy <name> --use-api` | Deploy an Edge Function to the cloud project |
+| `pnpm sb functions serve` | Serve functions locally (needs the local stack; pulls an extra image the first time) |
 
 The Husky pre-commit hook runs Prettier on staged files and then lint. Do not bypass it.
 
@@ -670,6 +684,6 @@ Teammates get the Supabase **Developer** role on the project, so everyone can ru
 
 ### 17.7 Current status
 
-Phases 0 and 1 are complete (scaffold, migrations for `profiles`, `categories` and `goals`, app shell with i18n, phone OTP login, server-side PIN lock, route guard, onboarding). Phase 1 was merged in PR #1; the move of the PIN to the server is the `fix/server-side-pin` branch. The web app now runs against the shared cloud project by default. Next up: Phase 2 (transactions and dashboard). Deployment is deferred until after Phases 1 to 4.
+Phases 0 and 1 are complete (scaffold, migrations for `profiles`, `categories` and `goals`, app shell with i18n, phone OTP login, server-side PIN lock, route guard, onboarding). Phase 1 was merged in PR #1; the move of the PIN to the server is the `fix/server-side-pin` branch. The web app now runs against the shared cloud project by default. Phase 2 (transactions, categorizer, simulated feed, ingestion functions, dashboard) is on branch `feat/phase2-transactions`. Next up: Phase 3 (budgets, goals, health score). Deployment is deferred until after Phases 1 to 4.
 
 ---

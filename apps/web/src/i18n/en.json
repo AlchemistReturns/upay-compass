@@ -25,7 +25,8 @@
     "back": "Back",
     "skip": "Skip",
     "finish": "Finish",
-    "saving": "Saving…"
+    "saving": "Saving…",
+    "simulated_note": "Simulated data. No real money is involved."
   },
   "home": {
     "title": "Home",
@@ -101,5 +102,65 @@
     "goal_date": "Target date (optional)",
     "goal_invalid": "Enter a name and a target amount above 0.",
     "failed": "Could not save. Please try again."
+  },
+  "dashboard": {
+    "period": "Time period",
+    "period_week": "This week",
+    "period_month": "This month",
+    "period_quarter": "3 months",
+    "balance": "Wallet balance",
+    "income": "Income",
+    "expense": "Spent",
+    "net": "Net",
+    "weekly_title": "Weekly income and spending",
+    "weekly_hint": "Last 8 weeks",
+    "legend": "Legend",
+    "show_chart": "Show chart",
+    "show_table": "Show table",
+    "week_of": "Week of",
+    "category_title": "Where it went",
+    "category_hint": "Spending by category in the selected period",
+    "no_spending": "No spending in this period.",
+    "uncategorized": "Uncategorized"
+  },
+  "transactions": {
+    "recent": "Recent transactions",
+    "see_all": "See all",
+    "add": "Add transaction",
+    "edit": "Edit transaction",
+    "list_title": "All transactions",
+    "empty": "No transactions yet.",
+    "not_found": "Transaction not found.",
+    "invalid": "Enter a valid amount and details.",
+    "direction": "Type",
+    "money_out": "Spent",
+    "money_in": "Received",
+    "amount": "Amount (৳)",
+    "channel": "Channel",
+    "counterparty": "Who or where",
+    "counterparty_hint": "e.g. Pathao, local shop",
+    "note": "Note",
+    "date": "Date and time",
+    "category": "Category",
+    "category_teaches": "Changing the category also applies to your other transactions with the same name.",
+    "save": "Save",
+    "delete": "Delete",
+    "confirm_delete": "Delete this transaction?",
+    "check_category": "Check category",
+    "add_short": "Add"
+  },
+  "channel": {
+    "send_money": "Send money",
+    "cash_out": "Cash out",
+    "merchant": "Merchant payment",
+    "recharge": "Mobile recharge",
+    "bill": "Bill payment",
+    "add_money": "Add money"
+  },
+  "demo": {
+    "title": "Connect upay (simulated)",
+    "body": "Pick the kind of user you are. We will load 90 days of simulated upay transactions.",
+    "suggested": "(suggested for you)",
+    "loading": "Loading transactions… this can take a few seconds."
   }
 }

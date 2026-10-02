@@ -128,3 +128,13 @@
     @apply font-sans;
   }
 }
+
+/* Chart palette (validated: blue/orange categorical pair, blue single-series bars; light mode only for now). */
+:root {
+  --chart-income: #2a78d6;
+  --chart-expense: #eb6834;
+  --chart-bar: #2a78d6;
+  --chart-grid: #e1e0d9;
+  --chart-axis: #898781;
+  --chart-cursor: rgba(11, 11, 11, 0.05);
+}

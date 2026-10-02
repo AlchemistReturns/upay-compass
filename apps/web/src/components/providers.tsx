@@ -1,10 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { I18nextProvider } from "react-i18next";
 import { AuthProvider } from "@/features/auth/auth-provider";
 import { LockProvider } from "@/features/auth/lock-provider";
+import { PwaShell } from "@/features/pwa/pwa-shell";
+import {
+  OFFLINE_CACHE_MAX_AGE,
+  queryPersister,
+  shouldPersistQuery,
+} from "@/features/pwa/offline-cache";
 import i18n, { LANGUAGES, LANGUAGE_STORAGE_KEY, type Language } from "@/i18n";
 
 function readStoredLanguage(): Language | null {
@@ -18,7 +25,11 @@ function readStoredLanguage(): Language | null {
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
-    () => new QueryClient({ defaultOptions: { queries: { staleTime: 30_000, retry: 1 } } }),
+    () =>
+      new QueryClient({
+        // gcTime must be at least the persisted max age, or restored data is dropped at once
+        defaultOptions: { queries: { staleTime: 30_000, retry: 1, gcTime: OFFLINE_CACHE_MAX_AGE } },
+      }),
   );
 
   // Start in the default language for hydration parity, then apply the stored choice.
@@ -34,12 +45,23 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{
+        persister: queryPersister,
+        maxAge: OFFLINE_CACHE_MAX_AGE,
+        buster: "1",
+        dehydrateOptions: { shouldDehydrateQuery: shouldPersistQuery },
+      }}
+    >
       <I18nextProvider i18n={i18n}>
         <AuthProvider>
-          <LockProvider>{children}</LockProvider>
+          <LockProvider>
+            <PwaShell />
+            {children}
+          </LockProvider>
         </AuthProvider>
       </I18nextProvider>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   );
 }

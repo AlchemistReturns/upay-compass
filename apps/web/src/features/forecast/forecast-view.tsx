@@ -8,7 +8,14 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { formatMoney, formatShortDate } from "@/lib/format";
 import { useRealtimeInvalidate } from "@/features/realtime/use-realtime-invalidate";
-import { ForecastChart } from "./forecast-chart";
+import dynamic from "next/dynamic";
+import { Skeleton } from "@/components/skeleton";
+
+// Recharts is large; load it after the first paint instead of with the page.
+const ForecastChart = dynamic(() => import("./forecast-chart").then((m) => m.ForecastChart), {
+  ssr: false,
+  loading: () => <Skeleton className="h-64" />,
+});
 import { useLatestForecast, useRefreshForecast, type ForecastSnapshot } from "./use-forecast";
 
 const STALE_AFTER_MS = 6 * 3_600_000;

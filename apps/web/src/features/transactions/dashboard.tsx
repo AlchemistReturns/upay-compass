@@ -12,7 +12,9 @@ import { formatMoney, formatSignedMoney } from "@/lib/format";
 import { useAuth } from "@/features/auth/auth-provider";
 import { useProfile } from "@/features/profile/use-profile";
 import { ForecastCard } from "@/features/forecast/forecast-card";
+import { StreakChip } from "@/features/gamification/streak-chip";
 import { HealthCard } from "@/features/health/health-card";
+import { InstallPrompt } from "@/features/pwa/install-prompt";
 import { useAutoNudges } from "@/features/nudges/use-auto-nudges";
 import { CategoryBars } from "./category-bars";
 import { DemoLoader } from "./demo-loader";
@@ -20,7 +22,14 @@ import { PeriodTabs } from "./period-tabs";
 import { TransactionList } from "./transaction-list";
 import { useDashboard } from "./use-dashboard";
 import { useTransactionList, useTransactionsRealtime } from "./use-transactions";
-import { WeeklyChart } from "./weekly-chart";
+import dynamic from "next/dynamic";
+import { Skeleton } from "@/components/skeleton";
+
+// Recharts is large; load it after the first paint instead of with the page.
+const WeeklyChart = dynamic(() => import("./weekly-chart").then((m) => m.WeeklyChart), {
+  ssr: false,
+  loading: () => <Skeleton className="h-56" />,
+});
 
 function Tile({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
@@ -89,6 +98,8 @@ export function Dashboard() {
             <Tile label={t("dashboard.net")} value={formatSignedMoney(net, lang)} />
           </div>
 
+          <InstallPrompt />
+          <StreakChip />
           <ForecastCard />
           <HealthCard />
 

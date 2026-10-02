@@ -1,5 +1,5 @@
-import { PlaceholderPage } from "@/components/placeholder-page";
+import { LearnView } from "@/features/learn/learn-view";
 
 export default function Page() {
-  return <PlaceholderPage ns="learn" />;
+  return <LearnView />;
 }

@@ -13,3 +13,4 @@ export * from "./forecast.ts";
 export * from "./nudge-rules.ts";
 export * from "./coach-context.ts";
 export * from "./coach-fallback.ts";
+export * from "./learn.ts";

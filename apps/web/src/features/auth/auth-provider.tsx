@@ -4,7 +4,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { useQueryClient } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
-import { writeUnlockFlag } from "@/lib/unlock-flag";
+import { forgetPinFlag, writeUnlockFlag } from "@/lib/unlock-flag";
+import { clearOfflineCache } from "@/features/pwa/offline-cache";
 
 type AuthContextValue = {
   session: Session | null;
@@ -36,6 +37,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut();
     writeUnlockFlag(false);
     queryClient.clear();
+    await clearOfflineCache();
+    forgetPinFlag();
   }, [queryClient]);
 
   const value = useMemo<AuthContextValue>(

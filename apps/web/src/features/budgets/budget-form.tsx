@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { OfflineNote } from "@/features/pwa/offline-note";
+import { useOnline } from "@/features/pwa/use-online";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +29,7 @@ export function BudgetForm({
   onDone: () => void;
 }) {
   const { t, i18n } = useTranslation();
+  const online = useOnline();
   const { data: categories } = useCategories();
   const save = useSaveBudget();
   const remove = useDeleteBudget();
@@ -128,15 +131,22 @@ export function BudgetForm({
       )}
 
       <div className="flex gap-2">
+        <OfflineNote />
         <Button type="button" variant="outline" disabled={busy} onClick={onDone}>
           {t("common.cancel")}
         </Button>
-        <Button type="submit" className="flex-1" disabled={busy || options.length === 0}>
+        <Button type="submit" className="flex-1" disabled={busy || !online || options.length === 0}>
           {busy ? t("common.saving") : t("budgets.save")}
         </Button>
       </div>
       {existing && (
-        <Button type="button" variant="ghost" className="w-full" disabled={busy} onClick={onDelete}>
+        <Button
+          type="button"
+          variant="ghost"
+          className="w-full"
+          disabled={busy || !online}
+          onClick={onDelete}
+        >
           {t("budgets.delete")}
         </Button>
       )}

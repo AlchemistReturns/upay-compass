@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useOnline } from "@/features/pwa/use-online";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { formatMoney } from "@/lib/format";
@@ -18,6 +19,7 @@ export function RoundupCard({
   contributions: GoalContribution[];
 }) {
   const { t, i18n } = useTranslation();
+  const online = useOnline();
   const lang = i18n.language;
   const { userId } = useAuth();
   const profile = useProfile(userId);
@@ -56,7 +58,7 @@ export function RoundupCard({
           role="switch"
           aria-checked={enabled}
           aria-label={t("goals.roundup_title")}
-          disabled={setRoundup.isPending || (active.length === 0 && !enabled)}
+          disabled={!online || setRoundup.isPending || (active.length === 0 && !enabled)}
           onClick={() => void apply(!enabled, enabled ? null : selected || null)}
           className={`relative h-8 w-14 shrink-0 rounded-full transition-colors ${
             enabled ? "bg-primary" : "bg-muted-foreground/30"
@@ -78,7 +80,7 @@ export function RoundupCard({
           <NativeSelect
             id="roundup-goal"
             value={selected}
-            disabled={setRoundup.isPending}
+            disabled={!online || setRoundup.isPending}
             onChange={(e) => {
               setChoice(e.target.value);
               if (enabled) void apply(true, e.target.value);

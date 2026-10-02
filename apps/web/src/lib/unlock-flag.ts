@@ -21,3 +21,34 @@ export function writeUnlockFlag(on: boolean) {
     // storage unavailable; the user will just be asked for the PIN
   }
 }
+
+/**
+ * Remembers (per browser) which user has a PIN set, so the app can still open its last-saved data
+ * when the server cannot be asked because the phone is offline. The PIN itself is only ever
+ * checked by the server, so an offline browser that has not been unlocked stays locked.
+ */
+const PIN_KEY = "compass.pin-user";
+
+export function readPinFlag(userId: string): boolean {
+  try {
+    return localStorage.getItem(PIN_KEY) === userId;
+  } catch {
+    return false;
+  }
+}
+
+export function writePinFlag(userId: string) {
+  try {
+    localStorage.setItem(PIN_KEY, userId);
+  } catch {
+    // ignore
+  }
+}
+
+export function forgetPinFlag() {
+  try {
+    localStorage.removeItem(PIN_KEY);
+  } catch {
+    // ignore
+  }
+}

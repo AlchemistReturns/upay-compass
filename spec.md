@@ -213,9 +213,13 @@ nudges(id uuid pk, user_id uuid, type text, data jsonb, dedupe_key text, read bo
   -- unique (user_id, dedupe_key). Text is rendered in the client from type + data so it follows the UI language.
   -- Created only by triggers/functions; users can read them and set read = true, nothing else.
 
-learn_modules(id serial pk, slug text, title_en text, title_bn text, body_md_en text, body_md_bn text, level int)
+learn_modules(id serial pk, slug text unique, position int, level int 1-3, minutes int,
+              title_en, title_bn, summary_en, summary_bn, body_md_en, body_md_bn)
+  -- read-only reference content, written only by migrations
 user_progress(user_id uuid, module_id int, completed_at timestamptz, primary key (user_id, module_id))
+  -- own rows readable; written only by complete_module(slug)
 gamification(user_id uuid pk, streak_days int default 0, last_active date, badges jsonb default '[]')
+  -- own row readable; written only by touch_activity() and complete_module(). badges: [{id, earned_at}]
 
 user_pins(user_id uuid pk → auth.users, pin_hash text, failed_attempts int, updated_at)
   -- RLS on, NO policies, NO grants: reachable only via security definer functions has_pin(), set_pin(pin), verify_pin(pin)
@@ -309,7 +313,7 @@ The screen shows "what moved your score" (change per component against the previ
 | Data fetching | TanStack Query + `@supabase/supabase-js` | Caching, realtime |
 | Charts | Recharts | Dashboard visuals |
 | i18n | `i18next` (en/bn) | Bangla-first UX |
-| PWA | Web manifest + Serwist (`@serwist/next`) | Install, cached offline read |
+| PWA | Web manifest (`app/manifest.ts`) + a small hand-written service worker (`public/sw.js`) + TanStack Query persistence in IndexedDB | Install, cached offline read. Serwist was dropped: it needs the webpack build, and our needs fit in about 100 lines |
 | Backend platform | **Supabase** | Postgres, Auth, Realtime, RLS, Edge Functions |
 | Edge Functions | Deno/TypeScript | Categorize, score, forecast, coach, nudges |
 | LLM | OpenAI API (from Edge Functions only; models set by `OPENAI_COACH_MODEL` / `OPENAI_CATEGORIZE_MODEL` secrets) | Coach and categorization fallback |
@@ -363,7 +367,7 @@ Reference data (the 12 categories, and later the learn modules) is inserted by m
 
 ### 11.2 Phases
 
-**Status:** Phases 0 to 4 complete (Phase 4 on its branch, not yet merged). Phase 5 is next.
+**Status:** Phases 0 to 5 complete (Phase 5 on its branch, not yet merged). Phase 6 is next.
 
 ### Phase 0 — Foundations
 
@@ -496,16 +500,24 @@ Reference data (the 12 categories, and later the learn modules) is inserted by m
 > Push notifications and the offline write queue are deferred (see Section 2). Nudges are in-app only.
 
 **Build process**
-1. **Learn hub:** `learn_modules` and `user_progress` migrations; write 8–10 short modules in Markdown (en/bn) seeded via `seed.sql`; render with a markdown component; mark complete on finish; show progress ring.
-2. **Gamification:** `gamification` table; on app open, update `streak_days` using `last_active`; badge rules evaluated server-side (RPC) for First Goal, 7-Day Streak, Budget Master, Module Graduate; badge toast + profile shelf.
-3. **PWA:**
-   - `app/manifest.ts` web manifest (name, icons, theme color, `display: standalone`) plus `@serwist/next` service worker.
-   - Service worker: precache app shell; stale-while-revalidate for read queries; cache last dashboard payload in IndexedDB for offline read.
-   - Writes are disabled while offline (clear message); no offline queue.
-   - Install prompt handling (`beforeinstallprompt`) and an offline banner.
-4. **Performance pass:** route-level code splitting, image/icon optimization, skeleton loaders, font subsetting; run Lighthouse locally against a production build and fix until mobile score ≥ 90.
+1. **Learn hub (F13):** migrations `20261003090000_phase5_learn_gamification.sql` (tables, RLS, functions) and `20261003090100_phase5_learn_content.sql` (content). Eight short modules in English and Bangla (budget basics, needs vs wants, emergency buffer, saving small, mobile money safety, irregular income, goals that stick, borrowing basics), in a small Markdown subset (`##` headings, paragraphs, `-` bullets, `**bold**`) rendered by a 60-line component in the app (no HTML injected). The hub shows a progress ring and the module list; `/learn/[slug]` shows a module with "Mark as finished" and "Next module". The content is educational only and every page says so. `LEARN_SLUGS` in `packages/shared/src/learn.ts` lists the slugs so the pages are built ahead of time (and kept for offline use); a unit test checks the list against the migration and that every module has both languages.
+   - Seeding is done in a migration, not `seed.sql`, because the shared cloud project only receives migrations. Changing a module later is a new migration.
+2. **Gamification (F14):** all state changes happen in security definer functions, so a streak or badge cannot be forged from the browser.
+   - `touch_activity()` is called when the signed-in app opens (and after creating a goal). It adds a streak day once per Bangladesh calendar day (yesterday: +1, longer gap: back to 1), then evaluates badges and returns the new ones.
+   - `complete_module(slug)` records a module as finished (idempotent) and evaluates badges.
+   - Badge rules, evaluated in SQL from the user's own rows: **First Goal** (created a goal), **7-Day Streak** (7 days in a row), **Budget Master** (has a budget at least a week old and none is over its limit this month), **Module Graduate** (finished every module). Awarded once, with the date.
+   - UI: a streak chip on the dashboard, a badge toast when one is earned, a badge shelf on the Learn page (locked badges say how to earn them).
+3. **PWA (F15):**
+   - `app/manifest.ts` (standalone, icons 192/512 and a maskable 512, theme colors) and an Apple touch icon; icons are generated PNGs in `public/icons/`.
+   - **Service worker** (`public/sw.js`, registered in production builds only): precaches the app's pages (9 screens and the 8 module pages) when installed; static build assets cache-first; page navigations network-first with the saved copy as the fallback, and a small bilingual "you are offline" page for anything never saved. It never touches Supabase or other cross-origin requests.
+   - **Offline data:** TanStack Query persists the last results of read queries (dashboard, transactions, goals, budgets, score, forecast, learn) in IndexedDB for up to 7 days, so the screens show the last data when offline. Coach conversations are never persisted. The saved data is cleared on sign out. This replaces "stale-while-revalidate in the service worker": the query cache already behaves that way.
+   - **Offline behavior:** a banner says "You are offline. Showing your last saved data. Changes are paused." Every write button (add or edit transaction, budgets, goals, contributions, round-ups, demo load, coach send, mark module finished) is disabled with a short explanation. There is no offline queue.
+   - **PIN while offline:** the PIN is only ever checked by the server. If the phone is offline, the browser remembers that this user has a PIN and keeps an already unlocked session open; a browser session that has not been unlocked stays locked until the phone is back online.
+   - **Install:** a dismissible install card on the dashboard (from `beforeinstallprompt`).
+4. **Performance pass:** charts (Recharts) load on demand with skeleton placeholders; `@compass/shared` is marked side-effect free so unused schemas are dropped from the bundle; the login page renders without waiting for the session check; the Bangla font uses `display: optional` so it cannot hold up the first paint (the first visit uses the phone's own Bangla font). Lighthouse mobile on the production build of the login page: **performance 98 with real network throttling, 87 to 91 with Lighthouse's default simulated throttling** (it varies by a few points between runs), accessibility 100, best practices 100. The signed-in screens cannot be audited from the command line (the session lives in the browser), so they are checked by hand.
 
-**Verify:** install to home screen, switch to airplane mode and the last dashboard still loads, offline banner shows and write actions are disabled with a clear message.
+**Verify:** a browser run (production build, local stack) of 22 checks: the streak counts on open; the hub lists 8 modules; a module renders its headings, bullets and bold text; finishing all 8 shows 8/8 and the Module Graduate toast; creating a goal earns First Goal; the hub renders in Bangla; the manifest and every icon load; the service worker activates and caches the pages; with the network cut, a reload still shows the last dashboard with the same balance, the banner appears, Goals opens from the saved data, "Create goal" is disabled with an explanation, and a learn module opens and reads; the banner clears when the network returns. 7 integration tests cover the RPCs (no direct writes, idempotence, badge awarding, helper functions not callable) and the streak rules were checked with simulated dates (consecutive day +1, gap resets to 1, seventh day awards the badge).
+- Not yet verified: installing to a real phone's home screen (the install prompt needs HTTPS and a deployed URL), and the cloud project (the migration is applied there only after review).
 
 ---
 
@@ -722,6 +734,6 @@ Teammates get the Supabase **Developer** role on the project, so everyone can ru
 
 ### 17.7 Current status
 
-Phases 0 to 3 are merged (PRs #1 to #4). Phase 4 (recurring detection, 30-day forecast with a backtest, the streaming AI coach with consent, rule-driven nudges) is on branch `feat/phase4-intelligence`. The web app runs against the shared cloud project by default. Next up: Phase 5 (learn hub, gamification, PWA). Deployment and scheduled jobs are deferred until after Phases 1 to 4.
+Phases 0 to 4 are merged (PRs #1 to #5). Phase 5 (learn hub with 8 bilingual modules, streaks and badges, installable PWA with cached offline reading, performance pass) is on branch `feat/phase5-engagement`. The web app runs against the shared cloud project by default. Next up: Phase 6 (admin insights, demo mode and reset, polish). Deployment and scheduled jobs are deferred until after the feature phases.
 
 ---

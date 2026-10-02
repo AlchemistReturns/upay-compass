@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { OfflineNote } from "@/features/pwa/offline-note";
+import { useOnline } from "@/features/pwa/use-online";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +16,7 @@ import { useContributions, useCreateGoal, useGoals } from "./use-goals";
 
 function NewGoalForm({ onDone }: { onDone: () => void }) {
   const { t } = useTranslation();
+  const online = useOnline();
   const create = useCreateGoal();
   const [title, setTitle] = useState("");
   const [target, setTarget] = useState("");
@@ -67,11 +70,12 @@ function NewGoalForm({ onDone }: { onDone: () => void }) {
           {error}
         </p>
       )}
+      <OfflineNote />
       <div className="flex gap-2">
         <Button type="button" variant="outline" onClick={onDone}>
           {t("common.cancel")}
         </Button>
-        <Button type="submit" className="flex-1" disabled={create.isPending}>
+        <Button type="submit" className="flex-1" disabled={create.isPending || !online}>
           {create.isPending ? t("common.saving") : t("goals.create")}
         </Button>
       </div>

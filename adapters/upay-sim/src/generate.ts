@@ -1,7 +1,7 @@
 import { transactionSchema, type Transaction } from "@compass/shared";
-import { addDays, calendarDay, dhakaTimeToIso } from "./dates";
-import { PERSONA_CONFIGS, type Persona } from "./personas";
-import { createRng, hashString } from "./prng";
+import { addDays, calendarDay, dhakaTimeToIso } from "./dates.ts";
+import { PERSONA_CONFIGS, type Persona } from "./personas.ts";
+import { createRng, hashString } from "./prng.ts";
 
 export type GenerateOptions = {
   persona: Persona;

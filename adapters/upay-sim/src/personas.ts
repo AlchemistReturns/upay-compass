@@ -1,6 +1,6 @@
 import type { Channel } from "@compass/shared";
-import type { CalendarDay } from "./dates";
-import type { Rng } from "./prng";
+import type { CalendarDay } from "./dates.ts";
+import type { Rng } from "./prng.ts";
 
 export type Persona = "student" | "gig" | "salaried";
 export const PERSONAS: readonly Persona[] = ["student", "gig", "salaried"];

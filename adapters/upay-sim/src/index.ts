@@ -1,13 +1,13 @@
 import type { Transaction } from "@compass/shared";
-import { DEFAULT_DAYS, DEFAULT_SEED, generateTransactions } from "./generate";
-import { todayInDhaka } from "./dates";
-import { PERSONA_CONFIGS, type Persona } from "./personas";
+import { DEFAULT_DAYS, DEFAULT_SEED, generateTransactions } from "./generate.ts";
+import { todayInDhaka } from "./dates.ts";
+import { PERSONA_CONFIGS, type Persona } from "./personas.ts";
 
-export { generateTransactions, DEFAULT_SEED, DEFAULT_DAYS } from "./generate";
-export type { GenerateOptions } from "./generate";
-export { PERSONAS, PERSONA_CONFIGS } from "./personas";
-export type { Persona } from "./personas";
-export { todayInDhaka, addDays } from "./dates";
+export { generateTransactions, DEFAULT_SEED, DEFAULT_DAYS } from "./generate.ts";
+export type { GenerateOptions } from "./generate.ts";
+export { PERSONAS, PERSONA_CONFIGS } from "./personas.ts";
+export type { Persona } from "./personas.ts";
+export { todayInDhaka, addDays } from "./dates.ts";
 
 /** Swappable feed interface. A real upay API implements this later. */
 export interface TransactionFeed {

@@ -1,5 +1,5 @@
-import { KEYWORDS, type CategoryKey } from "./categories";
-import type { Channel } from "./types";
+import { KEYWORDS, type CategoryKey } from "./categories.ts";
+import type { Channel } from "./types.ts";
 
 export type CategorizableTransaction = {
   direction: "in" | "out";

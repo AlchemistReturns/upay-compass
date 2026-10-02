@@ -5,6 +5,8 @@ Track: 03 — Customer Innovation & Financial Independence
 Document type: Self-contained team specification (problem + decisions + features + roadmap)
 Stack decided: Responsive web app (Next.js, installable PWA), Supabase (Postgres + Auth + Realtime + RLS + Edge Functions), LLM-powered coach via OpenAI API
 
+**New to the project? Start at Section 17 (Developer Guide).** It covers setup, daily workflow, conventions and ownership.
+
 > ⚠️ Items marked with this symbol are assumptions. The official track brief, judging weights and deliverable list were not available when this was written. Replace them with the real values.
 
 ---
@@ -315,9 +317,9 @@ upay-compass/
 Reference data (the 12 categories, and later the learn modules) is inserted by migrations, not `seed.sql`, because `supabase db push` does not run seeds.
 
 **Working rules**
-- Git (solo development): commit directly to `main`, small conventional commits (`feat(scope): ...`), `main` always passes lint, typecheck and tests. Branches, PRs and reviews are introduced only if more people join.
-- Schema changes only through `supabase/migrations` (never edit tables in the dashboard). Test locally with `pnpm sb start` first, then apply to the cloud project by hand with `pnpm sb db push`. Never edit a migration that has been pushed; add a new one.
-- Secrets: the browser only ever gets the `NEXT_PUBLIC_*` URL and anon key (`apps/web/.env.local`, gitignored). The service-role key, DB password and OpenAI key never go in the repo or in chat.
+- Git (team workflow, see Section 17): `main` is protected in spirit, always passes lint, typecheck and tests. Work on short-lived branches `feat/<feature-id>-<slug>` (for example `feat/f6-budgets`), open a PR, get one review, squash merge. Conventional commit messages (`feat(scope): ...`, `fix`, `chore`, `docs`, `test`).
+- Schema changes only through `supabase/migrations` (never edit tables in the dashboard). Create files with `pnpm sb migration new <name>`, test locally with `pnpm sb start` / `pnpm sb db reset`, never edit a migration that has been merged (add a new one). Only the DB owner pushes to the shared cloud project (`pnpm sb db push`), after the PR is merged.
+- Secrets: the browser only ever gets the `NEXT_PUBLIC_*` URL and anon key. The service-role key, DB password and OpenAI key never go in the repo, in chat or in screenshots.
 - Business logic (score, forecast, categorization rules) lives as **pure TypeScript functions in `packages/shared`**, unit-tested, then wrapped by Edge Functions. This keeps AI/LLM out of anything numeric.
 - Each feature is built **vertically**: migration → function/logic → API call → UI → test, in that order.
 - Definition of done per feature: works in both languages, RLS verified, empty/error state handled, demo-able.
@@ -472,7 +474,7 @@ Phase 0 ──► Phase 1 ──► Phase 2 ──┬─► Phase 3 ──► Ph
                                    └─ (frontend can mock Phase 3/4 data contracts in parallel)
 ```
 
-Development is currently solo (with Claude Code). The role table below is a map of the work streams, not a staffing plan; a native Bangla speaker on the team reviews all Bangla copy and the coach prompt.
+The team is growing. The table below maps the work streams; assign one owner per stream at kickoff (record names in Section 17.6). A native Bangla speaker on the team reviews all Bangla copy and the coach prompt.
 
 | Work stream | Phase 0–1 | Phase 2 | Phase 3 | Phase 4 | Phase 5–6 |
 |---|---|---|---|---|---|
@@ -546,5 +548,108 @@ Planned for later:
 11. Show the in-app nudge, then install the PWA
 12. Go offline, dashboard still loads
 13. Admin view: anonymized aggregate impact for upay
+
+---
+
+## 17. Developer Guide
+
+Everything a new teammate needs to get running and contribute. If something here is wrong or missing, fix this section in the same PR that exposes the gap.
+
+### 17.1 Prerequisites
+
+- Node.js 20+ (22 recommended), Git
+- pnpm 11 (`corepack enable` or `npm i -g pnpm`)
+- Docker Desktop, running (needed for the local Supabase stack; first start pulls several images and can take 10+ minutes)
+- Windows, macOS and Linux all work. On Windows use PowerShell or Git Bash.
+
+You do **not** install the Supabase CLI globally. It is a dev dependency, run as `pnpm sb <command>`.
+
+### 17.2 First-time setup
+
+```bash
+git clone <repo-url> upay-compass
+cd upay-compass
+pnpm install
+```
+
+Then pick how the web app talks to Supabase.
+
+**Option A: local stack (default for day-to-day work)**
+
+```bash
+pnpm sb start      # starts Postgres, Auth, REST in Docker and applies all migrations
+pnpm sb status     # prints the local API URL and anon key
+```
+
+Create `apps/web/.env.local`:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon key from pnpm sb status>
+```
+
+Local login uses test phone numbers `+8801700000001`, `+8801700000002`, `+8801700000003` with OTP `123456` (configured in `supabase/config.toml`). Create `supabase/.env` containing `SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN=dummy` (gitignored; the dummy Twilio provider is required by Supabase Auth for test OTPs, and no real SMS is ever sent). Reset the local database at any time with `pnpm sb db reset`.
+
+**Option B: shared cloud project**
+
+Ask the DB owner (Section 17.6) for the project URL and anon key, and to invite you to the Supabase organization. Put them in `apps/web/.env.local`. The anon key is public by design but is still not committed. Cloud test phone numbers are configured in the dashboard (Authentication → Providers → Phone, dummy Twilio credentials, same test numbers and OTP).
+
+**Run the app**
+
+```bash
+pnpm dev           # http://localhost:3000
+```
+
+### 17.3 Daily commands
+
+| Command | What it does |
+|---|---|
+| `pnpm dev` | Start the web app |
+| `pnpm lint` / `pnpm typecheck` / `pnpm test` | Checks across all workspaces |
+| `pnpm format` | Prettier write (the pre-commit hook also does this for staged files) |
+| `pnpm sb start` / `pnpm sb stop` | Start or stop the local Supabase stack |
+| `pnpm sb migration new <name>` | Create a new timestamped migration file |
+| `pnpm sb db reset` | Rebuild the local DB from migrations (and `seed.sql` if present) |
+| `pnpm sb db push --dry-run` | Preview what would be applied to the linked cloud project |
+
+The Husky pre-commit hook runs Prettier on staged files and then lint. Do not bypass it.
+
+### 17.4 Contribution workflow
+
+1. Pick a feature ID from Section 8 (or a task from the current phase) and tell the team you are on it.
+2. Branch from an up-to-date `main`: `git switch -c feat/<id>-<slug>`.
+3. Build vertically (migration, shared pure logic with unit tests, API call, UI, test), in both languages.
+4. Before pushing: `pnpm lint && pnpm typecheck && pnpm test`.
+5. Open a PR with: what changed, how you verified it, screenshots for UI. One review required. Squash merge.
+6. If the PR contains a migration, say so in the PR title. After merge, the DB owner runs `pnpm sb db push` against the cloud project.
+
+CI (`.github/workflows/ci.yml`) runs lint, typecheck, tests and the Prettier check on every push and PR once the repo is on GitHub. A red CI blocks merge.
+
+**Definition of done** (every feature): works in Bangla and English, RLS verified for any new table, empty and error states handled, unit tests for new logic, demo-able.
+
+### 17.5 Conventions and rules that are easy to break
+
+- **Next.js 16.** It differs from older versions. Read `apps/web/AGENTS.md` and the guides in `apps/web/node_modules/next/dist/docs/` before writing app code. Layout and page props use the generated `LayoutProps` / `PageProps` types (run `pnpm typecheck` to regenerate them).
+- **No hardcoded UI text.** All strings go through `t()` with keys in both `src/i18n/en.json` and `bn.json`. Bangla copy is reviewed by the native-speaker teammate before it ships.
+- **Numbers come from code, never the LLM.** Score, forecast, categorization rules and "can I afford X" are pure functions in `packages/shared` with unit tests. Edge Functions wrap them. The LLM only explains results.
+- **Migrations are append-only once merged.** Fix mistakes with a new migration. Every new table gets RLS enabled and policies keyed on `auth.uid()`. Reference data (categories, learn modules) is inserted by migrations, not `seed.sql`.
+- **Secrets.** Never commit `.env*` files other than `.env.example`. The service-role key, the DB password and `OPENAI_API_KEY` never go in the repo, in chat, in screenshots or in client code. Share them through a password manager. Edge Function secrets live in `supabase/.env.functions` (gitignored) locally and are set in the cloud with `pnpm sb secrets set`.
+- **Privacy.** No phone numbers or raw identifiers in LLM prompts. Simulated data is labelled as simulated in the UI.
+- **Windows login quirk.** `pnpm sb login` and `pnpm sb link` need an interactive terminal. Run them in your own terminal window, not through a tool that runs without a TTY.
+- **Ports.** Local Supabase uses 54321 (API) and 54322 (DB); the web app uses 3000. Stop other local Supabase stacks first.
+
+### 17.6 Ownership (fill in at kickoff)
+
+| Role | Owner | Responsibility |
+|---|---|---|
+| DB owner | _TBD_ | Holds the cloud project admin and DB password, pushes merged migrations, sets Edge Function secrets, invites teammates |
+| Frontend | _TBD_ | App shell, screens, i18n wiring |
+| Backend / DB | _TBD_ | Migrations, RLS, Edge Functions, adapter |
+| Intelligence | _TBD_ | Pure functions, categorizer, score, forecast, coach prompts and tests |
+| Product / pitch / Bangla | _TBD_ | Copy and Bangla review, learn content, demo script, impact case |
+
+### 17.7 Current status
+
+Phase 0 is complete (repo scaffold, Supabase migrations for `profiles` and `categories`, app shell with i18n, categories read from Supabase). Next up: Phase 1 (auth and onboarding). Deployment is deferred until after Phases 1 to 4.
 
 ---

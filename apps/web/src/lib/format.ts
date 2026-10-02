@@ -37,3 +37,12 @@ export function toDhakaInputValue(iso: string): string {
 export function fromDhakaInputValue(value: string): string {
   return new Date(`${value}:00+06:00`).toISOString();
 }
+
+/** "2026-11-16" -> "Nov 2026" */
+export function formatMonthYear(value: string, lang: string): string {
+  return new Intl.DateTimeFormat(locale(lang), {
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${value}T12:00:00Z`));
+}

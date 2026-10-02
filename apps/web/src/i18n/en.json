@@ -87,7 +87,8 @@
     "roundup_body": "Each payment you make is rounded up to the next ৳10 and the difference is set aside for a goal. You can turn it off or undo any round-up.",
     "roundup_goal": "Save round-ups into",
     "roundup_need_goal": "Create a goal first to use round-ups.",
-    "roundup_total": "Set aside by round-ups: {{amount}} from {{count}} payments"
+    "roundup_total_one": "Set aside by round-ups: {{amount}} from {{count}} payment",
+    "roundup_total_other": "Set aside by round-ups: {{amount}} from {{count}} payments"
   },
   "coach": {
     "title": "Coach",

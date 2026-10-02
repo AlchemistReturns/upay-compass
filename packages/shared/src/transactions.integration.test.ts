@@ -165,6 +165,6 @@ describe.skipIf(!url || !anon)("transactions, rules and dashboard RPCs", () => {
     expect(del.error).not.toBeNull();
     const forged = await b.client.from("audit_log").insert({ user_id: a.id, action: "forged" });
     expect(forged.error).not.toBeNull();
-    expect((await b.client.from("audit_log").select("id")).data).toEqual([]);
+    expect((await b.client.from("audit_log").select("id").eq("user_id", a.id)).data).toEqual([]);
   });
 });

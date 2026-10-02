@@ -244,7 +244,12 @@
     "title": "Connect upay (simulated)",
     "body": "Pick the kind of user you are. We will load 120 days of simulated upay transactions.",
     "suggested": "(suggested for you)",
-    "loading": "Loading transactions… this can take a few seconds."
+    "loading": "Loading transactions… this can take a few seconds.",
+    "tools_title": "Demo tools",
+    "tools_hint": "Start over with a clean account: this deletes your data here and loads a fresh simulated history.",
+    "reset_confirm": "Delete all your data in this account and start the demo again?",
+    "resetting": "Resetting… this can take a few seconds.",
+    "reset_done": "Done. Your demo account is fresh."
   },
   "score": {
     "title": "Financial health",
@@ -372,5 +377,32 @@
     "install_hint": "Add it to your home screen to open it like an app.",
     "install": "Install",
     "offline_no_data": "This has not been saved on this phone yet. Reconnect to load it."
+  },
+  "admin": {
+    "title": "Insights",
+    "open": "Open admin insights",
+    "not_allowed": "This page is only for administrators.",
+    "privacy": "Totals across groups of people only. Any figure based on fewer than {{count}} people is hidden, and nothing here points to one person.",
+    "hidden": "Hidden: fewer than {{count}} people.",
+    "spending_title": "Where money goes",
+    "spending_hint": "Share of spending in the last 30 days, by category.",
+    "health_title": "Financial health",
+    "health_hint": "Average of each person's latest score.",
+    "avg_score_one": "average score, {{count}} person",
+    "avg_score_other": "average score, {{count}} people",
+    "people_one": "{{count}} person",
+    "people_other": "{{count}} people",
+    "goals_title": "Goals reached",
+    "goals_done": "{{done}} of {{total}} goals",
+    "roundups_title": "Round-up savings",
+    "learning_title": "Learning",
+    "modules_avg": "modules finished on average, of {{count}}",
+    "graduates": "finished every module",
+    "seed_title": "Demo cohort",
+    "seed_hint": "Creates or refreshes 15 synthetic demo people so the figures above have enough people to show. It only adds clearly synthetic accounts.",
+    "seed": "Create demo cohort",
+    "seeding": "Creating… about 30 seconds",
+    "seeded_one": "Done: {{count}} demo person.",
+    "seeded_other": "Done: {{count}} demo people."
   }
 }

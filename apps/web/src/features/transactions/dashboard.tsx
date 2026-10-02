@@ -16,6 +16,7 @@ import { StreakChip } from "@/features/gamification/streak-chip";
 import { HealthCard } from "@/features/health/health-card";
 import { InstallPrompt } from "@/features/pwa/install-prompt";
 import { useAutoNudges } from "@/features/nudges/use-auto-nudges";
+import { DemoTools } from "@/features/demo/demo-tools";
 import { CategoryBars } from "./category-bars";
 import { DemoLoader } from "./demo-loader";
 import { PeriodTabs } from "./period-tabs";
@@ -69,7 +70,12 @@ export function Dashboard() {
         </div>
       )}
 
-      {noTransactions && <DemoLoader suggested={profile.data?.income_type ?? null} />}
+      {noTransactions && (
+        <div className="space-y-4 pb-4">
+          <DemoLoader suggested={profile.data?.income_type ?? null} />
+          <DemoTools />
+        </div>
+      )}
 
       {recent.isSuccess && !noTransactions && (
         <div className="space-y-4 pb-4">
@@ -119,7 +125,7 @@ export function Dashboard() {
                 </Link>
                 <Link
                   href="/transactions"
-                  className="text-primary min-h-10 content-center px-2 text-sm"
+                  className="text-primary min-h-11 content-center px-2 text-sm"
                 >
                   {t("transactions.see_all")}
                 </Link>
@@ -127,6 +133,8 @@ export function Dashboard() {
             </div>
             <TransactionList rows={recent.data} />
           </section>
+
+          <DemoTools />
         </div>
       )}
     </>

@@ -19,7 +19,7 @@ function NudgeBell() {
     <Link
       href="/nudges"
       aria-label={count > 0 ? t("nudges.bell_unread", { count }) : t("nudges.title")}
-      className="relative flex size-10 items-center justify-center rounded-lg"
+      className="relative flex size-11 items-center justify-center rounded-lg"
     >
       <Bell className="size-5" aria-hidden />
       {count > 0 && (

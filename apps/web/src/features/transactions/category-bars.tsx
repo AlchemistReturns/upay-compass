@@ -32,7 +32,7 @@ export function CategoryBars({ data }: { data: CategorySpend[] }) {
           <button
             type="button"
             onClick={() => setAsTable((v) => !v)}
-            className="text-muted-foreground min-h-10 text-xs underline"
+            className="text-muted-foreground min-h-11 min-w-11 text-xs underline"
           >
             {asTable ? t("dashboard.show_chart") : t("dashboard.show_table")}
           </button>

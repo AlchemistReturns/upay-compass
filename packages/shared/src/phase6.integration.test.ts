@@ -31,6 +31,25 @@ describe.skipIf(!url || !anon)("phase 6: admin insights, demo reset", () => {
     expect(r.error).not.toBeNull();
   });
 
+  it("nobody can edit their own wallet balance from the browser", async () => {
+    const r = await user.client
+      .from("profiles")
+      .update({ opening_balance: 999999 })
+      .eq("id", user.id);
+    expect(r.error).not.toBeNull();
+  });
+
+  it("anonymous visitors cannot read private tables", async () => {
+    const { createClient } = await import("@supabase/supabase-js");
+    const visitor = createClient(url!, anon!, { auth: { persistSession: false } });
+    for (const table of ["profiles", "transactions", "goals", "gamification"]) {
+      const r = await visitor.from(table).select("*").limit(1);
+      expect(r.error, table).not.toBeNull();
+    }
+    const cats = await visitor.from("categories").select("id").limit(1);
+    expect(cats.error).toBeNull();
+  });
+
   it("reset_demo wipes the caller's own data and nobody else's", async () => {
     const other = await user.client.from("goals").select("id");
     const before = other.data?.length ?? 0;

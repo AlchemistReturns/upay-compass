@@ -60,12 +60,15 @@ export function RoundupCard({
           aria-label={t("goals.roundup_title")}
           disabled={!online || setRoundup.isPending || (active.length === 0 && !enabled)}
           onClick={() => void apply(!enabled, enabled ? null : selected || null)}
-          className={`relative h-8 w-14 shrink-0 rounded-full transition-colors ${
-            enabled ? "bg-primary" : "bg-muted-foreground/30"
-          } disabled:opacity-50`}
+          className="relative h-11 w-14 shrink-0 disabled:opacity-50"
         >
           <span
-            className={`bg-background absolute top-1 size-6 rounded-full shadow transition-all ${
+            className={`absolute inset-x-0 top-1.5 h-8 rounded-full transition-colors ${
+              enabled ? "bg-primary" : "bg-muted-foreground/30"
+            }`}
+          />
+          <span
+            className={`bg-background absolute top-2.5 size-6 rounded-full shadow transition-all ${
               enabled ? "left-7" : "left-1"
             }`}
           />

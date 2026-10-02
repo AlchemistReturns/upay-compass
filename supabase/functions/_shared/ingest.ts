@@ -10,6 +10,7 @@ import {
 } from "@compass/shared";
 import { SimulatedFeed } from "@compass/upay-sim";
 import { aiCategorize, type AiItem } from "./ai-categorize.ts";
+import { adminClient } from "./http.ts";
 import { refreshHealthScore } from "./health.ts";
 import { refreshForecast } from "./flow.ts";
 
@@ -155,7 +156,11 @@ export async function ingestForUser(
     inserted += data?.length ?? 0;
   }
 
-  await client.from("profiles").update({ opening_balance: feed.openingBalance }).eq("id", userId);
+  // Server-controlled column: written with the service role, after the caller was verified.
+  await adminClient()
+    .from("profiles")
+    .update({ opening_balance: feed.openingBalance })
+    .eq("id", userId);
 
   const summary = {
     received: raw.length,

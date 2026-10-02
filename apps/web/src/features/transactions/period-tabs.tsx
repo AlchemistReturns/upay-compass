@@ -16,7 +16,7 @@ export function PeriodTabs({ value, onChange }: { value: Period; onChange: (p: P
           aria-selected={value === p}
           onClick={() => onChange(p)}
           className={cn(
-            "min-h-10 flex-1 rounded-md px-3 text-sm",
+            "min-h-11 flex-1 rounded-md px-3 text-sm",
             value === p ? "bg-background font-medium shadow-sm" : "text-muted-foreground",
           )}
         >

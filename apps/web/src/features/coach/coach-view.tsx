@@ -173,7 +173,7 @@ export function CoachView() {
                   type="button"
                   disabled={chat.status !== "idle"}
                   onClick={() => void chat.send(t(`coach.suggest_${s}`))}
-                  className="shrink-0 rounded-full border px-3 py-1.5 text-xs disabled:opacity-50"
+                  className="min-h-11 shrink-0 rounded-full border px-4 text-xs disabled:opacity-50"
                 >
                   {t(`coach.suggest_${s}`)}
                 </button>
@@ -205,7 +205,7 @@ export function CoachView() {
                   type="button"
                   disabled={clear.isPending || chat.status !== "idle"}
                   onClick={() => window.confirm(t("coach.clear_confirm")) && clear.mutate()}
-                  className="text-muted-foreground shrink-0 text-[11px] underline"
+                  className="text-muted-foreground min-h-11 shrink-0 px-2 text-[11px] underline"
                 >
                   {t("coach.clear")}
                 </button>

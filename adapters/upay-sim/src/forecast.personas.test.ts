@@ -6,7 +6,7 @@ import {
   isEssentialCategory,
   type FlowTx,
 } from "@compass/shared";
-import { PERSONAS, PERSONA_CONFIGS, generateTransactions, type Persona } from "./index";
+import { PERSONAS, generateTransactions, walletOpeningBalance, type Persona } from "./index";
 
 const NOW = new Date("2026-10-02T08:00:00Z");
 
@@ -29,7 +29,7 @@ const net = (txs: FlowTx[]) =>
 
 describe.each(PERSONAS)("forecast on the %s persona", (persona) => {
   const history = flowFor(persona, 120);
-  const balance = PERSONA_CONFIGS[persona].openingBalance + net(history);
+  const balance = walletOpeningBalance(persona, history) + net(history);
   const forecast = forecastCashflow({ now: NOW, balance, transactions: history });
 
   it("has enough history to forecast, and finds the recurring payments", () => {
@@ -52,7 +52,7 @@ describe.each(PERSONAS)("forecast on the %s persona", (persona) => {
 describe("demo storylines", () => {
   const forecastOf = (persona: Persona) => {
     const history = flowFor(persona, 120);
-    const balance = PERSONA_CONFIGS[persona].openingBalance + net(history);
+    const balance = walletOpeningBalance(persona, history) + net(history);
     return forecastCashflow({ now: NOW, balance, transactions: history });
   };
 

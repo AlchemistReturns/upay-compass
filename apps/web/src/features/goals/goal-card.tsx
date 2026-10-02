@@ -72,6 +72,7 @@ export function GoalCard({
       <div
         className="bg-muted mt-2 h-2.5 rounded-r-full rounded-l-sm"
         role="progressbar"
+        aria-label={goal.title}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={Math.round(pct)}

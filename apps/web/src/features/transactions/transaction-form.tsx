@@ -111,7 +111,7 @@ export function TransactionForm({ existing }: { existing?: TransactionRow }) {
             aria-pressed={direction === d}
             onClick={() => setDirection(d)}
             className={cn(
-              "min-h-10 flex-1 rounded-md text-sm",
+              "min-h-11 flex-1 rounded-md text-sm",
               direction === d ? "bg-background font-medium shadow-sm" : "text-muted-foreground",
             )}
           >

@@ -1,0 +1,10 @@
+packages:
+  - apps/*
+  - packages/*
+  - adapters/*
+
+allowBuilds:
+  esbuild: true
+  sharp: true
+  supabase: true
+  unrs-resolver: false

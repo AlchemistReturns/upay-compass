@@ -726,6 +726,17 @@ preview card ("Add Rs 500, Food, Tea Stall, today") -> user confirms -> existing
 
 ---
 
+### UX pass (after Phase 10)
+
+Small changes to first-run and everyday entry, no new backend.
+- **Get started:** a checklist on Home (add a payment, set a budget, create a goal) that ticks itself off from the person's own data and disappears when all three are done. An empty account also sees a "Nothing here yet" card, an Add button and a Try voice button. The forecast card says what it needs (about 4 weeks and 20 payments).
+- **Faster entry:** a floating microphone on Home and the payments list (the header microphone stays everywhere); "Repeat a recent one" chips on the add form fill amount, direction, channel and payee, and the person still taps Save.
+- **Undo:** deleting a payment (form or voice) and saving or deleting a budget now offer Undo. A deleted payment is put back with the same id, time and category.
+- **Privacy copy:** the voice notes in the coach and the voice sheet now describe the server fallbacks (recording, spoken text and, without an on-device voice, the answer text going to OpenAI).
+- **Verified:** typecheck, lint, a browser run on a production build (empty Home, checklist 0 of 3 then 1 of 3, recents fill the form, delete then Undo restores the row) and an integration test for restore and budget upsert. Not checked: Undo for budgets in the browser, and these screens on a real phone.
+
+---
+
 ### 11.3 Build Order and Parallelism
 
 ```

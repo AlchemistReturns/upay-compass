@@ -9,6 +9,7 @@ import { useContribute, useCreateGoal, useUndoContribution } from "@/features/go
 import {
   useAddTransaction,
   useDeleteTransactionById,
+  useRestoreTransaction,
 } from "@/features/transactions/use-transactions";
 
 export type RunOutcome = {
@@ -31,6 +32,7 @@ export function useRunCommand() {
   const progress = useBudgetProgress();
   const addTransaction = useAddTransaction();
   const deleteById = useDeleteTransactionById();
+  const restoreTx = useRestoreTransaction();
   const saveBudget = useSaveBudget();
   const createGoal = useCreateGoal();
   const contribute = useContribute();
@@ -115,10 +117,18 @@ export function useRunCommand() {
           };
         }
 
-        case "delete_transaction":
+        case "delete_transaction": {
           if (!extra.deleteId) throw new Error("no payment chosen");
-          await deleteById.mutateAsync(extra.deleteId);
-          return { kind: "deleted" };
+          const row = await deleteById.mutateAsync(extra.deleteId);
+          return {
+            kind: "deleted",
+            undo: row
+              ? async () => {
+                  await restoreTx.mutateAsync(row);
+                }
+              : undefined,
+          };
+        }
 
         case "ask_coach":
           throw new Error("questions go to the coach, not here");
@@ -129,6 +139,7 @@ export function useRunCommand() {
       progress.data,
       addTransaction,
       deleteById,
+      restoreTx,
       saveBudget,
       createGoal,
       contribute,

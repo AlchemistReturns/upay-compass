@@ -35,6 +35,8 @@ import { StreakChip } from "@/features/gamification/streak-chip";
 import { HealthCard } from "@/features/health/health-card";
 import { ReadinessCard } from "@/features/readiness/readiness-card";
 import { NextModuleCard } from "@/features/learn/next-module-card";
+import { GetStarted } from "@/features/onboarding/get-started";
+import { VoiceTryButton } from "@/features/voice/voice-command-button";
 import { InstallPrompt } from "@/features/pwa/install-prompt";
 import { useAutoNudges } from "@/features/nudges/use-auto-nudges";
 import { CategoryBars } from "./category-bars";
@@ -333,26 +335,34 @@ export function Dashboard() {
       {recent.isError && <ErrorState onRetry={() => void recent.refetch()} />}
 
       {noTransactions && (
-        <EmptyState
-          icon={Wallet}
-          title={t("home.empty_title")}
-          body={t("home.empty_body")}
-          action={
-            <Link
-              href="/transactions/new"
-              className={buttonVariants({ size: "lg" })}
-              transitionTypes={NAV_FORWARD}
-            >
-              <Plus aria-hidden />
-              {t("transactions.add")}
-            </Link>
-          }
-        />
+        <div className="space-y-4 pb-4">
+          <EmptyState
+            icon={Wallet}
+            title={t("home.empty_title")}
+            body={t("home.empty_body")}
+            action={
+              <Link
+                href="/transactions/new"
+                className={buttonVariants({ size: "lg" })}
+                transitionTypes={NAV_FORWARD}
+              >
+                <Plus aria-hidden />
+                {t("transactions.add")}
+              </Link>
+            }
+          />
+          <p className="text-muted-foreground px-1 text-center text-sm">{t("start.voice_hint")}</p>
+          <div className="flex justify-center">
+            <VoiceTryButton />
+          </div>
+          <GetStarted hasTransactions={false} />
+        </div>
       )}
 
       {recent.isSuccess && !noTransactions && (
         <div className="space-y-7 pb-4 sm:space-y-9">
           <div className="space-y-3.5">
+            <GetStarted hasTransactions />
             <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-3.5 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:items-stretch">
               <BalancePanel
                 balance={balance.data}

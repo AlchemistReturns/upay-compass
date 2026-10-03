@@ -19,7 +19,14 @@ import { cn } from "@/lib/utils";
 import { fromDhakaInputValue, toDhakaInputValue } from "@/lib/format";
 import { useCategories } from "@/features/categories/use-categories";
 import type { TransactionRow } from "./types";
-import { useAddTransaction, useDeleteTransaction, useUpdateTransaction } from "./use-transactions";
+import {
+  useAddTransaction,
+  useDeleteTransaction,
+  useRestoreTransaction,
+  useTransactionList,
+  useUpdateTransaction,
+} from "./use-transactions";
+import { formatMoney } from "@/lib/format";
 
 const formSchema = z.object({
   amount: z.number().positive().max(100_000_000),
@@ -39,6 +46,7 @@ export function TransactionForm({ existing }: { existing?: TransactionRow }) {
   const add = useAddTransaction();
   const update = useUpdateTransaction(existing?.id ?? "");
   const remove = useDeleteTransaction(existing?.id ?? "");
+  const restore = useRestoreTransaction();
 
   const [amount, setAmount] = useState(existing ? String(existing.amount) : "");
   const [direction, setDirection] = useState<"in" | "out">(existing?.direction ?? "out");
@@ -52,6 +60,26 @@ export function TransactionForm({ existing }: { existing?: TransactionRow }) {
   );
   const [categoryId, setCategoryId] = useState<number | null>(existing?.category_id ?? null);
   const [error, setError] = useState<string | null>(null);
+
+  const recentList = useTransactionList(40);
+  // the last few distinct payees, newest first: tapping one fills the form to save again
+  const recents: TransactionRow[] = [];
+  if (!existing) {
+    const seen = new Set<string>();
+    for (const r of recentList.data ?? []) {
+      const key = `${r.counterparty.trim().toLowerCase()}|${r.amount}|${r.direction}`;
+      if (!r.counterparty.trim() || seen.has(key)) continue;
+      seen.add(key);
+      recents.push(r);
+      if (recents.length === 5) break;
+    }
+  }
+  function fillFrom(r: TransactionRow) {
+    setAmount(String(r.amount));
+    setDirection(r.direction);
+    setChannel(r.channel);
+    setCounterparty(r.counterparty);
+  }
 
   const busy = add.isPending || update.isPending || remove.isPending;
   const catName = (c: { name_bn: string; name_en: string }) =>
@@ -96,8 +124,19 @@ export function TransactionForm({ existing }: { existing?: TransactionRow }) {
     });
     if (!ok) return;
     try {
-      await remove.mutateAsync();
-      toast.success(t("transactions.toast_deleted"));
+      const row = await remove.mutateAsync();
+      toast.success(
+        t("transactions.toast_deleted"),
+        row
+          ? {
+              undo: {
+                label: t("common.undo"),
+                onClick: () =>
+                  void restore.mutateAsync(row).catch(() => toast.error(t("common.error"))),
+              },
+            }
+          : undefined,
+      );
       router.push("/transactions");
     } catch {
       setError(t("common.error"));
@@ -106,6 +145,30 @@ export function TransactionForm({ existing }: { existing?: TransactionRow }) {
 
   return (
     <form onSubmit={submit} className="mx-auto max-w-xl space-y-4 pb-4" noValidate>
+      {recents.length > 0 && (
+        <section aria-labelledby="tx-recent" className="space-y-2">
+          <h2 id="tx-recent" className="text-muted-foreground px-1 text-[12.5px] font-bold">
+            {t("transactions.repeat_recent")}
+          </h2>
+          <ul className="flex flex-wrap gap-2">
+            {recents.map((r) => (
+              <li key={r.id}>
+                <button
+                  type="button"
+                  onClick={() => fillFrom(r)}
+                  className="bg-card border-hairline-strong tap inline-flex h-11 max-w-full items-center gap-2 rounded-full border px-4 text-sm font-semibold"
+                >
+                  <span className="truncate">{r.counterparty}</span>
+                  <span className="text-muted-foreground num shrink-0">
+                    {formatMoney(r.amount, i18n.language)}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section className="finance-card rise space-y-4 p-4 sm:p-5">
         <div
           role="group"

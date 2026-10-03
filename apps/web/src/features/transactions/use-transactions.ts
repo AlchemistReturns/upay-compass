@@ -171,13 +171,23 @@ export function useUpdateTransaction(id: string) {
   });
 }
 
+/** Deletes a payment and hands back the row as it was, so the delete can be undone. */
+async function deleteReturning(id: string): Promise<TransactionRow | null> {
+  const { data, error: readErr } = await supabase
+    .from("transactions")
+    .select(COLUMNS)
+    .eq("id", id)
+    .maybeSingle();
+  if (readErr) throw readErr;
+  const { error } = await supabase.from("transactions").delete().eq("id", id);
+  if (error) throw error;
+  return data ? ({ ...data, amount: Number(data.amount) } as TransactionRow) : null;
+}
+
 export function useDeleteTransaction(id: string) {
   const invalidate = useInvalidateMoney();
   return useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.from("transactions").delete().eq("id", id);
-      if (error) throw error;
-    },
+    mutationFn: () => deleteReturning(id),
     onSuccess: invalidate,
   });
 }
@@ -186,8 +196,19 @@ export function useDeleteTransaction(id: string) {
 export function useDeleteTransactionById() {
   const invalidate = useInvalidateMoney();
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("transactions").delete().eq("id", id);
+    mutationFn: (id: string) => deleteReturning(id),
+    onSuccess: invalidate,
+  });
+}
+
+/** Puts a deleted payment back exactly as it was (same id, time and category). */
+export function useRestoreTransaction() {
+  const { userId } = useAuth();
+  const invalidate = useInvalidateMoney();
+  return useMutation({
+    mutationFn: async (row: TransactionRow) => {
+      if (!userId) throw new Error("Not signed in");
+      const { error } = await supabase.from("transactions").insert({ ...row, user_id: userId });
       if (error) throw error;
     },
     onSuccess: invalidate,

@@ -52,10 +52,13 @@ export function useSaveBudget() {
       alert_threshold: number;
     }) => {
       if (!userId) throw new Error("Not signed in");
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("budgets")
-        .upsert({ user_id: userId, ...input }, { onConflict: "user_id,category_id" });
+        .upsert({ user_id: userId, ...input }, { onConflict: "user_id,category_id" })
+        .select("id")
+        .single();
       if (error) throw error;
+      return data.id as string;
     },
     onSuccess: after,
   });

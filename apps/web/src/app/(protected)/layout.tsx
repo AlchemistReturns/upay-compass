@@ -2,6 +2,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { BottomNav } from "@/components/bottom-nav";
 import { PageTransition } from "@/components/page-transition";
 import { Guard } from "@/features/auth/guard";
+import { VoiceFab } from "@/features/voice/voice-command-button";
 import { GamificationProvider } from "@/features/gamification/gamification-provider";
 
 export default function ProtectedLayout({ children }: LayoutProps<"/">) {
@@ -15,6 +16,7 @@ export default function ProtectedLayout({ children }: LayoutProps<"/">) {
             <PageTransition>{children}</PageTransition>
           </main>
         </div>
+        <VoiceFab />
         <BottomNav />
       </GamificationProvider>
     </Guard>

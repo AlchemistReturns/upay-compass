@@ -10,6 +10,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/features/auth/auth-provider";
 import { useCategories } from "@/features/categories/use-categories";
+import { useRefreshHealth } from "@/features/health/use-health";
 import type { TransactionRow } from "./types";
 
 const COLUMNS =
@@ -76,11 +77,16 @@ export function useTransactionsRealtime() {
 function useInvalidateMoney() {
   const { userId } = useAuth();
   const queryClient = useQueryClient();
-  return () =>
-    Promise.all([
+  const refreshHealth = useRefreshHealth();
+  return () => {
+    // The health score depends on income and spending, so recompute it after any change
+    // (best effort, in the background; the previous snapshot stays valid if this fails).
+    void refreshHealth();
+    return Promise.all([
       queryClient.invalidateQueries({ queryKey: ["dashboard", userId] }),
       queryClient.invalidateQueries({ queryKey: ["transactions", userId] }),
     ]);
+  };
 }
 
 export type TransactionInput = {

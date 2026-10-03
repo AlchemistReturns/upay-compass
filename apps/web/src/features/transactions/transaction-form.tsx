@@ -22,6 +22,7 @@ import type { TransactionRow } from "./types";
 import {
   useAddTransaction,
   useDeleteTransaction,
+  useRestoreTransaction,
   useTransactionList,
   useUpdateTransaction,
 } from "./use-transactions";
@@ -45,6 +46,7 @@ export function TransactionForm({ existing }: { existing?: TransactionRow }) {
   const add = useAddTransaction();
   const update = useUpdateTransaction(existing?.id ?? "");
   const remove = useDeleteTransaction(existing?.id ?? "");
+  const restore = useRestoreTransaction();
 
   const [amount, setAmount] = useState(existing ? String(existing.amount) : "");
   const [direction, setDirection] = useState<"in" | "out">(existing?.direction ?? "out");
@@ -122,8 +124,19 @@ export function TransactionForm({ existing }: { existing?: TransactionRow }) {
     });
     if (!ok) return;
     try {
-      await remove.mutateAsync();
-      toast.success(t("transactions.toast_deleted"));
+      const row = await remove.mutateAsync();
+      toast.success(
+        t("transactions.toast_deleted"),
+        row
+          ? {
+              undo: {
+                label: t("common.undo"),
+                onClick: () =>
+                  void restore.mutateAsync(row).catch(() => toast.error(t("common.error"))),
+              },
+            }
+          : undefined,
+      );
       router.push("/transactions");
     } catch {
       setError(t("common.error"));

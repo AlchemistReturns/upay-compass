@@ -68,8 +68,22 @@ export function BudgetForm({
     });
     if (!parsed.success) return setError(t("budgets.invalid"));
     try {
-      await save.mutateAsync(parsed.data);
-      toast.success(t("budgets.toast_saved"));
+      const id = await save.mutateAsync(parsed.data);
+      // undo puts back the earlier limit, or removes the budget if it was new
+      const undo = () =>
+        existing
+          ? save.mutateAsync({
+              category_id: existing.category_id,
+              limit_amount: existing.limit_amount,
+              alert_threshold: existing.alert_threshold,
+            })
+          : remove.mutateAsync(id);
+      toast.success(t("budgets.toast_saved"), {
+        undo: {
+          label: t("common.undo"),
+          onClick: () => void undo().catch(() => toast.error(t("common.error"))),
+        },
+      });
       onDone();
     } catch {
       setError(t("common.error"));
@@ -85,7 +99,19 @@ export function BudgetForm({
     if (!ok) return;
     try {
       await remove.mutateAsync(existing.budget_id);
-      toast.success(t("budgets.toast_deleted"));
+      toast.success(t("budgets.toast_deleted"), {
+        undo: {
+          label: t("common.undo"),
+          onClick: () =>
+            void save
+              .mutateAsync({
+                category_id: existing.category_id,
+                limit_amount: existing.limit_amount,
+                alert_threshold: existing.alert_threshold,
+              })
+              .catch(() => toast.error(t("common.error"))),
+        },
+      });
       onDone();
     } catch {
       setError(t("common.error"));

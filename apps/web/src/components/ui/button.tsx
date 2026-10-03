@@ -4,12 +4,12 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "cn";
 
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-full border border-transparent bg-clip-padding text-sm font-semibold whitespace-nowrap transition-[background-color,color,box-shadow,transform] duration-200 outline-none select-none focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:scale-[0.97] disabled:pointer-events-none disabled:opacity-45 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "group/button inline-flex shrink-0 items-center justify-center rounded-full border border-transparent bg-clip-padding text-sm font-semibold whitespace-nowrap tap [--tap-scale:0.965] outline-none select-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-45 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-[0_1px_2px_rgba(6,47,49,.18),0_8px_18px_-8px_rgba(13,75,76,.6)] hover:bg-brand-ink",
+          "bg-primary text-primary-foreground shadow-[0_1px_2px_rgba(6,47,49,.18),0_8px_18px_-8px_rgba(13,75,76,.6)] hover:bg-[color-mix(in_oklch,var(--primary),var(--foreground)_16%)] dark:shadow-[0_8px_20px_-10px_rgba(147,216,194,.35)]",
         lime: "bg-lime text-brand-ink shadow-[0_8px_18px_-10px_rgba(79,158,58,.7)] hover:bg-[#b4e176]",
         outline: "border-border bg-card text-foreground hover:bg-muted aria-expanded:bg-muted",
         secondary:
@@ -17,7 +17,7 @@ const buttonVariants = cva(
         ghost: "text-foreground hover:bg-muted aria-expanded:bg-muted",
         destructive:
           "bg-negative-soft text-destructive hover:bg-[color-mix(in_oklch,var(--negative-soft),var(--destructive)_10%)] focus-visible:ring-destructive/25",
-        onDark: "bg-white text-brand-ink hover:bg-lime-soft",
+        onDark: "bg-white text-brand-ink hover:bg-[#ecf8da]",
         darkGhost: "bg-white/10 text-on-dark ring-1 ring-white/20 hover:bg-white/16",
         link: "text-primary underline-offset-4 hover:underline",
       },

@@ -31,7 +31,7 @@ export function Avatar({
     <span
       aria-hidden
       className={cn(
-        "grid size-9 shrink-0 place-items-center rounded-full bg-[image:var(--gradient-teal)] text-[13px] font-bold text-lime ring-2 ring-white/80",
+        "grid size-9 shrink-0 place-items-center rounded-full bg-[image:var(--gradient-teal)] text-[13px] font-bold text-lime ring-2 ring-white/80 dark:ring-white/10",
         className,
       )}
     >

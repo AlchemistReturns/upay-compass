@@ -27,7 +27,7 @@ function Row({ tx, inset }: { tx: TransactionRow; inset: boolean }) {
       href={`/transactions/${tx.id}`}
       transitionTypes={NAV_FORWARD}
       className={cn(
-        "group flex min-h-[4.25rem] items-center gap-3.5 py-3 transition-colors hover:bg-[#f6faf4] active:bg-muted",
+        "group flex min-h-[4.25rem] items-center gap-3.5 py-3 transition-colors hover:bg-row-hover active:bg-muted",
         inset ? "rounded-2xl px-2.5" : "px-4",
       )}
     >
@@ -58,7 +58,7 @@ function Row({ tx, inset }: { tx: TransactionRow; inset: boolean }) {
         {formatSignedMoney(incoming ? tx.amount : -tx.amount, lang)}
       </div>
       <ChevronRight
-        className="text-muted-foreground/50 -mr-1 hidden size-4 shrink-0 transition-transform group-hover:translate-x-0.5 sm:block"
+        className="text-muted-foreground/50 ic-forward -mr-1 hidden size-4 shrink-0 sm:block"
         aria-hidden
       />
     </Link>
@@ -76,7 +76,7 @@ export function TransactionList({
   return (
     <ul
       className={cn(
-        "divide-y divide-[rgba(13,75,76,.07)]",
+        "divide-y divide-hairline",
         framed ? "finance-card overflow-hidden" : "-mx-2.5",
       )}
     >

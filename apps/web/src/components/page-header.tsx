@@ -13,9 +13,15 @@ import { useRealtimeInvalidate } from "@/features/realtime/use-realtime-invalida
 import { NAV_BACK, NAV_FORWARD } from "@/components/page-transition";
 import { cn } from "@/lib/utils";
 
-/** Shared look for every round button in the header toolbar. */
+/**
+ * A free-standing round toolbar button (page actions, back). Liquid glass, same height as the
+ * account cluster so the whole toolbar sits on one line.
+ */
 export const TOOLBAR_BUTTON =
-  "relative grid size-11 shrink-0 place-items-center rounded-full border border-[rgba(13,75,76,.08)] bg-card/85 text-foreground shadow-[0_1px_2px_rgba(6,47,49,.06)] backdrop-blur-md transition-[background-color,transform] duration-150 hover:bg-card active:scale-95 disabled:opacity-45";
+  "liquid liquid-btn size-12 shrink-0 text-foreground disabled:opacity-45 [&_svg]:size-5";
+
+/** Buttons inside the account cluster: 44px targets inside the 48px capsule. */
+const CLUSTER_BUTTON = "liquid-btn size-11 shrink-0";
 
 function NudgeBell() {
   const { t } = useTranslation();
@@ -23,16 +29,33 @@ function NudgeBell() {
   useRealtimeInvalidate("nudges", [["nudges"]]);
   const count = unread.data ?? 0;
 
+  // ring the bell once when a new alert arrives while the page is open (not on first load)
+  const previous = useRef<number | null>(null);
+  const [ring, setRing] = useState(0);
+  useEffect(() => {
+    if (!unread.isSuccess) return;
+    if (previous.current !== null && count > previous.current) setRing((n) => n + 1);
+    previous.current = count;
+  }, [count, unread.isSuccess]);
+
   return (
     <Link
       href="/nudges"
       transitionTypes={NAV_FORWARD}
       aria-label={count > 0 ? t("nudges.bell_unread", { count }) : t("nudges.title")}
-      className={TOOLBAR_BUTTON}
+      className={CLUSTER_BUTTON}
     >
-      <Bell className="size-[19px]" strokeWidth={1.9} aria-hidden />
+      <Bell
+        key={ring}
+        className={cn("ic-bell size-[20px]", ring > 0 && "is-ringing")}
+        strokeWidth={1.9}
+        aria-hidden
+      />
       {count > 0 && (
-        <span className="bg-destructive ring-background pop absolute -top-0.5 -right-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-bold text-white tabular-nums ring-2">
+        <span
+          key={count}
+          className="bg-destructive pop-spring absolute top-1 right-1 flex h-[17px] min-w-[17px] items-center justify-center rounded-full px-1 text-[10px] leading-none font-bold text-white tabular-nums shadow-[0_0_0_2px_var(--background)]"
+        >
           {count > 9 ? "9+" : count}
         </span>
       )}
@@ -41,28 +64,48 @@ function NudgeBell() {
 }
 
 /**
- * Every screen's header, iOS style: a large title in the page, and a slim sticky bar that
- * frosts over and shows the title once the large one scrolls away. `back` adds a back button;
- * `actions` are page-specific toolbar buttons (style them with TOOLBAR_BUTTON).
+ * Notifications, language and the account, grouped in one liquid-glass capsule (iOS-style
+ * toolbar group) so they read as one piece of the app rather than three loose buttons.
+ */
+function AccountCluster() {
+  const { session } = useAuth();
+  return (
+    <div className="liquid flex h-12 shrink-0 items-center gap-0 rounded-full p-0.5">
+      {session && <NudgeBell />}
+      <LanguageToggle className={CLUSTER_BUTTON} />
+      {session && <UserMenu triggerClassName={CLUSTER_BUTTON} />}
+    </div>
+  );
+}
+
+/**
+ * Every screen's header, iOS style: a large title in the page, and a toolbar that floats over
+ * the content. Once the large title scrolls away, a soft blurred edge fades in behind the
+ * toolbar (no hard line) and the title settles into it. `back` adds a back button; `actions`
+ * are page-specific toolbar buttons (style them with TOOLBAR_BUTTON).
  */
 export function PageHeader({
   title,
+  lead,
   subtitle,
   eyebrow,
+  eyebrowIcon,
   icon,
   actions,
   back,
 }: {
   title: string;
+  /** a lighter first line of the large title, e.g. "Good morning," */
+  lead?: string;
   subtitle?: string;
   /** small line above the title, e.g. today's date */
   eyebrow?: string;
+  eyebrowIcon?: React.ReactNode;
   icon?: React.ReactNode;
   actions?: React.ReactNode;
   back?: string;
 }) {
   const { t } = useTranslation();
-  const { session } = useAuth();
   const sentinel = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
 
@@ -83,15 +126,19 @@ export function PageHeader({
     <>
       {/* full-bleed across the content column (see the @container on the layout) */}
       <header
-        style={{ viewTransitionName: "page-toolbar" }}
-        className={cn(
-          "sticky top-0 z-30 mx-[calc(50%-50cqw)] px-[calc(50cqw-50%)] pt-[env(safe-area-inset-top)] transition-[background-color,box-shadow,backdrop-filter] duration-300",
-          scrolled
-            ? "bg-background/78 shadow-[0_1px_0_rgba(13,75,76,.08)] backdrop-blur-xl backdrop-saturate-150"
-            : "bg-transparent",
-        )}
+        data-vt="page-toolbar"
+        data-scrolled={scrolled || undefined}
+        className="sticky top-0 z-30 mx-[calc(50%-50cqw)] px-[calc(50cqw-50%)] pt-[env(safe-area-inset-top)]"
       >
-        <div className="flex h-16 items-center gap-2.5">
+        {/* scroll edge: tint + blur that fade out downward instead of ending in a line */}
+        <div
+          aria-hidden
+          className={cn(
+            "scroll-edge pointer-events-none absolute inset-x-0 top-0 -bottom-6 transition-opacity duration-300",
+            scrolled ? "opacity-100" : "opacity-0",
+          )}
+        />
+        <div className="relative flex h-[4.25rem] items-center gap-2">
           {back ? (
             <Link
               href={back}
@@ -99,43 +146,51 @@ export function PageHeader({
               aria-label={t("common.back")}
               className={TOOLBAR_BUTTON}
             >
-              <ChevronLeft className="size-5" strokeWidth={2.2} aria-hidden />
+              <ChevronLeft className="ic-back size-[22px]" strokeWidth={2.3} aria-hidden />
             </Link>
           ) : (
-            <Link href="/" aria-label="upay Compass" className="shrink-0 rounded-xl lg:hidden">
-              <BrandMark className="size-10" />
+            <Link
+              href="/"
+              aria-label="upay Compass"
+              className="brand-link tap shrink-0 rounded-[15px] lg:hidden"
+            >
+              <BrandMark className="size-11 shadow-[0_8px_18px_-10px_rgba(6,47,49,.7)]" />
             </Link>
           )}
           <div
             aria-hidden
             className={cn(
-              "min-w-0 flex-1 truncate text-[17px] font-bold tracking-tight transition-[opacity,transform] duration-300",
+              "min-w-0 flex-1 truncate pl-1 text-[17px] font-bold tracking-tight transition-[opacity,translate] duration-300",
               scrolled
                 ? "translate-y-0 opacity-100"
-                : "pointer-events-none translate-y-1 opacity-0",
+                : "pointer-events-none translate-y-1.5 opacity-0",
             )}
           >
-            {title}
+            {lead ? `${lead} ${title}` : title}
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {actions}
-            {session && <NudgeBell />}
-            <LanguageToggle className={TOOLBAR_BUTTON} />
-            {session && <UserMenu triggerClassName={TOOLBAR_BUTTON} />}
+            <AccountCluster />
           </div>
         </div>
       </header>
 
-      <div className="pt-2 pb-5 sm:pt-3 sm:pb-7">
+      <div className="pt-1.5 pb-5 sm:pt-3 sm:pb-7">
         {eyebrow && (
-          <p className="text-muted-foreground mb-1 px-0.5 text-[13px] font-semibold tracking-wide uppercase">
+          <p className="text-muted-foreground fade-in mb-1.5 flex items-center gap-1.5 px-0.5 text-[12.5px] font-semibold tracking-[0.06em] uppercase">
+            {eyebrowIcon}
             {eyebrow}
           </p>
         )}
         <div className="flex items-center gap-3">
           {icon && <span className="icon-chip size-12 rounded-2xl">{icon}</span>}
           <div className="min-w-0">
-            <h1 className="text-[1.875rem] leading-[1.15] font-extrabold tracking-[-0.025em] text-balance sm:text-[2.25rem]">
+            <h1 className="text-[1.875rem] leading-[1.12] font-extrabold tracking-[-0.025em] text-balance sm:text-[2.25rem]">
+              {lead && (
+                <span className="text-muted-foreground block text-[1.375rem] leading-tight font-semibold tracking-[-0.015em] sm:text-[1.625rem]">
+                  {lead}
+                </span>
+              )}
               {title}
             </h1>
             {subtitle && (

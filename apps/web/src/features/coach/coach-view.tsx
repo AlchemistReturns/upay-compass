@@ -125,7 +125,7 @@ function SuggestionSlider({
       : `linear-gradient(to right, ${edges.start ? "#000" : "transparent"}, #000 2.5rem, #000 calc(100% - 2.5rem), ${edges.end ? "#000" : "transparent"})`;
 
   const arrow =
-    "bg-card text-foreground hidden size-9 shrink-0 place-items-center rounded-full border border-[rgba(13,75,76,.1)] shadow-sm sm:grid";
+    "bg-card text-foreground tap hidden size-9 shrink-0 place-items-center rounded-full border border-hairline-strong shadow-sm sm:grid";
 
   return (
     <div className="flex items-center gap-1.5">
@@ -136,7 +136,7 @@ function SuggestionSlider({
           aria-label={t("coach.suggest_prev")}
           onClick={() => slide(-1)}
         >
-          <ChevronLeft className="size-4" aria-hidden />
+          <ChevronLeft className="ic-back size-4" aria-hidden />
         </button>
       )}
       <div
@@ -153,7 +153,7 @@ function SuggestionSlider({
             onClick={() => onPick(t(`coach.suggest_${s}`))}
             // keyboard users tabbing through still bring each chip into view
             onFocus={(e) => e.currentTarget.scrollIntoView({ block: "nearest", inline: "nearest" })}
-            className="bg-card/90 hover:bg-lime-soft min-h-11 shrink-0 snap-start rounded-full border border-[rgba(13,75,76,.1)] px-4 text-[13px] font-semibold backdrop-blur transition-colors active:scale-95 disabled:opacity-50"
+            className="bg-card/90 hover:bg-lime-soft tap min-h-11 shrink-0 snap-start rounded-full border border-hairline-strong px-4 text-[13px] font-semibold backdrop-blur disabled:opacity-50"
           >
             {t(`coach.suggest_${s}`)}
           </button>
@@ -166,7 +166,7 @@ function SuggestionSlider({
           aria-label={t("coach.suggest_next")}
           onClick={() => slide(1)}
         >
-          <ChevronRight className="size-4" aria-hidden />
+          <ChevronRight className="ic-forward size-4" aria-hidden />
         </button>
       )}
     </div>
@@ -180,8 +180,8 @@ function TypingDots() {
       {[0, 1, 2].map((i) => (
         <span
           key={i}
-          className="bg-primary/45 size-2 animate-bounce rounded-full"
-          style={{ animationDelay: `${i * 150}ms` }}
+          className="bg-primary/55 size-2 rounded-full [animation:typing_1.2s_ease-in-out_infinite]"
+          style={{ animationDelay: `${i * 160}ms` }}
         />
       ))}
     </span>
@@ -336,7 +336,7 @@ export function CoachView() {
               disabled={clear.isPending || busy}
               onClick={() => void clearChat()}
             >
-              <Trash2 className="size-[18px]" aria-hidden />
+              <Trash2 className="ic-delete size-[18px]" aria-hidden />
             </button>
           )
         }
@@ -418,10 +418,11 @@ export function CoachView() {
                   type="submit"
                   aria-label={t("coach.send")}
                   title={t("coach.send")}
-                  className="bg-primary text-lime hover:bg-brand-ink grid size-11 shrink-0 place-items-center rounded-full transition-[background-color,transform,opacity] active:scale-90 disabled:opacity-35"
+                  // shrinks back while there is nothing to send, springs up as soon as there is
+                  className="bg-brand-deep text-lime hover:bg-brand-ink tap grid size-11 shrink-0 place-items-center rounded-full disabled:scale-[.82] disabled:opacity-35"
                   disabled={busy || !online || !text.trim()}
                 >
-                  <ArrowUp className="size-5" strokeWidth={2.5} aria-hidden />
+                  <ArrowUp className="ic-up size-5" strokeWidth={2.5} aria-hidden />
                 </button>
               </form>
               <OfflineNote />

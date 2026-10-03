@@ -65,7 +65,7 @@ export function LearnView() {
             <Link
               href={`/learn/${top.mod.slug}`}
               transitionTypes={NAV_FORWARD}
-              className="surface-lime group rise flex flex-col justify-between gap-4 rounded-[2rem] p-5 shadow-[0_16px_34px_-20px_rgba(79,158,58,.9)] transition-transform active:scale-[0.985] sm:p-6"
+              className="surface-lime group rise flex flex-col justify-between gap-4 rounded-[2rem] p-5 shadow-[0_16px_34px_-20px_rgba(79,158,58,.9)] tap-soft sm:p-6"
               style={{ "--i": 1 } as React.CSSProperties}
             >
               <div>
@@ -86,10 +86,7 @@ export function LearnView() {
                 </span>
                 <span className="bg-brand-ink text-lime flex h-10 items-center gap-1.5 rounded-full pr-3 pl-4 text-[13px] font-bold">
                   {t("learn.start")}
-                  <ArrowRight
-                    className="size-4 transition-transform group-hover:translate-x-0.5"
-                    aria-hidden
-                  />
+                  <ArrowRight className="ic-forward size-4" aria-hidden />
                 </span>
               </div>
             </Link>
@@ -116,7 +113,7 @@ export function LearnView() {
                       </span>
                     </span>
                     <ChevronRight
-                      className="text-muted-foreground/60 size-5 shrink-0"
+                      className="ic-forward text-muted-foreground/60 size-5 shrink-0"
                       aria-hidden
                     />
                   </Link>
@@ -185,7 +182,7 @@ export function LearnView() {
                         </span>
                       </span>
                       <ChevronRight
-                        className="text-muted-foreground/60 size-5 shrink-0"
+                        className="ic-forward text-muted-foreground/60 size-5 shrink-0"
                         aria-hidden
                       />
                     </Link>

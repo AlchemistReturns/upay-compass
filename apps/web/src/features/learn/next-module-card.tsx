@@ -31,7 +31,7 @@ export function NextModuleCard() {
           {t(`learn.reason_${top.reason}`)}
         </div>
       </div>
-      <ChevronRight className="text-muted-foreground/60 size-5 shrink-0" aria-hidden />
+      <ChevronRight className="ic-forward text-muted-foreground/60 size-5 shrink-0" aria-hidden />
     </Link>
   );
 }

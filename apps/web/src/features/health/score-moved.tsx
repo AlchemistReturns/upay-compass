@@ -32,7 +32,7 @@ export function ScoreMoved({
         ) : changes.length === 0 ? (
           <p className="text-muted-foreground text-sm">{t("score.moved_none")}</p>
         ) : (
-          <ul className="divide-y divide-[rgba(13,75,76,.07)] text-sm">
+          <ul className="divide-y divide-hairline text-sm">
             {changes.map((c) => (
               <li key={c.component} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0">
                 <span

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Noto_Sans_Bengali, Plus_Jakarta_Sans } from "next/font/google";
 import { Providers } from "@/components/providers";
+import { THEME_SCRIPT } from "@/lib/theme-script";
 import "./globals.css";
 
 const jakarta = Plus_Jakarta_Sans({ variable: "--font-latin", subsets: ["latin"] });
@@ -19,15 +20,21 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f1f6ee" },
-    { media: "(prefers-color-scheme: dark)", color: "#062f31" },
-  ],
+  // light by default; lib/theme.ts updates this when the user picks another theme
+  themeColor: "#f1f6ee",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="bn" className={`${jakarta.variable} ${notoBengali.variable} h-full antialiased`}>
+    // the theme script sets the .dark class before hydration, hence the warning opt-out
+    <html
+      lang="bn"
+      suppressHydrationWarning
+      className={`${jakarta.variable} ${notoBengali.variable} h-full antialiased`}
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="flex min-h-full flex-col">
         <Providers>{children}</Providers>
       </body>

@@ -86,7 +86,7 @@ export default function TransactionsPage() {
             aria-label={t("transactions.add")}
             title={t("transactions.add")}
           >
-            <Plus className="size-5" aria-hidden />
+            <Plus className="ic-add size-5" aria-hidden />
           </Link>
         }
       />
@@ -101,9 +101,9 @@ export default function TransactionsPage() {
             <Link
               href="/transactions/new"
               transitionTypes={NAV_FORWARD}
-              className="bg-primary text-primary-foreground inline-flex h-12 items-center gap-2 rounded-full px-5 text-sm font-semibold"
+              className="bg-primary text-primary-foreground tap inline-flex h-12 items-center gap-2 rounded-full px-5 text-sm font-semibold"
             >
-              <Plus className="size-4" aria-hidden />
+              <Plus className="ic-add size-4" aria-hidden />
               {t("transactions.add")}
             </Link>
           }
@@ -113,8 +113,12 @@ export default function TransactionsPage() {
       {list.isSuccess && list.data.length > 0 && (
         <div className="space-y-5 pb-4">
           <div className="rise space-y-3">
-            <label className="finance-card focus-within:ring-ring/25 flex h-12 items-center gap-2.5 rounded-full px-4 transition-shadow focus-within:ring-4">
-              <Search className="text-muted-foreground size-[18px] shrink-0" aria-hidden />
+            <label className="finance-card group/search focus-within:ring-ring/25 flex h-12 items-center gap-2.5 rounded-full px-4 transition-shadow focus-within:ring-4">
+              {/* the lens tints and leans in while you type */}
+              <Search
+                className="text-muted-foreground group-focus-within/search:text-primary ic size-[18px] shrink-0 group-focus-within/search:scale-110 group-focus-within/search:-rotate-12"
+                aria-hidden
+              />
               <input
                 type="search"
                 value={query}
@@ -128,9 +132,9 @@ export default function TransactionsPage() {
                   type="button"
                   onClick={() => setQuery("")}
                   aria-label={t("common.close")}
-                  className="bg-muted text-muted-foreground -mr-1.5 grid size-8 place-items-center rounded-full"
+                  className="bg-muted text-muted-foreground tap pop-spring -mr-2 grid size-9 place-items-center rounded-full"
                 >
-                  <X className="size-4" aria-hidden />
+                  <X className="ic-close size-4" aria-hidden />
                 </button>
               )}
             </label>
@@ -145,10 +149,10 @@ export default function TransactionsPage() {
                     setFilter(id);
                   }}
                   className={cn(
-                    "h-11 rounded-full px-4 text-[13px] font-semibold transition-[background-color,color,box-shadow] active:scale-95",
+                    "tap h-11 rounded-full px-4 text-[13px] font-semibold",
                     filter === id
                       ? "bg-primary text-primary-foreground shadow-[0_6px_14px_-8px_rgba(13,75,76,.8)]"
-                      : "bg-card text-muted-foreground hover:text-foreground border border-[rgba(13,75,76,.1)]",
+                      : "bg-card text-muted-foreground hover:text-foreground border border-hairline-strong",
                   )}
                 >
                   {label}

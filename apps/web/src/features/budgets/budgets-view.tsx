@@ -89,7 +89,7 @@ export function BudgetsView() {
               title={t("budgets.add")}
               onClick={() => edit("new")}
             >
-              <Plus className="size-5" aria-hidden />
+              <Plus className="ic-add size-5" aria-hidden />
             </button>
           )
         }

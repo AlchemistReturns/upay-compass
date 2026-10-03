@@ -8,9 +8,13 @@ import {
   ArrowUpRight,
   LineChart,
   type LucideIcon,
+  MoonStar,
   Plus,
   Scale,
   Sparkles,
+  Sun,
+  Sunrise,
+  Sunset,
   Target,
   Wallet,
 } from "lucide-react";
@@ -58,7 +62,7 @@ function useGreeting() {
   const [now, setNow] = useState<Date | null>(null);
   // eslint-disable-next-line react-hooks/set-state-in-effect -- the clock is read after mount
   useEffect(() => setNow(new Date()), []);
-  if (!now) return { greeting: t("home.title"), date: undefined };
+  if (!now) return { greeting: t("home.title"), date: undefined, Icon: undefined };
   const hour = Number(
     new Intl.DateTimeFormat("en-GB", {
       hour: "numeric",
@@ -73,7 +77,16 @@ function useGreeting() {
     month: "long",
     timeZone: "Asia/Dhaka",
   }).format(now);
-  return { greeting: t(`home.greeting_${key}`), date };
+  // the sky over Dhaka right now: sunrise, sun, sunset, then the moon
+  const Icon =
+    hour >= 5 && hour < 9
+      ? Sunrise
+      : hour < 16 && hour >= 9
+        ? Sun
+        : hour >= 16 && hour < 19
+          ? Sunset
+          : MoonStar;
+  return { greeting: t(`home.greeting_${key}`), date, Icon };
 }
 
 /** Round shortcut on the balance panel. `primary` is the lime main action. */
@@ -99,13 +112,17 @@ function QuickAction({
     >
       <span
         className={cn(
-          "grid size-[3.25rem] place-items-center rounded-full transition-[background-color,transform] duration-200 group-active:scale-90",
+          "grid size-[3.25rem] place-items-center rounded-full transition-[background-color,scale] duration-500 ease-[var(--ease-spring)] group-active:scale-90 group-active:duration-100",
           primary
             ? "bg-lime text-brand-ink shadow-[0_10px_22px_-10px_rgba(195,234,140,.9)] group-hover:bg-[#cff09e]"
             : "bg-white/10 ring-1 ring-white/15 group-hover:bg-white/18",
         )}
       >
-        <Icon className="size-[21px]" strokeWidth={primary ? 2.5 : 2} aria-hidden />
+        <Icon
+          className={cn("size-[21px]", primary ? "ic-add" : "ic-pop")}
+          strokeWidth={primary ? 2.5 : 2}
+          aria-hidden
+        />
       </span>
       <span className="w-full truncate">{label}</span>
     </Link>
@@ -208,11 +225,11 @@ function AskCoach() {
   return (
     <Link
       href="/coach"
-      className="surface-lime group rise relative flex items-center gap-3.5 overflow-hidden rounded-[1.75rem] p-4 pr-3.5 shadow-[0_14px_30px_-18px_rgba(79,158,58,.8)] transition-transform duration-200 active:scale-[0.985]"
+      className="surface-lime group rise relative flex items-center gap-3.5 overflow-hidden rounded-[1.75rem] p-4 pr-3.5 shadow-[0_14px_30px_-18px_rgba(79,158,58,.8)] tap-soft"
       style={{ "--i": 1 } as React.CSSProperties}
     >
       <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[image:var(--gradient-teal)] text-lime shadow-[0_8px_18px_-10px_rgba(6,47,49,.8)]">
-        <Sparkles className="size-[22px]" aria-hidden />
+        <Sparkles className="ic-spark size-[22px]" aria-hidden />
       </span>
       <span className="min-w-0 flex-1">
         <span className="block text-[15px] font-bold">{t("dashboard.ask_coach")}</span>
@@ -220,8 +237,8 @@ function AskCoach() {
           “{t("coach.suggest_can_afford")}”
         </span>
       </span>
-      <span className="bg-brand-ink text-lime grid size-11 shrink-0 place-items-center rounded-full transition-transform duration-200 group-hover:translate-x-0.5">
-        <ArrowRight className="size-5" aria-hidden />
+      <span className="bg-brand-ink text-lime grid size-11 shrink-0 place-items-center rounded-full">
+        <ArrowRight className="ic-forward size-5" aria-hidden />
       </span>
     </Link>
   );
@@ -274,7 +291,7 @@ function Totals({
     <div
       aria-busy={stale || undefined}
       className={cn(
-        "finance-card grid grid-cols-3 divide-x divide-[rgba(13,75,76,.07)] py-4 transition-opacity duration-300",
+        "finance-card grid grid-cols-3 divide-x divide-hairline py-4 transition-opacity duration-300",
         stale && "opacity-60",
       )}
     >
@@ -307,7 +324,7 @@ export function Dashboard() {
   const { summary, month, byCategory, trend, balance } = useDashboard(period);
   const recent = useTransactionList(8);
   const lang = i18n.language;
-  const { greeting, date } = useGreeting();
+  const { greeting, date, Icon: SkyIcon } = useGreeting();
 
   useTransactionsRealtime();
   useAutoNudges(recent.isSuccess && recent.data.length > 0);
@@ -320,7 +337,17 @@ export function Dashboard() {
     <>
       <PageHeader
         eyebrow={date}
-        title={firstName ? `${greeting}, ${firstName}` : greeting}
+        eyebrowIcon={
+          SkyIcon && (
+            <SkyIcon
+              className="text-reward ic-spin-in size-4 [animation-delay:.2s]"
+              strokeWidth={2.2}
+              aria-hidden
+            />
+          )
+        }
+        lead={firstName ? `${greeting},` : undefined}
+        title={firstName ?? greeting}
         subtitle={noTransactions ? undefined : t("home.subtitle")}
       />
 

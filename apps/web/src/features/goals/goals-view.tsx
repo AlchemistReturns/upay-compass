@@ -154,7 +154,7 @@ export function GoalsView() {
               title={t("goals.new")}
               onClick={startNew}
             >
-              <Plus className="size-5" aria-hidden />
+              <Plus className="ic-add size-5" aria-hidden />
             </button>
           )
         }

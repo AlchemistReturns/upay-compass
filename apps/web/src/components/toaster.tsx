@@ -33,15 +33,16 @@ export const toast = {
 };
 
 const ICON = {
-  success: { Icon: Check, cls: "bg-lime text-brand-ink" },
-  error: { Icon: AlertCircle, cls: "bg-[#ff9b7d] text-[#3d0f05]" },
-  info: { Icon: Info, cls: "bg-white/15 text-on-dark" },
+  // each kind arrives its own way: success draws its tick, an error shakes, info just appears
+  success: { Icon: Check, cls: "bg-lime text-brand-ink", motion: "ic-draw" },
+  error: { Icon: AlertCircle, cls: "bg-[#ff9b7d] text-[#3d0f05]", motion: "ic-shake" },
+  info: { Icon: Info, cls: "bg-white/15 text-on-dark", motion: "pop-spring" },
 } as const;
 
 function ToastList() {
   const { toasts } = Toast.useToastManager();
   return toasts.map((t) => {
-    const { Icon, cls } = ICON[(t.type as ToastKind) ?? "info"] ?? ICON.info;
+    const { Icon, cls, motion } = ICON[(t.type as ToastKind) ?? "info"] ?? ICON.info;
     return (
       <Toast.Root
         key={t.id}
@@ -57,9 +58,11 @@ function ToastList() {
           "data-limited:opacity-0 data-limited:[transform:translateY(-40%)_scale(.94)] data-limited:blur-[2px]",
         )}
       >
-        <Toast.Content className="text-on-dark flex min-h-12 items-center gap-2.5 rounded-full border border-white/10 bg-[rgba(6,47,49,.86)] py-1.5 pr-2 pl-1.5 shadow-[0_18px_40px_-14px_rgba(6,47,49,.7),0_2px_6px_rgba(6,47,49,.2)] backdrop-blur-xl backdrop-saturate-150">
-          <span className={cn("grid size-8 shrink-0 place-items-center rounded-full", cls)}>
-            <Icon className="size-[17px]" strokeWidth={2.6} aria-hidden />
+        <Toast.Content className="text-on-dark flex min-h-12 items-center gap-2.5 rounded-full border border-white/10 bg-[rgba(6,47,49,.86)] dark:bg-[rgba(36,54,55,.86)] dark:border-white/[.12] py-1.5 pr-2 pl-1.5 shadow-[0_18px_40px_-14px_rgba(6,47,49,.7),0_2px_6px_rgba(6,47,49,.2)] backdrop-blur-xl backdrop-saturate-150">
+          <span
+            className={cn("pop-spring grid size-8 shrink-0 place-items-center rounded-full", cls)}
+          >
+            <Icon className={cn("size-[17px]", motion)} strokeWidth={2.6} aria-hidden />
           </span>
           <div className="min-w-0 pr-2">
             <Toast.Title className="truncate text-[14px] leading-5 font-semibold" />
@@ -68,7 +71,7 @@ function ToastList() {
             )}
           </div>
           {t.actionProps && (
-            <Toast.Action className="bg-lime text-brand-ink h-9 shrink-0 rounded-full px-4 text-[13px] font-bold transition-transform active:scale-95" />
+            <Toast.Action className="bg-lime text-brand-ink tap h-9 shrink-0 rounded-full px-4 text-[13px] font-bold" />
           )}
         </Toast.Content>
       </Toast.Root>
@@ -82,7 +85,7 @@ export function Toaster({ children }: { children: React.ReactNode }) {
       {children}
       <Toast.Portal>
         <Toast.Viewport
-          style={{ viewTransitionName: "toasts" }}
+          data-vt="toasts"
           className="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top)+0.75rem)] z-[70] mx-auto w-[min(30rem,calc(100vw-1.5rem))] outline-none [&>*]:pointer-events-auto"
         >
           <ToastList />

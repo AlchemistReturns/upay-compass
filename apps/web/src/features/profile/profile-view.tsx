@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Check, Languages, LogOut, Phone, ShieldCheck } from "lucide-react";
+import { Languages, LogOut, Phone, ShieldCheck, SunMoon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import { INCOME_TYPES, incomeSchema, type IncomeType } from "@compass/shared";
@@ -10,13 +10,14 @@ import { PageHeader } from "@/components/page-header";
 import { ErrorState, LoadingCards, Pill } from "@/components/compass";
 import { useSetLanguage } from "@/components/language-toggle";
 import { Button } from "@/components/ui/button";
+import { Segmented } from "@/components/segmented";
+import { ThemeSwitch } from "@/components/theme-switch";
 import { useConfirm } from "@/components/confirm";
 import { toast } from "@/components/toaster";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { formatShortDate } from "@/lib/format";
-import { cn } from "@/lib/utils";
 import { useAuth } from "@/features/auth/auth-provider";
 import { OfflineNote } from "@/features/pwa/offline-note";
 import { useOnline } from "@/features/pwa/use-online";
@@ -211,34 +212,24 @@ export function ProfileView() {
               <Languages className="text-primary size-[18px]" aria-hidden />
               {t("language.label")}
             </h2>
-            <div
-              role="radiogroup"
-              aria-labelledby="profile-lang"
-              className="grid grid-cols-2 gap-2 rounded-full bg-[#e3ece4] p-1"
-            >
-              {(["bn", "en"] as const).map((lng) => {
-                const active = i18n.language === lng;
-                return (
-                  <button
-                    key={lng}
-                    type="button"
-                    role="radio"
-                    aria-checked={active}
-                    lang={lng}
-                    onClick={() => setLanguage(lng)}
-                    className={cn(
-                      "flex min-h-11 items-center justify-center gap-1.5 rounded-full px-4 text-sm font-semibold transition-[background-color,box-shadow,color]",
-                      active
-                        ? "bg-card text-foreground shadow-[0_4px_12px_-4px_rgba(6,47,49,.3)]"
-                        : "text-muted-foreground hover:text-foreground",
-                    )}
-                  >
-                    {t(`language.${lng}`)}
-                    {active && <Check className="text-primary size-4" aria-hidden />}
-                  </button>
-                );
-              })}
-            </div>
+            <Segmented
+              label={t("language.label")}
+              value={i18n.language === "en" ? "en" : "bn"}
+              onSelect={(lng) => setLanguage(lng)}
+              options={(["bn", "en"] as const).map((lng) => ({
+                value: lng,
+                label: t(`language.${lng}`),
+                lang: lng,
+              }))}
+            />
+          </section>
+
+          <section className="finance-card space-y-3 p-5 sm:p-6" aria-labelledby="profile-theme">
+            <h2 id="profile-theme" className="flex items-center gap-2 text-[17px] font-bold">
+              <SunMoon className="text-primary size-[18px]" aria-hidden />
+              {t("appearance.title")}
+            </h2>
+            <ThemeSwitch />
           </section>
 
           <section className="finance-card space-y-3 p-5 sm:p-6">
@@ -271,7 +262,7 @@ export function ProfileView() {
           </section>
 
           <Button variant="destructive" className="w-full" onClick={() => void signOut()}>
-            <LogOut className="size-4" aria-hidden />
+            <LogOut className="ic-forward size-4" aria-hidden />
             {t("common.logout")}
           </Button>
           <p className="text-muted-foreground text-center text-xs">{t("common.simulated_note")}</p>

@@ -65,8 +65,9 @@ function AddMoneyForm({
           <button
             key={a}
             type="button"
+            aria-pressed={amount === String(a)}
             onClick={() => setAmount(String(a))}
-            className="bg-secondary text-secondary-foreground hover:bg-lime-soft num h-11 rounded-full px-4 text-[13px] font-bold transition-colors active:scale-95"
+            className="bg-secondary text-secondary-foreground hover:bg-lime-soft aria-pressed:bg-primary aria-pressed:text-primary-foreground tap num h-11 rounded-full px-4 text-[13px] font-bold"
           >
             {formatMoney(a, lang)}
           </button>
@@ -74,8 +75,9 @@ function AddMoneyForm({
         {remaining > 0 && (
           <button
             type="button"
+            aria-pressed={amount === String(Math.round(remaining))}
             onClick={() => setAmount(String(Math.round(remaining)))}
-            className="bg-lime-soft text-brand-ink hover:bg-lime num h-11 rounded-full px-4 text-[13px] font-bold transition-colors active:scale-95"
+            className="bg-lime-soft text-brand-ink hover:bg-lime aria-pressed:bg-lime aria-pressed:text-brand-ink dark:text-lime dark:hover:text-brand-ink tap num h-11 rounded-full px-4 text-[13px] font-bold"
           >
             {formatMoney(remaining, lang)}
           </button>
@@ -118,6 +120,8 @@ export function GoalCard({
   const [adding, setAdding] = useState(false);
   const [opens, setOpens] = useState(0);
   const [showHistory, setShowHistory] = useState(false);
+  // bumps on each contribution, so the ring can glow once to acknowledge it
+  const [cheer, setCheer] = useState(0);
 
   function undoContribution(id: string) {
     undo.mutateAsync(id).then(
@@ -129,6 +133,7 @@ export function GoalCard({
   function onAdded(added?: { id: string; amount: number }) {
     setAdding(false);
     if (!added) return;
+    setCheer((n) => n + 1);
     toast.success(
       t("goals.toast_added", { amount: formatMoney(added.amount, lang), title: goal.title }),
       { undo: { label: t("goals.undo"), onClick: () => undoContribution(added.id) } },
@@ -159,19 +164,29 @@ export function GoalCard({
       style={{ "--i": index + 1 } as React.CSSProperties}
     >
       <div className="flex items-center gap-4">
-        <Ring
-          value={pct}
-          size={72}
-          stroke={7}
-          color={done ? "var(--status-good)" : "var(--leaf)"}
-          track="var(--mint)"
-        >
-          {done ? (
-            <CircleCheck className="text-positive size-6" aria-hidden />
-          ) : (
-            <span className="num text-[15px] font-extrabold">{Math.round(pct)}%</span>
+        <div className="relative shrink-0 rounded-full">
+          {cheer > 0 && (
+            <span key={cheer} aria-hidden className="glow-ping absolute inset-0 rounded-full" />
           )}
-        </Ring>
+          <Ring
+            value={pct}
+            size={72}
+            stroke={7}
+            color={done ? "var(--status-good)" : "var(--leaf)"}
+            track="var(--mint)"
+          >
+            {done ? (
+              <CircleCheck className="text-positive ic-draw size-6" aria-hidden />
+            ) : (
+              <span
+                key={cheer}
+                className={cn("num text-[15px] font-extrabold", cheer > 0 && "ic-beat")}
+              >
+                {Math.round(pct)}%
+              </span>
+            )}
+          </Ring>
+        </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <h2 className="truncate text-[17px] font-bold">{goal.title}</h2>
@@ -264,7 +279,7 @@ export function GoalCard({
               setAdding(true);
             }}
           >
-            <Plus strokeWidth={2.5} aria-hidden />
+            <Plus className="ic-add" strokeWidth={2.5} aria-hidden />
             <span className="truncate">{t("goals.add_money")}</span>
           </Button>
         )}
@@ -278,13 +293,7 @@ export function GoalCard({
           <span className="bg-card num grid h-5 min-w-5 place-items-center rounded-full px-1 text-[11px]">
             {contributions.length}
           </span>
-          <ChevronDown
-            className={cn(
-              "-ml-0.5 size-4 transition-transform duration-300",
-              showHistory && "rotate-180",
-            )}
-            aria-hidden
-          />
+          <ChevronDown className={cn("ic-expand -ml-0.5 size-4")} aria-hidden />
         </Button>
         <Button
           variant="ghost"
@@ -295,7 +304,7 @@ export function GoalCard({
           disabled={remove.isPending || !online}
           onClick={() => void onDelete()}
         >
-          <Trash2 className="size-[18px]" aria-hidden />
+          <Trash2 className="ic-delete size-[18px]" aria-hidden />
         </Button>
       </div>
 
@@ -308,7 +317,7 @@ export function GoalCard({
         inert={!showHistory}
       >
         <div className="min-h-0 overflow-hidden">
-          <ul className="bg-muted/60 mt-3 divide-y divide-[rgba(13,75,76,.07)] overflow-hidden rounded-2xl text-sm">
+          <ul className="bg-muted/60 mt-3 divide-y divide-hairline overflow-hidden rounded-2xl text-sm">
             {contributions.length === 0 && (
               <li className="text-muted-foreground flex items-center gap-2 p-3.5">
                 <Target className="size-4" aria-hidden />

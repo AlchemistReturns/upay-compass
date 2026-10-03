@@ -69,7 +69,8 @@ export function RoundupCard({
             enabled ? "text-lime bg-[image:var(--gradient-teal)]" : "bg-secondary text-primary",
           )}
         >
-          <Coins className="size-[22px]" aria-hidden />
+          {/* the coin flips over when round-ups switch on or off */}
+          <Coins key={String(enabled)} className="ic-flip-in size-[22px]" aria-hidden />
         </span>
         <div className="min-w-0 flex-1 pt-0.5">
           <h2 className="text-[17px] font-bold">{t("goals.roundup_title")}</h2>
@@ -108,7 +109,7 @@ export function RoundupCard({
             id="roundup-goal"
             value={selected}
             disabled={!online || setRoundup.isPending}
-            className={cn(enabled && "border-brand-ink/10 bg-white/70")}
+            className={cn(enabled && "border-brand-ink/10")}
             onChange={(e) => {
               setChoice(e.target.value);
               if (enabled) void apply(true, e.target.value);

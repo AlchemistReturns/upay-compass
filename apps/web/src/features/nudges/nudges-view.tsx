@@ -26,7 +26,10 @@ const TYPE_STYLE: Record<string, { Icon: LucideIcon; tone: string }> = {
   budget_exceeded: { Icon: OctagonAlert, tone: "bg-negative-soft text-destructive" },
   overspend: { Icon: TrendingUp, tone: "bg-warning-soft text-warning-ink" },
   goal_behind: { Icon: Target, tone: "bg-secondary text-primary" },
-  bill_due: { Icon: CalendarClock, tone: "bg-[#e3f0fb] text-[#1f5f95]" },
+  bill_due: {
+    Icon: CalendarClock,
+    tone: "bg-[#e3f0fb] text-[#1f5f95] dark:bg-[rgba(110,170,230,.15)] dark:text-[#9ccaf4]",
+  },
   forecast_risk: { Icon: LineChart, tone: "bg-negative-soft text-destructive" },
 };
 const FALLBACK = { Icon: BellOff, tone: "bg-muted text-muted-foreground" };
@@ -58,7 +61,7 @@ export function NudgesView() {
                 })
               }
             >
-              <CheckCheck className="size-[18px]" aria-hidden />
+              <CheckCheck className="ic-pop size-[18px]" aria-hidden />
             </button>
           )
         }
@@ -118,7 +121,8 @@ export function NudgesView() {
                       {!n.read && (
                         <span
                           aria-hidden
-                          className="bg-leaf mt-1.5 size-2.5 shrink-0 rounded-full"
+                          // radiates once so a new alert is noticed, then sits still
+                          className="bg-leaf glow-ping relative mt-1.5 size-2.5 shrink-0 rounded-full"
                         />
                       )}
                     </Link>

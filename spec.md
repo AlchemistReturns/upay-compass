@@ -174,7 +174,7 @@ profiles(id uuid pk → auth.users, phone text, full_name text, language text de
          income_type text, monthly_income numeric, opening_balance numeric default 0,
          roundup_enabled boolean default false, roundup_goal_id uuid,  -- set only through set_roundup()
          voice_consent_at timestamptz,  -- consent to send voice recordings and spoken-command text to OpenAI (Phase 10)
-         coach_consent_at timestamptz,  -- consent to share a compact summary of the user's numbers with the AI coach  -- wallet balance = opening_balance + income - spend
+         coach_consent_at timestamptz,  -- consent to share a compact summary of the user's numbers with the AI coach  -- wallet balance = opening_balance + income - spend - savings balance
          onboarded boolean default false, role text default 'user')
 
 categories(id serial pk, key text unique, name_en text, name_bn text, icon text, is_essential boolean)
@@ -196,6 +196,11 @@ budgets(id uuid pk, user_id uuid, category_id int, limit_amount numeric,
 
 goals(id uuid pk, user_id uuid, title text, target_amount numeric, saved_amount numeric default 0,
       target_date date, status text default 'active')
+savings_entries(id uuid pk, user_id uuid, kind text,  -- deposit|withdrawal
+                amount numeric, created_at)
+  -- free savings (money held without a goal). RLS select own; written only by deposit_to_savings /
+  -- withdraw_from_savings, which check the balance. savings balance = goal contributions + free savings.
+
 goal_contributions(id uuid pk, goal_id uuid, user_id uuid, amount numeric, source text,  -- manual|roundup
                     transaction_id uuid,  -- set for round-ups; deleting the transaction removes its round-up
                     created_at)
@@ -308,9 +313,9 @@ create policy "own rows" on transactions for all
 
 Each component is normalized to 0-100 over the last 90 days, then weighted. The rules (all in `packages/shared/src/health.ts`, tested with hand-computed values):
 
-- **Savings rate:** (income - spending) / income, where transfers into the Savings category count as saving, not spending. 20% saved scores 100, linear from 0%.
+- **Savings rate:** explicit saving divided by income over the window. **Savings is its own balance**: money moved into the savings account (a deposit, a goal contribution or a round-up) leaves the wallet, and payments filed under the Savings category (for example a DPS) count as saving too; saving is measured from these, not from whatever was left unspent. 20% of income put aside scores 100, linear from 0%. Withdrawals reduce it, never below zero.
 - **Budget adherence:** average over this month's budgets; within the limit scores 100, 50% over scores 0.
-- **Emergency buffer:** wallet balance divided by a month of essential spending, measured on a **monthly basis from what was logged, with no scaling**: the average of the complete calendar months (Bangladesh time, up to three), or, until one has completed, this month's essentials so far, marked "this month so far" on the screen. A short history is never multiplied up to a month (a day of essentials used to be multiplied by 30 and scored the buffer near zero). 3 months scores 100.
+- **Emergency buffer:** (wallet balance + savings balance) divided by a month of essential spending, measured on a **monthly basis from what was logged, with no scaling**: the average of the complete calendar months (Bangladesh time, up to three), or, until one has completed, this month's essentials so far, marked "this month so far" on the screen. A short history is never multiplied up to a month (a day of essentials used to be multiplied by 30 and scored the buffer near zero). 3 months scores 100.
 - **Income stability:** coefficient of variation of income across the last three **complete calendar months** (Bangladesh time; months from the first transaction's month onward are skipped); 0% variation scores 100, 50% or more scores 0. (Rolling 30-day windows were used until Phase 7 and mis-scored steady monthly income; see F18.)
 - A component that cannot be measured yet (no income, no budgets, under two complete months) counts as a neutral 50 and is labelled as such. Confidence is "low" under 15 transactions or 28 days of history, and the screen says so.
 
@@ -333,7 +338,7 @@ A component without enough history counts as a neutral 50 and is labelled. **Ass
 
 **Forecast (F10).** Detect recurring income and bills by interval and amount similarity, project 30-day balance, flag days where balance dips under a safety buffer. Seasonal-naive baseline first; model upgrade only if it measurably improves error.
 
-**Round-up (F8).** Each outgoing transaction rounds up to the next ৳10; the difference is credited to the chosen goal (simulated, opt-in, reversible). It is done by a database trigger, so ingested and manual payments behave the same; a payment already on a multiple of 10 sets nothing aside. It earmarks money inside the demo: the wallet balance is not reduced.
+**Round-up (F8).** Each outgoing transaction rounds up to the next ৳10; the difference is credited to the chosen goal (simulated, opt-in, reversible). It is done by a database trigger, so ingested and manual payments behave the same; a payment already on a multiple of 10 sets nothing aside. Round-ups move money from the wallet into the savings account (the wallet balance is reduced), like every other contribution.
 
 **AI Coach (F11).**
 - Edge Function builds a compact context: profile, 30-day summary, budgets, goals, score. No raw PII.
@@ -957,6 +962,16 @@ Small changes to first-run and everyday entry, no new backend.
 - **Categorizer limit.** `categorize-transaction` had none.
 - **Read-aloud by id.** See `voice-speak` above.
 - **Still open:** one item in a categorizer batch can influence others (low impact, output is limited to the category list); goal titles and chat text can steer the person's own coach; no spend ceiling beyond the per-user limits, so set a hard monthly budget on the OpenAI project.
+
+---
+
+### Explicit savings (after the score review)
+
+- **Savings is a separate balance.** Money put into the savings account leaves the wallet: `wallet = opening + in − out − savings`, and `savings = goal contributions + free savings`. Goals are funded from the wallet (an `insufficient_balance` error if it cannot cover it); round-ups move money the same way; free savings can be withdrawn, money allocated to a goal is freed by undoing its contribution.
+- **Score.** The savings rate is the explicit saving over the window divided by income (payments filed under Savings, goal contributions, round-ups and deposits, less withdrawals). The emergency buffer counts the wallet and the savings account together, so moving money into savings never lowers it. Readiness "savings consistency" counts a month with a deposit as well as a goal contribution.
+- **Existing accounts.** Because the balance is derived, existing goal contributions and round-ups now come out of the wallet at once (they used to only earmark money). All data is simulated.
+- **UI.** A Savings card on Goals (total, in goals, not in a goal, Add to savings, Withdraw) and a "Plus ৳X in savings" line under the wallet balance on Home.
+- **Verified:** 9 database tests (deposit, over-balance, goal funding, withdraw only free savings, undo, health inputs, no forging) that re-run on the same stack, health unit tests for the explicit rate and the combined buffer, `audit:rls`, and a browser run (deposit, refusal when the wallet cannot cover it, Home shows the lower wallet and the savings line). Two more local test accounts (`01700000005`, `01700000006`) give the savings and buffer tests their own state.
 
 ---
 

@@ -23,7 +23,7 @@ import { useTranslation } from "react-i18next";
 import { detectReplyLanguage } from "@compass/shared";
 import { useVoiceInput } from "@/features/voice/use-voice-input";
 import { COACH_PREFILL_KEY } from "@/features/voice/voice-sheet";
-import { useSpeechSynthesis } from "@/features/voice/use-speech-synthesis";
+import { useSpeak } from "@/features/voice/use-speak";
 import { OfflineNote } from "@/features/pwa/offline-note";
 import { useOnline } from "@/features/pwa/use-online";
 import { PageHeader, TOOLBAR_BUTTON } from "@/components/page-header";
@@ -309,7 +309,7 @@ function ListenButton({
   id: string;
   text: string;
   appLang: "bn" | "en";
-  tts: ReturnType<typeof useSpeechSynthesis>;
+  tts: ReturnType<typeof useSpeak>;
 }) {
   const { t } = useTranslation();
   // an answer is in the language of the question; the app language only breaks a tie
@@ -321,10 +321,13 @@ function ListenButton({
       type="button"
       aria-pressed={speaking}
       aria-label={speaking ? t("coach.stop_listening") : t("coach.listen")}
-      onClick={() => (speaking ? tts.stop() : tts.speak(text, id, lang))}
+      disabled={tts.loadingId === id}
+      onClick={() => (speaking ? tts.stop() : void tts.speak(text, id, lang))}
       className="text-primary mt-2 -mb-1 flex min-h-11 items-center gap-1.5 text-[13px] font-semibold"
     >
-      {speaking ? (
+      {tts.loadingId === id ? (
+        <Loader2 className="size-4 animate-spin" aria-hidden />
+      ) : speaking ? (
         <Square className="size-3.5" fill="currentColor" aria-hidden />
       ) : (
         <Volume2 className="size-4" aria-hidden />
@@ -347,7 +350,7 @@ export function CoachView() {
   const [declined, setDeclined] = useState(false);
   const bottom = useRef<HTMLDivElement>(null);
   const confirm = useConfirm();
-  const tts = useSpeechSynthesis();
+  const tts = useSpeak((problem) => toast.error(t(`coach.voice_problem_${problem}`)));
   const stt = useVoiceInput({
     lang: appLang,
     onTranscript: (spoken) => setText(spoken),

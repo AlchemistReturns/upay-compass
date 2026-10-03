@@ -451,3 +451,6 @@ verify_jwt = false
 
 [functions.voice-command]
 verify_jwt = false
+
+[functions.voice-speak]
+verify_jwt = false

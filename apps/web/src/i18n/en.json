@@ -591,7 +591,7 @@
   },
   "voice": {
     "consent_title": "Send your voice to OpenAI?",
-    "consent_body": "To understand speech in any browser, your recording is sent to OpenAI to be turned into text, and the words of a spoken command may name a shop or person. Recordings are not stored. You can keep typing instead.",
+    "consent_body": "To understand speech in any browser, your recording is sent to OpenAI to be turned into text. The words of a spoken command, and the names of shops you often pay (to help spell them), are also sent to OpenAI. They may name a shop or a person. Recordings are not stored. You can keep typing instead.",
     "consent_accept": "I agree",
     "open": "Voice commands",
     "title": "Say it, then confirm",

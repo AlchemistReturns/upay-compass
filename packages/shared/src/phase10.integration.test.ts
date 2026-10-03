@@ -146,6 +146,16 @@ describe.skipIf(!url || !anon)("phase 10: voice commands", () => {
   }, 60_000);
 
   it("removal returns only the caller's own payments, never the model's pick or anyone else's", async () => {
+    // other suites reset this account, so make sure there is a payment to find
+    const seeded = await a.client.from("transactions").insert({
+      user_id: a.id,
+      amount: 42,
+      direction: "out",
+      channel: "merchant",
+      counterparty: "Voice test",
+      occurred_at: new Date().toISOString(),
+    });
+    expect(seeded.error).toBeNull();
     const mine = await a.client.from("transactions").select("id");
     const mineIds = new Set((mine.data ?? []).map((t) => t.id));
     const theirs = await b.client.from("transactions").select("id");
@@ -173,5 +183,58 @@ describe.skipIf(!url || !anon)("phase 10: voice commands", () => {
       const text = JSON.stringify(row.detail);
       expect(text).not.toMatch(/tea|Rahim|delete everything|500/i);
     }
+  });
+});
+
+/** Server voice for reading answers aloud: same consent and limits as the other voice functions. */
+describe.skipIf(!url || !anon)("phase 10: reading aloud on the server", () => {
+  let a: TestUser;
+
+  beforeAll(async () => {
+    a = await signIn("+8801700000004");
+  });
+
+  const speak = async (body: Record<string, unknown>, token?: string) =>
+    fetch(`${url}/functions/v1/voice-speak`, {
+      method: "POST",
+      headers: {
+        apikey: anon!,
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(body),
+    });
+  const tokenOf = async () => (await a.client.auth.getSession()).data.session!.access_token;
+
+  it("refuses without a token and without consent", async () => {
+    expect((await speak({ text: "hello", language: "en" })).status).toBe(401);
+    await a.client.from("profiles").update({ voice_consent_at: null }).eq("id", a.id);
+    expect((await speak({ text: "hello", language: "en" }, await tokenOf())).status).toBe(403);
+  });
+
+  it("returns audio for a short answer, and refuses an empty, over-long or wrong-language request", async () => {
+    await a.client
+      .from("profiles")
+      .update({ voice_consent_at: new Date().toISOString() })
+      .eq("id", a.id);
+    const token = await tokenOf();
+    const ok = await speak({ text: "আপনার ওয়ালেটে ১,৮০০ টাকা আছে।", language: "bn" }, token);
+    expect(ok.status).toBe(200);
+    expect(ok.headers.get("content-type")).toContain("audio/mpeg");
+    expect((await ok.arrayBuffer()).byteLength).toBeGreaterThan(2000);
+    expect((await speak({ text: "", language: "en" }, token)).status).toBe(400);
+    expect((await speak({ text: "x".repeat(1300), language: "en" }, token)).status).toBe(400);
+    expect((await speak({ text: "hello", language: "fr" }, token)).status).toBe(400);
+  }, 60_000);
+
+  it("the audit entry records the length and language, never the text", async () => {
+    const { data } = await a.client
+      .from("audit_log")
+      .select("detail")
+      .eq("action", "voice_speak")
+      .order("created_at", { ascending: false })
+      .limit(1);
+    const detail = data![0]!.detail as Record<string, unknown>;
+    expect(Object.keys(detail).sort()).toEqual(["chars", "language", "ok"]);
   });
 });

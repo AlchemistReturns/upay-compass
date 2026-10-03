@@ -11,8 +11,16 @@ export type HealthInputs = {
   historyDays: number;
   /** Money in over the window. */
   income: number;
-  /** Money out over the window, excluding transfers into savings. */
+  /** Money out over the window, excluding payments filed under Savings. */
   spend: number;
+  /**
+   * Explicit saving over the window: payments filed under Savings plus money put into the savings
+   * account (goal contributions, round-ups, deposits) less withdrawals. Saving is something the
+   * person does on purpose, so it is measured directly, not as whatever was left unspent.
+   */
+  saved: number;
+  /** What the savings account holds now (goal money and free savings). */
+  savingsBalance: number;
   /** Money out in essential categories over the window (not used by the buffer any more). */
   essentialSpend: number;
   /** Essential spending per complete calendar month (Bangladesh time), newest first (up to 3). */
@@ -21,7 +29,7 @@ export type HealthInputs = {
   essentialThisMonth: number;
   /** Income per complete calendar month (Bangladesh time), newest first (up to 3). */
   incomeBuckets: number[];
-  /** Current wallet balance. */
+  /** Current wallet balance (what is left to spend; savings has already left it). */
   balance: number;
   /** This month's budgets with spending so far. */
   budgets: { categoryId: number; limit: number; spent: number }[];
@@ -88,7 +96,7 @@ const unavailable = (key: ComponentKey): Component => ({
 
 function savingsComponent(i: HealthInputs): Component {
   if (i.income <= 0) return unavailable("savings");
-  const rate = (i.income - i.spend) / i.income;
+  const rate = Math.max(0, i.saved) / i.income;
   return {
     score: clamp01(rate / SAVINGS_TARGET_RATE) * 100,
     weight: HEALTH_WEIGHTS.savings,
@@ -133,7 +141,9 @@ export function monthlyEssential(
 function bufferComponent(i: HealthInputs): Component {
   const monthly = monthlyEssential(i);
   if (!monthly) return unavailable("buffer");
-  const months = Math.max(0, i.balance) / monthly.amount;
+  // an emergency fund is liquid reserves: the wallet and the savings account together, so moving
+  // money into savings never lowers the buffer
+  const months = Math.max(0, i.balance + i.savingsBalance) / monthly.amount;
   return {
     score: clamp01(months / BUFFER_TARGET_MONTHS) * 100,
     weight: HEALTH_WEIGHTS.buffer,
@@ -170,7 +180,7 @@ function buildActions(i: HealthInputs, c: Record<ComponentKey, Component>): Heal
 
   if (c.savings.available && c.savings.score < 100) {
     const extraMonthly =
-      Math.max(0, SAVINGS_TARGET_RATE * i.income - (i.income - i.spend)) / months;
+      Math.max(0, SAVINGS_TARGET_RATE * i.income - Math.max(0, i.saved)) / months;
     candidates.push({
       shortfall: shortfall("savings"),
       action: {
@@ -216,7 +226,10 @@ function buildActions(i: HealthInputs, c: Record<ComponentKey, Component>): Heal
         params: {
           months: round1(c.buffer.raw ?? 0),
           targetMonths: BUFFER_TARGET_MONTHS,
-          missing: ceilTo(Math.max(0, BUFFER_TARGET_MONTHS * monthlyEssential - i.balance), 100),
+          missing: ceilTo(
+            Math.max(0, BUFFER_TARGET_MONTHS * monthlyEssential - (i.balance + i.savingsBalance)),
+            100,
+          ),
         },
       },
     });
@@ -271,6 +284,8 @@ export function parseHealthInputs(raw: unknown): HealthInputs {
     historyDays: Math.max(1, n(r.history_days)),
     income: n(r.income),
     spend: n(r.spend),
+    saved: n(r.saved),
+    savingsBalance: n(r.savings_balance),
     essentialSpend: n(r.essential_spend),
     essentialMonths: (Array.isArray(r.essential_months) ? r.essential_months : []).map(n),
     essentialThisMonth: n(r.essential_this_month),

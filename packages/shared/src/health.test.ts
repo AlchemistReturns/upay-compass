@@ -6,6 +6,8 @@ const base: HealthInputs = {
   historyDays: 90,
   income: 90000,
   spend: 60000,
+  saved: 18000, // 20% of income
+  savingsBalance: 0,
   essentialSpend: 30000,
   essentialMonths: [10000, 10000, 10000],
   essentialThisMonth: 4000,
@@ -30,7 +32,8 @@ describe("computeHealthScore", () => {
     const r = computeHealthScore({
       ...base,
       income: 30000,
-      spend: 27000, // saved 10% -> half of the 20% target = 50
+      spend: 27000,
+      saved: 3000, // saved 10% -> half of the 20% target = 50
       essentialMonths: [6000, 6000, 6000], // 6000 a month
       balance: 3000, // half a month of buffer -> 0.5 / 3 = 16.67
       budgets: [{ categoryId: 7, limit: 1000, spent: 1250 }], // 25% over -> 50
@@ -49,6 +52,7 @@ describe("computeHealthScore", () => {
       ...base,
       income: 30000,
       spend: 27000,
+      saved: 3000,
       essentialMonths: [6000, 6000, 6000],
       balance: 3000,
       budgets: [{ categoryId: 7, limit: 1000, spent: 1250 }],
@@ -74,6 +78,8 @@ describe("computeHealthScore", () => {
       historyDays: 5,
       income: 0,
       spend: 200,
+      saved: 0,
+      savingsBalance: 0,
       essentialSpend: 0,
       essentialMonths: [],
       essentialThisMonth: 0,
@@ -96,6 +102,7 @@ describe("computeHealthScore", () => {
     const r = computeHealthScore({
       ...base,
       spend: 200000,
+      saved: -5000, // withdrew more than was put in
       balance: -5000,
       budgets: [{ categoryId: 1, limit: 100, spent: 900 }],
     });
@@ -106,9 +113,9 @@ describe("computeHealthScore", () => {
     expect(r.score).toBeLessThanOrEqual(100);
   });
 
-  it("improves monotonically as spending falls", () => {
-    const scores = [80000, 70000, 60000, 50000].map(
-      (spend) => computeHealthScore({ ...base, spend }).score,
+  it("improves monotonically as saving rises", () => {
+    const scores = [0, 4000, 9000, 18000].map(
+      (saved) => computeHealthScore({ ...base, saved }).score,
     );
     expect([...scores].sort((a, b) => a - b)).toEqual(scores);
   });
@@ -120,7 +127,7 @@ describe("diffHealth", () => {
       ...base,
       budgets: [{ categoryId: 1, limit: 1000, spent: 1250 }],
     });
-    const after = computeHealthScore({ ...base, spend: 80000 });
+    const after = computeHealthScore({ ...base, saved: 0 });
     const diff = diffHealth(before, after);
     const budget = diff.find((d) => d.component === "budget")!;
     expect(budget).toEqual({ component: "budget", from: 50, to: 100, points: 12.5 });
@@ -142,6 +149,8 @@ describe("parseHealthInputs", () => {
       history_days: 30,
       income: "1000.5",
       spend: 400,
+      saved: 120,
+      savings_balance: 80,
       essential_spend: 200,
       essential_months: [100, 90],
       essential_this_month: 30,
@@ -154,6 +163,8 @@ describe("parseHealthInputs", () => {
       historyDays: 30,
       income: 1000.5,
       spend: 400,
+      saved: 120,
+      savingsBalance: 80,
       essentialSpend: 200,
       essentialMonths: [100, 90],
       essentialThisMonth: 30,
@@ -239,11 +250,55 @@ describe("buffer on a monthly basis", () => {
       ...fresh,
       income: 25000,
       spend: 24000,
+      saved: 1000,
       balance: 1000,
       essentialThisMonth: 100,
     });
     const tip = r.actions.find((a) => a.id === "save_more");
     // needs 5,000 saved to reach 20%, has 1,000: 4,000 more, not 4,000 x 30
     expect(tip?.params.extraMonthly).toBe(4000);
+  });
+});
+
+describe("explicit savings", () => {
+  it("measures saving that was put aside, not whatever was left unspent", () => {
+    // spent almost nothing, but never moved anything into savings: no saving
+    const idle = computeHealthScore({ ...base, income: 25000, spend: 1000, saved: 0 });
+    expect(idle.components.savings.raw).toBe(0);
+    expect(idle.components.savings.score).toBe(0);
+    // 5,000 of 25,000 put aside is exactly the 20% target
+    const target = computeHealthScore({ ...base, income: 25000, spend: 20000, saved: 5000 });
+    expect(target.components.savings.raw).toBeCloseTo(0.2, 5);
+    expect(target.components.savings.score).toBe(100);
+    // half of the target is half the marks
+    const half = computeHealthScore({ ...base, income: 25000, saved: 2500 });
+    expect(half.components.savings.score).toBeCloseTo(50, 5);
+  });
+
+  it("never goes below zero when more was withdrawn than put in", () => {
+    const r = computeHealthScore({ ...base, saved: -4000 });
+    expect(r.components.savings.raw).toBe(0);
+    expect(r.components.savings.score).toBe(0);
+  });
+
+  it("the buffer counts the savings account as well as the wallet", () => {
+    // 6,000 a month of essentials; 6,000 in the wallet and 6,000 saved is two months
+    const r = computeHealthScore({
+      ...base,
+      balance: 6000,
+      savingsBalance: 6000,
+      essentialMonths: [6000, 6000, 6000],
+    });
+    expect(r.components.buffer.raw).toBeCloseTo(2, 5);
+    // moving money into savings leaves the buffer where it was
+    const before = computeHealthScore({ ...base, balance: 12000, savingsBalance: 0 });
+    const after = computeHealthScore({ ...base, balance: 4000, savingsBalance: 8000 });
+    expect(after.components.buffer.score).toBeCloseTo(before.components.buffer.score, 5);
+  });
+
+  it("tells the person how much more to put aside to reach the target", () => {
+    const r = computeHealthScore({ ...base, income: 30000, saved: 3000, historyDays: 30 });
+    const tip = r.actions.find((a) => a.id === "save_more");
+    expect(tip?.params).toMatchObject({ ratePct: 10, targetPct: 20, extraMonthly: 3000 });
   });
 });

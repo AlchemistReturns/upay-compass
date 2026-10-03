@@ -10,7 +10,6 @@ import { UserMenu } from "@/components/user-menu";
 import { useAuth } from "@/features/auth/auth-provider";
 import { useUnreadNudgeCount } from "@/features/nudges/use-nudges";
 import { useRealtimeInvalidate } from "@/features/realtime/use-realtime-invalidate";
-import { VoiceCommandButton } from "@/features/voice/voice-command-button";
 import { NAV_BACK, NAV_FORWARD } from "@/components/page-transition";
 import { cn } from "@/lib/utils";
 
@@ -65,17 +64,123 @@ function NudgeBell() {
 }
 
 /**
- * Notifications, language and the account, grouped in one liquid-glass capsule (iOS-style
- * toolbar group) so they read as one piece of the app rather than three loose buttons.
+ * Open-state classes for the account capsule. `data-open` is set from pointer events (mouse
+ * hover, or a first tap on a phone), so it works whatever the device reports about `:hover`.
+ * It also opens on keyboard focus, and stays open while the account menu is open.
+ */
+const OPEN = {
+  tray: "group-data-[open]/account:w-[5.5rem] group-has-[:focus-visible]/account:w-[5.5rem] group-has-[[data-popup-open]]/account:w-[5.5rem]",
+  item: "group-data-[open]/account:translate-x-0 group-data-[open]/account:scale-100 group-data-[open]/account:opacity-100 group-has-[:focus-visible]/account:translate-x-0 group-has-[:focus-visible]/account:scale-100 group-has-[:focus-visible]/account:opacity-100 group-has-[[data-popup-open]]/account:translate-x-0 group-has-[[data-popup-open]]/account:scale-100 group-has-[[data-popup-open]]/account:opacity-100",
+  hide: "group-data-[open]/account:scale-0 group-has-[:focus-visible]/account:scale-0 group-has-[[data-popup-open]]/account:scale-0",
+};
+
+/** How long the tray lingers after the pointer leaves, so brushing past does not flicker it. */
+const CLOSE_DELAY_MS = 220;
+
+/** One button in the sliding tray; `order` staggers them so they arrive right to left. */
+function TrayItem({ order, children }: { order: number; children: React.ReactNode }) {
+  return (
+    <div
+      style={{ transitionDelay: `${order * 40}ms` }}
+      className={cn(
+        "translate-x-3 scale-75 opacity-0 transition-[translate,scale,opacity] duration-[420ms] ease-[var(--ease-spring)]",
+        OPEN.item,
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+/**
+ * The account avatar in a liquid-glass capsule. Notifications and language slide out to its
+ * left: on hover with a mouse, on keyboard focus, and on a phone with the first tap on the
+ * avatar (a second tap opens the account menu; tapping anywhere else tucks them away again).
+ * Voice lives in the floating microphone, not here.
  */
 function AccountCluster() {
   const { session } = useAuth();
+  const unread = useUnreadNudgeCount();
+  const hasUnread = (unread.data ?? 0) > 0;
+  const [open, setOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const cluster = useRef<HTMLDivElement>(null);
+  const closeTimer = useRef<number | undefined>(undefined);
+  const lastPointer = useRef<string>("mouse");
+  useEffect(() => () => window.clearTimeout(closeTimer.current), []);
+
+  // a tap outside the capsule tucks the tray away (a mouse closes it by leaving)
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => {
+      if (e.pointerType === "mouse" || cluster.current?.contains(e.target as Node)) return;
+      setOpen(false);
+    };
+    document.addEventListener("pointerdown", onDown);
+    return () => document.removeEventListener("pointerdown", onDown);
+  }, [open]);
+
+  if (!session) {
+    return (
+      <div className="liquid flex h-12 shrink-0 items-center rounded-full p-0.5">
+        <LanguageToggle className={CLUSTER_BUTTON} />
+      </div>
+    );
+  }
+
   return (
-    <div className="liquid flex h-12 shrink-0 items-center gap-0 rounded-full p-0.5">
-      {session && <VoiceCommandButton className={CLUSTER_BUTTON} />}
-      {session && <NudgeBell />}
-      <LanguageToggle className={CLUSTER_BUTTON} />
-      {session && <UserMenu triggerClassName={CLUSTER_BUTTON} />}
+    <div
+      ref={cluster}
+      data-open={open || undefined}
+      onPointerDownCapture={(e) => {
+        lastPointer.current = e.pointerType;
+      }}
+      onPointerEnter={(e) => {
+        if (e.pointerType !== "mouse" && e.pointerType !== "pen") return;
+        window.clearTimeout(closeTimer.current);
+        setOpen(true);
+      }}
+      onPointerLeave={(e) => {
+        if (e.pointerType !== "mouse" && e.pointerType !== "pen") return;
+        closeTimer.current = window.setTimeout(() => setOpen(false), CLOSE_DELAY_MS);
+      }}
+      className="group/account liquid relative flex h-12 shrink-0 items-center rounded-full p-0.5"
+    >
+      <div
+        className={cn(
+          "flex w-0 items-center justify-end overflow-hidden rounded-full transition-[width] duration-[420ms] ease-[var(--ease-spring)]",
+          OPEN.tray,
+        )}
+      >
+        <TrayItem order={1}>
+          <NudgeBell />
+        </TrayItem>
+        <TrayItem order={0}>
+          <LanguageToggle className={CLUSTER_BUTTON} />
+        </TrayItem>
+      </div>
+      <UserMenu
+        triggerClassName={CLUSTER_BUTTON}
+        open={menuOpen}
+        onOpenChange={(next) => {
+          // on a phone the first tap shows the tray; the menu waits for the second
+          if (next && lastPointer.current === "touch" && !open) {
+            setOpen(true);
+            return;
+          }
+          setMenuOpen(next);
+        }}
+      />
+      {/* unread alerts stay visible on the avatar while the bell is tucked away */}
+      {hasUnread && (
+        <span
+          aria-hidden
+          className={cn(
+            "bg-destructive pointer-events-none absolute top-1.5 right-1.5 size-2.5 rounded-full shadow-[0_0_0_2px_var(--background)] transition-[scale] duration-300 ease-[var(--ease-spring)]",
+            OPEN.hide,
+          )}
+        />
+      )}
     </div>
   );
 }

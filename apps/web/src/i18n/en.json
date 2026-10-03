@@ -46,7 +46,6 @@
     "greeting_afternoon": "Good afternoon",
     "greeting_evening": "Good evening",
     "subtitle": "Here is your money at a glance.",
-    "at_glance": "At a glance",
     "empty_title": "Nothing here yet",
     "empty_body": "Add your first payment or income to see your balance, budgets and tips."
   },
@@ -152,6 +151,9 @@
     "consent_how": "Answers come from an AI model (OpenAI). The app calculates every number; the coach only explains them. It gives educational guidance only: no investment, loan or insurance advice. You can delete the conversation at any time.",
     "consent_accept": "I agree",
     "consent_decline": "Not now",
+    "info_label": "About the coach and your privacy",
+    "info_data": "What the coach sees",
+    "info_voice": "Voice",
     "context_line": "Uses your last 30 days of totals. Never your name, phone or merchants.",
     "suggest_prev": "Previous suggestions",
     "suggest_next": "More suggestions",
@@ -161,7 +163,8 @@
     "mic_start": "Speak your question",
     "mic_stop": "Stop listening",
     "listening": "Listening…",
-    "voice_privacy": "Voice input first uses your browser's speech service, which may send your voice to its maker. If that is not available, with your permission your recording goes to OpenAI to be turned into text. Answers are read aloud with a voice on your device; if it has none for the language, with your permission the answer text goes to OpenAI to be spoken.",
+    "voice_privacy_in": "Speaking: your browser's speech service turns your voice into text, and may send it to its maker. If that is not available, your recording goes to OpenAI, with your permission.",
+    "voice_privacy_out": "Listening: answers are read aloud with a voice on your device. If it has none for the language, the answer text goes to OpenAI, with your permission.",
     "voice_problem_denied": "The microphone is blocked. Allow it in your browser settings to speak a question.",
     "voice_problem_no_mic": "No microphone was found.",
     "voice_problem_no_speech": "We did not hear anything. Try again.",
@@ -334,6 +337,7 @@
     "failed": "Could not save. Please try again."
   },
   "dashboard": {
+    "score_pending": "Not worked out yet",
     "period": "Time period",
     "period_week": "This week",
     "period_month": "This month",

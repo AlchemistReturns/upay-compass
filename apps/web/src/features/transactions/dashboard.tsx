@@ -6,6 +6,7 @@ import {
   ArrowDownLeft,
   ArrowRight,
   ArrowUpRight,
+  ChevronRight,
   LineChart,
   type LucideIcon,
   Plus,
@@ -23,6 +24,7 @@ import {
   ErrorState,
   LoadingCards,
   Pill,
+  Ring,
   SectionHeader,
 } from "@/components/compass";
 import { buttonVariants } from "@/components/ui/button";
@@ -30,11 +32,10 @@ import { cn } from "@/lib/utils";
 import { formatMoney, formatSignedMoney } from "@/lib/format";
 import { useAuth } from "@/features/auth/auth-provider";
 import { useProfile } from "@/features/profile/use-profile";
-import { ForecastCard } from "@/features/forecast/forecast-card";
-import { StreakChip } from "@/features/gamification/streak-chip";
-import { HealthCard } from "@/features/health/health-card";
-import { ReadinessCard } from "@/features/readiness/readiness-card";
-import { NextModuleCard } from "@/features/learn/next-module-card";
+import { BAND_COLOR } from "@/features/health/health-card";
+import { useHealthSnapshots } from "@/features/health/use-health";
+import { useReadinessSnapshots } from "@/features/readiness/use-readiness";
+import { useRealtimeInvalidate } from "@/features/realtime/use-realtime-invalidate";
 import { GetStarted } from "@/features/onboarding/get-started";
 import { VoiceTryButton } from "@/features/voice/voice-command-button";
 import { InstallPrompt } from "@/features/pwa/install-prompt";
@@ -118,6 +119,52 @@ function QuickAction({
   );
 }
 
+/** One score on the balance panel (health or credit readiness); opens its full screen. */
+function ScoreStat({
+  href,
+  label,
+  note,
+  score,
+}: {
+  href: string;
+  label: string;
+  /** small line under the band, e.g. "Informational only" */
+  note?: string;
+  score: number | undefined;
+}) {
+  const { t } = useTranslation();
+  const band = score === undefined ? null : score < 40 ? "low" : score < 70 ? "fair" : "good";
+  return (
+    <Link
+      href={href}
+      transitionTypes={NAV_FORWARD}
+      className="group flex min-w-0 items-center gap-3 rounded-2xl bg-white/8 p-3 ring-1 ring-white/12 transition-colors hover:bg-white/14"
+    >
+      {/* the arc is decorative; the number and band are written out */}
+      <Ring
+        value={score ?? 0}
+        size={46}
+        stroke={5}
+        track="rgba(255,255,255,.14)"
+        color={band ? BAND_COLOR[band] : "transparent"}
+      >
+        <span className="num text-[15px] font-extrabold">{score ?? "–"}</span>
+      </Ring>
+      <div className="min-w-0 flex-1">
+        <div className="text-on-dark-muted truncate text-[12px] font-semibold">{label}</div>
+        <div className="mt-0.5 truncate text-[14px] font-bold">
+          {band ? t(`score.band_${band}`) : t("dashboard.score_pending")}
+        </div>
+        {note && <div className="text-on-dark-muted truncate text-[11px]">{note}</div>}
+      </div>
+      <ChevronRight
+        className="ic-forward text-on-dark-muted size-4 shrink-0 group-hover:text-white"
+        aria-hidden
+      />
+    </Link>
+  );
+}
+
 function BalancePanel({
   balance,
   income,
@@ -131,6 +178,10 @@ function BalancePanel({
 }) {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
+  const health = useHealthSnapshots();
+  const readiness = useReadinessSnapshots();
+  useRealtimeInvalidate("health_scores", [["health"]]);
+  useRealtimeInvalidate("readiness_scores", [["readiness"]]);
   const spentPct =
     income && income > 0 && expense !== undefined
       ? Math.min(Math.round((expense / income) * 100), 100)
@@ -189,6 +240,17 @@ function BalancePanel({
           )}
         </div>
       )}
+
+      <div className="mt-5 grid gap-2.5 sm:grid-cols-2">
+        <ScoreStat href="/score" label={t("score.title")} score={health.data?.[0]?.score} />
+        {/* credit readiness is informational only, and the panel says so */}
+        <ScoreStat
+          href="/readiness"
+          label={t("readiness.title")}
+          note={t("readiness.info_only")}
+          score={readiness.data?.[0]?.score}
+        />
+      </div>
 
       <nav
         aria-label={t("dashboard.quick_actions")}
@@ -363,35 +425,16 @@ export function Dashboard() {
         <div className="space-y-7 pb-4 sm:space-y-9">
           <div className="space-y-3.5">
             <GetStarted hasTransactions />
-            <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-3.5 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:items-stretch">
-              <BalancePanel
-                balance={balance.data}
-                income={month.data?.income}
-                expense={month.data?.expense}
-                simulated={hasSimulated}
-              />
-              <div className="space-y-3.5">
-                <AskCoach />
-                <InstallPrompt />
-                {/* phones: its own titled section under the panel; desktop: a column beside it */}
-                <section aria-labelledby="glance-heading" className="pt-3.5 lg:pt-0">
-                  <SectionHeader
-                    id="glance-heading"
-                    title={t("home.at_glance")}
-                    className="lg:sr-only"
-                  />
-                  <div
-                    className="rise grid gap-3 sm:grid-cols-2 lg:grid-cols-1"
-                    style={{ "--i": 2 } as React.CSSProperties}
-                  >
-                    <HealthCard />
-                    <ReadinessCard />
-                    <ForecastCard />
-                    <NextModuleCard />
-                    <StreakChip />
-                  </div>
-                </section>
-              </div>
+            {/* the balance panel is the at-a-glance view: money, scores and shortcuts */}
+            <BalancePanel
+              balance={balance.data}
+              income={month.data?.income}
+              expense={month.data?.expense}
+              simulated={hasSimulated}
+            />
+            <div className="grid gap-3.5 lg:grid-cols-2">
+              <AskCoach />
+              <InstallPrompt />
             </div>
             {hasSimulated && (
               <p className="text-muted-foreground px-1 text-xs">{t("common.simulated_note")}</p>

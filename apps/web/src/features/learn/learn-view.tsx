@@ -11,6 +11,7 @@ import { useGamification } from "@/features/gamification/use-gamification";
 import { cn } from "@/lib/utils";
 import { useCompletedModules, useModules } from "./use-learn";
 import { useRecommendations } from "./use-recommendations";
+import { ForYouSection } from "./for-you-section";
 import { NAV_FORWARD } from "@/components/page-transition";
 
 export function LearnView() {
@@ -122,6 +123,8 @@ export function LearnView() {
             </ul>
           </section>
         )}
+
+        <ForYouSection />
 
         {modules.isPending && (
           <div>

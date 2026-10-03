@@ -50,6 +50,19 @@ for (const [name, definer, config, anon, authed] of funcs) {
     console.log(`  · ${name}: definer, callable by signed-in users (checks auth.uid() inside)`);
 }
 
+// Tables only the server writes: signed-in users may read them and nothing else. Personalized
+// learn modules (Phase 12) change only through update_personalized_module(), so the generated
+// content and its facts cannot be edited from the browser.
+const SERVER_WRITTEN = ["personalized_modules"];
+for (const table of SERVER_WRITTEN) {
+  const privs = psql(
+    `select string_agg(privilege_type, ',' order by privilege_type) from information_schema.role_table_grants where table_schema='public' and table_name='${table}' and grantee='authenticated'`,
+  )[0]?.[0];
+  if (privs !== "SELECT")
+    fail(`authenticated has ${privs ?? "nothing"} on ${table}, expected SELECT only`);
+  else console.log(`✓ signed-in users can only read ${table}`);
+}
+
 // Column-level: users must not be able to write server-controlled profile columns.
 const profileCols = psql(
   "select column_name from information_schema.column_privileges where table_schema='public' and table_name='profiles' and grantee='authenticated' and privilege_type='UPDATE' order by 1",

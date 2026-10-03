@@ -48,3 +48,8 @@ export function formatMonthYear(value: string, lang: string): string {
     timeZone: "UTC",
   }).format(new Date(`${value}T12:00:00Z`));
 }
+
+/** A plain count in the app language's digits: 3 -> "৩" in Bangla. */
+export function formatNumber(value: number, lang: string): string {
+  return value.toLocaleString(locale(lang));
+}

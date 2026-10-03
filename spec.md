@@ -232,6 +232,12 @@ gamification(user_id uuid pk, streak_days int default 0, last_active date, badge
 
 user_pins(user_id uuid pk → auth.users, pin_hash text, failed_attempts int, updated_at)
   -- RLS on, NO policies, NO grants: reachable only via security definer functions has_pin(), set_pin(pin), verify_pin(pin)
+personalized_modules(id uuid pk, user_id uuid, topic_id text, language text, content jsonb, facts jsonb, reason_id text,
+                     generated_at timestamptz, expires_at timestamptz, completed_at timestamptz,
+                     quick_check_score int 0-3, feedback smallint -1|1, dismissed_at timestamptz, unique (user_id, topic_id, language))
+  -- Phase 12. Owner reads; inserted only by generate-learn-modules (service role) after validation; users change only
+  -- completed_at, quick_check_score, feedback, dismissed_at through update_personalized_module() (security definer).
+  -- Not in the realtime publication, like the other learn tables. Finishing one does not touch user_progress or badges.
 audit_log(id bigserial pk, user_id uuid, action text, entity text, entity_id text, detail jsonb, created_at)
   -- append-only for users: they can insert and read their own rows, never update or delete
 ```
@@ -283,6 +289,7 @@ create policy "own rows" on transactions for all
 | F25 | Server speech-to-text: record in any browser, transcribe with OpenAI (Bangla, English, mixed) | 10 |
 | F26 | Voice commands: add or remove income and expenses, create budgets and goals, add to a goal, by voice with a confirmation card | 10 |
 | F27 | Voice for the coach everywhere: ask by voice in any browser, answers read aloud with OpenAI text-to-speech where the device has no voice | 10 |
+| F28 | Personalized "Made for you" learn modules: code picks topics from the person's signals, the model writes them from a small facts object, a validator checks every number and claim | 12 |
 
 ---
 
@@ -359,7 +366,7 @@ Only **upward** outliers are flagged (an unusually small payment is nothing to w
 | PWA | Web manifest (`app/manifest.ts`) + a small hand-written service worker (`public/sw.js`) + TanStack Query persistence in IndexedDB | Install, cached offline read. Serwist was dropped: it needs the webpack build, and our needs fit in about 100 lines |
 | Backend platform | **Supabase** | Postgres, Auth, Realtime, RLS, Edge Functions |
 | Edge Functions | Deno/TypeScript | Categorize, score, forecast, coach, nudges |
-| LLM | OpenAI API (from Edge Functions only; models set by `OPENAI_COACH_MODEL` / `OPENAI_CATEGORIZE_MODEL` secrets) | Coach and categorization fallback |
+| LLM | OpenAI API (from Edge Functions only; models set by `OPENAI_COACH_MODEL` / `OPENAI_CATEGORIZE_MODEL` / `OPENAI_LEARN_MODEL` secrets; the last falls back to the coach model) | Coach, categorization fallback, personalized learn modules |
 | Validation | zod | Input safety |
 | Testing | Vitest + Playwright (stretch) | Core logic and demo flow |
 | CI | GitHub Actions (lint, typecheck, test, format check on push) | Second check behind the local Husky hook |
@@ -737,6 +744,212 @@ Small changes to first-run and everyday entry, no new backend.
 
 ---
 
+### Phase 12 — Personalized Learn modules (F28)
+
+**Goal.** The brief's "Financial Literacy Personalizer: adapt educational guidance based on a user's demonstrated behavior rather than generic content." The Learn hub keeps its 8 fixed modules, their order, the 8/8 ring, the Module Graduate badge and their static pages exactly as they were, and adds up to 3 "Made for you" lessons per person, written by the LLM from that person's own signals.
+
+**How it works and its limits (for the pitch)**
+- **Code picks the topic; the model only writes it.** 12 topics in `packages/shared/src/learn-topics.ts` (cash-out cost, lean weeks, goals that last, buffer in days, month-end bills, small repeated spends, festival planning, scam safety, beyond the basics, reading your score, budgets that fit, borrowing under pressure). Each has a pure signal rule over data the app already has (score components, readiness, budgets, goal status, unread alerts, forecast risks, income type) giving a score from 0 to 1 and a reason id. `pickPersonalizedTopics`: threshold 0.4, at most 3, one per category first, no repeat of a finished or dismissed topic within 14 days, deterministic.
+- **The model sees only a topic id, a language and a small facts object** of numbers and ids (for example `{"buffer_days":13,"buffer_target_days":90,"safety_buffer_days":7}`). No name, phone, merchant, counterparty or transaction list.
+- **A validator checks every module before it is stored or shown** (`learn-validate.ts`, English and Bangla): strict schema; length and shape within limits measured from the 8 hand-written modules (`docs/pitch/learn-style-spec.md`); only the renderer's Markdown subset; **every number must be one of the facts** (Latin or Bangla digits, commas, taka sign; sums and differences fail); the requested language; no URL, phone-like digits, product or firm names, return promises, advice to invest, borrow or buy, shaming, or leaked field names. One retry with the reasons; never truncated, never shown if rejected. The browser validates stored rows again before showing them.
+- **Investing is concept-level only** ("beyond the basics", for high scorers): what investing is, risk and return together, why an offer that says you cannot lose is a warning sign, what to check first. No product, firm, fund, share or coin, no "you should invest", no return figures. A golden test inserts product names and return promises and every one is rejected.
+- **Bangladesh-specific facts** (DPS terms, fees, rates, festival dates) may only come from the vetted sheet `learn-facts.ts`, each entry with an official source and a check date. It is empty: nothing has been verified yet, so every topic stays concept-level and the festival topic waits for a date source.
+- **"Why you're seeing this"** is built from the reason id through i18n templates, never from model text. The "N min read" label is computed from the word count. The "Try this" button opens a screen fixed by the topic.
+- **Limits:** the numbers are grounded, but the wording is not reviewed by a person; Bangla quality of live output is unverified; the banned-word lists catch common phrasing, not every possible one; the cash-out, month-end, small-spend and festival signals need summaries that do not exist yet, so those topics stay silent for now.
+
+**Build**
+1. Style measurement and limits (`learn-style.ts`, `learn-style-spec.md`).
+2. Topic catalog, signals, selection, facts (`learn-topics.ts`, `learn-facts.ts`).
+3. Output schema and Markdown assembly (`learn-module.ts`), validator (`learn-validate.ts`), prompt, token cap and generate-with-one-retry against a pluggable model client (`learn-generate.ts`), refresh planner (`learn-plan.ts`: reuse fresh modules, write again after 7 days or when the reason or facts moved more than 20%).
+4. Migration `20261007090000_phase12_personalized_learn.sql`: `personalized_modules` (Section 7) and `update_personalized_module()`.
+5. Edge Function `generate-learn-modules`: verifies the caller, requires `coach_consent_at` (the same consent; the consent card now says so), 6 calls an hour, loads signals as the caller, plans, writes missing modules with `OPENAI_LEARN_MODEL` (falls back to `OPENAI_COACH_MODEL`, then `gpt-5-mini`), stores only validated modules with the service role, returns the person's modules. Model unavailable: nothing new, status `model_unavailable`. Audit entry with counts only. Not streamed.
+6. UI: a "Made for you" section between "Up next" and the course (same card as the module rows, a pill, the reason line); skeletons while loading; one calm consent card without consent; nothing on failure. Lesson page `/learn/for-you?id=` (one static shell; the service worker caches it, never ids) with the reason, the existing renderer, Try this, a quick check with instant feedback and no penalty, Finished, thumbs, Not for me, Next, disclaimer. Progress goes only through `update_personalized_module` and does not count toward the 8/8 ring, streaks or badges. Offline: saved lessons stay readable; writes are disabled with the offline note.
+7. Tests and evals: unit tests for scoring, selection, facts, schema, every validator rule in both languages with positive and negative examples, the 8 hand-written modules passing every limit and text rule, the generator with a fake client and recorded good and bad fixtures, and the planner; RLS integration tests (`phase12.integration.test.ts`). `pnpm eval:learn` runs the three personas and writes `docs/pitch/learn-personalization-report.md`.
+
+**Verified so far:** 320 shared unit tests and 38 simulator tests; lint, typecheck, production build and `pnpm audit:bundle`. On the local stack (Docker): `pnpm audit:rls` passes (users can only read `personalized_modules`), and the full suite including the Phase 12 RLS tests passes (403). **End to end with the real model** (`scripts/e2e-learn-local.mjs`, local function, real OpenAI): sign-in, consent, signals, topic picking, generation, validation and storage work for all three personas in English and Bangla. `scripts/eval-learn-live.mjs` showed the first prompt passed validation only about half the time (sections slightly long, a made-up "30" for "a month", English words in Bangla), so the prompt now aims at 80% of each limit and has a Bangla glossary; `gpt-4.1` was the most consistent (5 of 6 in two runs, against 3 to 5 for `gpt-5-mini`), so **set `OPENAI_LEARN_MODEL=gpt-4.1`** on the deployed project. Rejected modules are dropped silently. `pnpm eval:learn`: the three personas get three different topic sets. **Not verified:** Bangla wording quality (needs the native speaker), the cloud project, the UI on a real phone, axe on the new screens.
+
+**Still to do by hand:** record the backup video and take the screenshots.
+6. **Rehearsal:** the Section 16 script was run by a browser script on a brand-new account (steps 3 to 12), then again after pressing Reset demo, then the admin step: **23 checks, all passing, twice in a row**, with no manual database edits. The checks include a corrected category saved as a rule, a budget alert firing, a goal with round-ups, the score breakdown, the forecast warning, a Bangla coach answer that quotes the user's real number, nudges in the inbox, the dashboard loading offline, a clean account after reset (310 transactions, one goal, no budgets, no chat), the admin aggregates with no personal data, and a regular user being refused the admin page.
+
+**Verify:** the full demo runs end to end and repeats from a reset with no manual database changes (done, above). Remaining before the pitch: the Bangla copy review, the backup video, and one dry run on the real phone against the cloud project.
+
+---
+
+### Phase 7 — Score Parity & Quick Wins (F18, F19, F20, F21)
+
+**Build process**
+1. **Credit readiness (F21):** migration `20261004090000_phase7_readiness.sql` (`readiness_scores`, RLS, Realtime, the `savings_activity()` function, and `reset_demo()` now clears the history); pure scoring in `packages/shared/src/readiness.ts`; Edge Function `compute-readiness-score` (and the ingest pipeline refreshes it after loading data); `/readiness` screen (hero ring, four component cards each with a sentence from counts, the punctuality assumption, "what moved your score", the standing banner) and a dashboard card. The "what moved" card was extracted into a shared component used by both scores.
+2. **Personalizer (F20):** `rankModules` with tests; on `/learn` the lime card is now the top recommendation with its reason and an "Also for you" rail shows the next two; the dashboard has a one-line "Next: ..." card.
+3. **Unit economics (F19):** `pnpm impact:model` prints a deterministic model over the 120-day persona data (fixed end day). Section A is **measured** (payments, cash-outs, auto-categorized share, bill reminders and low-balance days per persona); section B is **modelled** with every assumption in one table (8 seconds per manual entry, 5/10/20% prompt-to-behaviour change, 20% baseline 30-day retention with 5/10/15% relative uplift, a hypothetical real cash-out frequency). The simulated personas barely cash out, so the cash-out table is a sensitivity analysis and says so. `pnpm impact:model --update` writes it into `docs/pitch/impact-metrics.md` between markers and `--check` fails if the document drifts.
+4. **Fairness (F18):** `pnpm audit:fairness` signs in to the local stack, loads each persona through the real `reset-demo` function, calls the health and readiness functions and compares them with hand-labelled categorization ground truth for every merchant the personas produce. It writes `docs/pitch/fairness-report.md`. Each gap above its threshold must be explained as by design (income pattern, buffer, no budgets in the demo data) or the script fails.
+   - **It found a real bug.** Income stability used rolling 30-day windows; a student with perfectly regular monthly income (Rs 8,000 on the 5th, Rs 3,000 on the 25th) scored **9.5 / 100** because the windows split the payments unevenly, while the irregular gig worker scored 91.3. Migration `20261004100000_phase7_income_months.sql` now sums income per complete calendar month: the student scores 100 and the gig worker 61.5. This also feeds the readiness scorecard's income consistency.
+
+**Verify:** unit tests (readiness with hand-computed scores, ranking order); a browser run on a production build; the fairness script under a minute with every gap explained; the model deterministic.
+
+**Verified so far (local stack):**
+- 189 shared and 33 simulator tests, including 6 integration tests for the readiness table, the savings function and the stability fix. Typecheck, lint and format are clean; axe found no violations on the new screens.
+- Readiness browser run (10 checks): dashboard card; the "informational only" banner is on screen while the snapshot request is still delayed by 3 seconds; the four components with their sentences; the score on screen equals the stored snapshot; "what moved" lists a changed component; Bangla.
+- Personalizer browser run (7 checks): a low savings rate puts the saving module first with its reason (English and Bangla); the dashboard card agrees; an unread budget alert outranks the score-driven pick; finished modules drop out.
+- Fairness: categorization accuracy 100% for all three personas and coverage 95.9 to 98.7% (spread under 5 points); the score gaps are explained by persona design. Impact model: identical output on repeated runs.
+- Not verified: the cloud project (the new migrations are applied there only after review), and the Section 16 browser rehearsal script needs updating for the UI revamp (its sign-up steps use the old screens).
+
+---
+
+### Phase 8 — AI/ML Depth & Explainability (F22, F23)
+
+**Build process**
+1. **Unusual-payment detection (F22):** `anomaly.ts` (rules in Section 9), tested against hand-computed buckets (a tight bucket held at the Rs 20 floor, a wide bucket using 1.4826 x MAD, the 3.5 boundary, four earlier payments not being enough, weekday and category buckets staying separate, the 90-day window, recurring payments and savings never flagged, order independence, the merchant-first behaviour and the sparse-history rule). Migration `20261005090000_phase8_anomaly_index.sql` adds the category index. `generate-nudges` now loads 125 days of payments, raises `unusual_transaction` nudges for the last 7 days and no longer raises the flat overspend alert; adding a payment in the app triggers a check, so the alert shows up straight away. The inbox renders it in both languages and opens the payment.
+2. **Evaluation, like the categorizer and the forecast** (`pnpm eval:anomaly`, `adapters/upay-sim/src/anomaly-eval.ts`, asserted by a test): one food payment at 8x, 9x and 10x the typical one is injected per persona per month, across 5 fixed seeds (45 injected payments); false alarms are counted on the unmodified data. On the same data:
+
+| | Finds the injected payments | False alarms per persona per month |
+|---|---|---|
+| Old flat rule (category's week at 2x) | 31 of 45 (69%) | 9.40 |
+| Category and weekday bucket only (first plan) | 36 of 45 (80%) | 2.78 |
+| **Shipped (merchant first, then category and weekday)** | **43 of 45 (96%)** | **1.76** |
+
+   The category-only version also missed most injected payments for the salaried persona (6 of 15), whose food category mixes canteen lunches with a weekly grocery shop; comparing with the merchant first fixes both the misses and the false alarms. Many remaining "false alarms" are payments that really were higher than usual (for example a Rs 200 tea in the simulator's second tea-stall price band). The sample is small and simulated: a sanity check, not a measurement of real users.
+3. **Explainability (F23):** migration `20261005100000_phase8_explain.sql` (`transaction_explain`); `explain.ts` with tests for every categorization source; `categorize()` now also returns the keyword that matched; an "Why this decision" card on the payment page names the rule (or the merchant the user taught the app, or that the AI suggested it, or that nothing matched and it awaits review) and, for a flagged payment, the amount, the typical amount, the score and the threshold. The readiness screen already has the "what moved your score" treatment (built in Phase 7 as a shared component).
+4. **Accessibility follow-up:** the payment page and alerts inbox now pass axe in both languages (the destructive colour was darkened for contrast, the unread alert date uses the normal muted colour, the Spent and Received toggle is 44 px tall).
+
+**Verify:** unit tests for the MAD and z-score math; the injected-anomaly evaluation compared with the old rule; a 10x payment added in the app produces exactly one alert; explanations checked for every categorization source in both languages.
+
+**Verified so far (local stack):**
+- 222 shared tests (new: 16 anomaly, 12 explain, and 5 integration tests: an alert for a 10x payment, exactly once, with the numbers; no more flat overspend alerts; an ordinary payment raises nothing; `transaction_explain` returns the facts for the owner only) and 38 simulator tests (5 of them the evaluation).
+- Browser run on a production build (10 checks): keyword, channel, income, AI and saved-correction explanations; a payment of Rs 1,800 at a place that normally costs about Rs 135, added in the app, produced exactly one alert, readable in the inbox, which opens the payment with the flagged explanation (score 44.9 against the 3.5 threshold); English and Bangla.
+- Not verified: the cloud project (the new migrations and the changed `generate-nudges` function go there after review).
+
+---
+
+### Phase 9 — Accessibility & Voice (F24)
+
+**Decision: no external voice API.** The browser's Web Speech API does both jobs (speaking answers, listening to questions), so there is no key, no server code, no cost and no extra place the user's words are sent for reading aloud. A cloud voice (ElevenLabs, Google Cloud text-to-speech) would sound better and would cover Bangla on every device, but it needs a key kept on a server, costs per character, sends every answer to a third party and does not work offline. It is a sensible later upgrade for Bangla only.
+
+**Build process**
+1. **Pure helpers** (`packages/shared/src/speech.ts`, 14 tests): `pickVoice` (an exact locale first, then another locale of the same language, then none; a voice on the device beats an online one), `prepareSpeech` (turns an answer into speakable text: the taka sign said as the word "taka" or "টাকা", markdown marks removed, sentence-sized pieces never above 180 characters because some browsers stop a long passage part-way), and `recognitionProblem` (names a recognition error, quiet when we stopped it ourselves).
+2. **Listen** (`useSpeechSynthesis`, a Listen/Stop control under each coach answer): uses an installed voice for the answer's language, taken from the answer's script (the app language breaks a tie; the plan said `profiles.language`, but an answer follows the language of the question). **Hidden where there is no voice for that language**, rather than a dead button. Stops when a new question starts, when the person leaves the screen or when the app is hidden.
+3. **Speak a question** (`useSpeechRecognition`, a microphone button in the text box): asks the browser for `bn-BD` or `en-US` by the app language; the words appear in the box while you speak and stay there for you to read and send, nothing is sent automatically. Hidden where the browser has no speech recognition. A note under the box says voice input uses the browser's speech service, which may send the voice to its maker. Plain-language messages for a blocked microphone, no microphone, no speech heard, an unsupported language, no network.
+4. **A real bug found on the way:** `detectReplyLanguage` treated the taka sign (U+09F3, in the Bangla Unicode block but not a letter) as Bangla script, so an English question such as the app's own suggestion chip "Can I afford ৳5,000 for a phone?" was answered in Bangla and its answer was read with a Bangla voice. It now looks for Bangla letters only (tests added). This function also runs inside the `coach-chat` Edge Function, which needs redeploying to the cloud project.
+
+**Verify:** a manual checklist on two real browsers (desktop Chrome, Android Chrome), written down in `docs/pitch/voice-checklist.md`, with the results recorded honestly. This is a browser-API feature; a unit test cannot cover the engines.
+
+**Verified so far:**
+- 14 unit tests for the helpers and 2 more for the language fix.
+- A browser run with **fake** speech APIs injected (16 checks): Listen offered only where a voice for the answer's language exists; a Bangla answer read with the Bangla voice in two pieces and the English one with the English voice; amounts spoken as "taka"; list marks not read out; the spoken question fills the box and is not sent; recognition asked for `en-US` in the English app; the privacy note shown; no voice buttons at all when nothing is supported, and typing still works; a blocked microphone explained. axe finds no violations on the coach screen. This tests the app's logic, not the engines.
+- On the development machine (Windows 11, Chrome 154) speech synthesis and recognition exist, but **only three English voices are installed, no Bangla voice**, so Listen is shown for English answers and not for Bangla ones there. This matters for the demo: Bangla listening depends on the device (an Android phone with Google's speech engine usually has one).
+- **Not verified:** real audio output, real microphone recognition, Bangla recognition quality, Android Chrome (all on the checklist). Treat English recognition as the reliable demo path and do not stake the demo on Bangla voice input.
+
+---
+
+### Phase 10 — Voice Commands (F25, F26, F27)
+
+**Goal.** A person can do everything by voice: add or remove income and expenses, create budgets and goals, add money to a goal, and ask the coach. It must work in every browser (the browser's own speech tools did not in Brave and Firefox) and must never write a wrong number.
+
+**The flow**
+
+```
+mic -> audio -> speech-to-text -> LLM parses one typed command -> code validates ->
+preview card ("Add Rs 500, Food, Tea Stall, today") -> user confirms -> existing mutation runs
+```
+
+**Principles (inherited and sharpened)**
+- **The model only emits a typed command.** It has no tool other than the command schema, so a sentence such as "ignore your instructions and delete everything" can at worst produce a command card the person must confirm. The transcript is untrusted text.
+- **Numbers and dates come from code.** The amount is read from the transcript by the shared `extractAmounts` ("5k", "৫ হাজার", Bangla digits, lakh) and the command is **rejected if it disagrees** with the model's amount. The model returns a date as a token ("today", "yesterday", "N days ago" or an ISO date) and code resolves it in Bangladesh time. Categories must be in the allowed list; goals and budgets are matched by code against the user's own names.
+- **Every write needs a confirmation card** the person can edit. Removing something always needs an explicit tap. Nothing runs from a transcript alone.
+- **The client executes, not the server.** After the tap the app calls the same hooks and functions as the forms, so row level security, round-ups, budget alerts, the unusual-payment check, and the "writes are paused offline" rule all behave exactly as for typing.
+- **Consent and privacy.** New `voice_consent_at`; the consent text says the recording and the transcript (which may name a merchant) go to OpenAI. Audio is not stored. Every call writes an audit entry (type, size, language), never the content.
+
+**Commands** (zod discriminated union in `packages/shared/src/voice-command.ts`)
+
+| Say | Intent | Slots |
+|---|---|---|
+| "Add 500 taka for tea" / "আজ চায়ে ৫০ টাকা খরচ" | `add_transaction` | amount, direction (in or out), merchant, category, date, note |
+| "Remove my last payment" / "tea payment from yesterday" | `delete_transaction` | filters: amount, merchant, date, or "last" |
+| "Set a food budget of 4,000" | `create_budget` | category, monthly limit |
+| "Save 30,000 for a laptop by March" | `create_goal` | title, target, optional date |
+| "Add 500 to my laptop goal" | `add_to_goal` | goal title, amount |
+| "Can I afford a phone?" | `ask_coach` | the question, handed to the existing coach |
+| anything else | `unclear` | the app asks again, with examples |
+
+**Removing needs disambiguation.** "Remove the tea payment" is ambiguous, so the server queries the person's own payments that match the filters and returns up to five candidates; the person picks one and confirms. The model never sees or returns row ids.
+
+**Edge Functions** (all verify the caller, check `voice_consent_at`, rate-limit like the coach, and write an audit entry; `OPENAI_API_KEY` stays server-side)
+1. `voice-transcribe`: audio in (a short clip, size-capped), language hint and a few of the person's own merchant names as a vocabulary hint, text out. Model set by `OPENAI_TRANSCRIBE_MODEL`.
+2. `voice-command`: text in, a validated command out (plus candidates for removal). Model set by `OPENAI_VOICE_MODEL`; structured output so the reply is always the schema.
+3. `voice-speak`: a stored coach answer's id in, audio out, for reading answers aloud on devices with no voice for the language. It never accepts text from the client and reads only the caller's own assistant messages, so it cannot be used as a general text-to-speech service. Model set by `OPENAI_TTS_MODEL`. Used only when the browser has no installed voice, so the free on-device voice stays the default.
+
+**Build order**
+1. **Record and transcribe (F25):** `voice_consent_at` migration and consent card; `voice-transcribe`; a recorder (`MediaRecorder`, works in every browser) with a clear recording state and a cap on length; the coach microphone uses it where the browser's speech recognition is missing or blocked. This alone fixes the Brave and Firefox gap.
+2. **Parse and validate (F26, part 1):** the command schema and `validateCommand` in shared with tests (amount cross-check, relative dates, category and goal matching, rejection reasons); `voice-command`; the preview card with editable fields for add transaction, create budget, create goal and add to goal; a golden set of about 100 utterances (Bangla, English, mixed) and `pnpm eval:voice`.
+3. **Remove and confirm (F26, part 2):** candidate lookup, the picker, explicit confirm for removal, undo where the data allows; the confirmation read-back by voice.
+4. **Coach by voice (F27):** spoken question into the existing chat from any browser; `voice-speak` and the Listen button choosing the on-device voice first.
+5. **Hardening and docs:** consent and audit checks, rate limits, accessibility on the new screens, the demo path and the voice checklist updated.
+
+**Evaluation (golden set, like the categorizer).** About 100 utterances with the expected command. Report intent accuracy, slot accuracy, and amount exactness. The target for amounts is **100% accepted-or-rejected**: a wrong amount must never reach the confirmation card, because the cross-check rejects it. Parsing is tested on text so it is fast and cheap; a small set of recorded audio checks transcription. `pnpm eval:voice` calls the real model and costs a few cents.
+
+**Alternative considered (not chosen): the OpenAI Realtime API**, speech in and speech out with tool calling in one live session. Lowest latency and natural back-and-forth, but it needs a WebRTC session with short-lived tokens from an Edge Function and costs more per minute. A later stretch once this simpler version works.
+
+**Verify:** every command type works end to end by voice on a production build in two browsers including Brave; a spoken amount in Bangla words, Bangla digits and "5k" all read correctly; a deliberately wrong amount from the model is rejected by code; removal always shows candidates and needs a tap; consent is required and refused without it; an audit entry exists for each call and no audio is stored.
+
+**Built (all five steps).**
+- Search order for voice input: the browser's own speech recognition first (free), then, if it is missing or blocked (Brave, Firefox), a recording sent to `voice-transcribe`. The same order applies to reading aloud: an on-device voice first, `voice-speak` only when there is none, with replays reusing the fetched audio.
+- Models are set by `OPENAI_TRANSCRIBE_MODEL` (default `gpt-4o-transcribe`; `whisper-1` rejects `bn`), `OPENAI_VOICE_MODEL` (default `gpt-4.1-mini`, strict JSON schema) and `OPENAI_TTS_MODEL` (default `tts-1`, voice `nova`; `gpt-4o-mini-tts` without instructions garbled Bangla). Code defaults are enough; the secrets are only needed to override.
+- The amount cross-check uses the spoken amounts in the sentence (`candidateAmounts`: digits, English number words, Bangla number words, lakh, crore, "দেড়", "আড়াই").
+- Rate limit: 60 voice calls per 10 minutes per person, counted from `audit_log`. Merchant names (from the person's own history) are sent as a vocabulary hint, and the consent text says so.
+- A voice-command header button opens the sheet from any screen; a spoken question is handed to the coach.
+
+**Verified so far**
+- `pnpm eval:voice` (real model, 100 golden sentences): intent accuracy 100/100, **0 wrong amounts accepted**. The prompt was tuned on this set, so the number is optimistic. A separate 24-sentence holdout (`pnpm eval:voice -- --holdout`) gives 22/24 with the other 2 safely refused, 0 wrong amounts accepted. The holdout is the fairer measure.
+- Browser runs against a production build with real (synthesized) audio in English and Bangla: server transcription, every command type (add, undo, edit on the card, budget, goal, add to goal, ambiguous goal blocks Confirm, removal with a pick, refusals, a hostile sentence changes nothing, coach hand-off, Bangla card), the server Listen path (consent, one request per answer, replays reuse the audio). Every confirmed change was checked in SQL, and the audit entries contain no spoken words.
+- axe-core: no violations on the voice sheet states in English and Bangla. `pnpm audit:rls` and `pnpm audit:bundle` pass. Full test suite: 288 passing.
+
+**Known limits**
+- Bangla recognition was tested with synthesized speech, not a human speaker; check on a real phone (see `docs/pitch/voice-checklist.md`).
+- A sentence with several items ("tea 50 and lunch 120") is refused as unclear; say one thing at a time.
+- The Realtime API is not built.
+
+**Status:** complete on branch `feat/phase10-voice-commands`; cloud migration and function deploys pending the team's go-ahead.
+
+---
+
+### UX pass (after Phase 10)
+
+Small changes to first-run and everyday entry, no new backend.
+- **Get started:** a checklist on Home (add a payment, set a budget, create a goal) that ticks itself off from the person's own data and disappears when all three are done. An empty account also sees a "Nothing here yet" card, an Add button and a Try voice button. The forecast card says what it needs (about 4 weeks and 20 payments).
+- **Faster entry:** a floating microphone on Home and the payments list (the header microphone stays everywhere); "Repeat a recent one" chips on the add form fill amount, direction, channel and payee, and the person still taps Save.
+- **Undo:** deleting a payment (form or voice) and saving or deleting a budget now offer Undo. A deleted payment is put back with the same id, time and category.
+- **Privacy copy:** the voice notes in the coach and the voice sheet now describe the server fallbacks (recording, spoken text and, without an on-device voice, the answer text going to OpenAI).
+- **Verified:** typecheck, lint, a browser run on a production build (empty Home, checklist 0 of 3 then 1 of 3, recents fill the form, delete then Undo restores the row) and an integration test for restore and budget upsert. Not checked: Undo for budgets in the browser, and these screens on a real phone.
+
+---
+
+### Phase 12 — Personalized Learn modules (F28)
+
+**Goal.** The brief's "Financial Literacy Personalizer: adapt educational guidance based on a user's demonstrated behavior rather than generic content." The Learn hub keeps its 8 fixed modules, their order, the 8/8 ring, the Module Graduate badge and their static pages exactly as they were, and adds up to 3 "Made for you" lessons per person, written by the LLM from that person's own signals.
+
+**How it works and its limits (for the pitch)**
+- **Code picks the topic; the model only writes it.** 12 topics in `packages/shared/src/learn-topics.ts` (cash-out cost, lean weeks, goals that last, buffer in days, month-end bills, small repeated spends, festival planning, scam safety, beyond the basics, reading your score, budgets that fit, borrowing under pressure). Each has a pure signal rule over data the app already has (score components, readiness, budgets, goal status, unread alerts, forecast risks, income type) giving a score from 0 to 1 and a reason id. `pickPersonalizedTopics`: threshold 0.4, at most 3, one per category first, no repeat of a finished or dismissed topic within 14 days, deterministic.
+- **The model sees only a topic id, a language and a small facts object** of numbers and ids (for example `{"buffer_days":13,"buffer_target_days":90,"safety_buffer_days":7}`). No name, phone, merchant, counterparty or transaction list.
+- **A validator checks every module before it is stored or shown** (`learn-validate.ts`, English and Bangla): strict schema; length and shape within limits measured from the 8 hand-written modules (`docs/pitch/learn-style-spec.md`); only the renderer's Markdown subset; **every number must be one of the facts** (Latin or Bangla digits, commas, taka sign; sums and differences fail); the requested language; no URL, phone-like digits, product or firm names, return promises, advice to invest, borrow or buy, shaming, or leaked field names. One retry with the reasons; never truncated, never shown if rejected. The browser validates stored rows again before showing them.
+- **Investing is concept-level only** ("beyond the basics", for high scorers): what investing is, risk and return together, why an offer that says you cannot lose is a warning sign, what to check first. No product, firm, fund, share or coin, no "you should invest", no return figures. A golden test inserts product names and return promises and every one is rejected.
+- **Bangladesh-specific facts** (DPS terms, fees, rates, festival dates) may only come from the vetted sheet `learn-facts.ts`, each entry with an official source and a check date. It is empty: nothing has been verified yet, so every topic stays concept-level and the festival topic waits for a date source.
+- **"Why you're seeing this"** is built from the reason id through i18n templates, never from model text. The "N min read" label is computed from the word count. The "Try this" button opens a screen fixed by the topic.
+- **Limits:** the numbers are grounded, but the wording is not reviewed by a person; Bangla quality of live output is unverified; the banned-word lists catch common phrasing, not every possible one; the cash-out, month-end, small-spend and festival signals need summaries that do not exist yet, so those topics stay silent for now.
+
+**Build**
+1. Style measurement and limits (`learn-style.ts`, `learn-style-spec.md`).
+2. Topic catalog, signals, selection, facts (`learn-topics.ts`, `learn-facts.ts`).
+3. Output schema and Markdown assembly (`learn-module.ts`), validator (`learn-validate.ts`), prompt, token cap and generate-with-one-retry against a pluggable model client (`learn-generate.ts`), refresh planner (`learn-plan.ts`: reuse fresh modules, write again after 7 days or when the reason or facts moved more than 20%).
+4. Migration `20261007090000_phase12_personalized_learn.sql`: `personalized_modules` (Section 7) and `update_personalized_module()`.
+5. Edge Function `generate-learn-modules`: verifies the caller, requires `coach_consent_at` (the same consent; the consent card now says so), 6 calls an hour, loads signals as the caller, plans, writes missing modules with `OPENAI_LEARN_MODEL` (falls back to `OPENAI_COACH_MODEL`, then `gpt-5-mini`), stores only validated modules with the service role, returns the person's modules. Model unavailable: nothing new, status `model_unavailable`. Audit entry with counts only. Not streamed.
+6. UI: a "Made for you" section between "Up next" and the course (same card as the module rows, a pill, the reason line); skeletons while loading; one calm consent card without consent; nothing on failure. Lesson page `/learn/for-you?id=` (one static shell; the service worker caches it, never ids) with the reason, the existing renderer, Try this, a quick check with instant feedback and no penalty, Finished, thumbs, Not for me, Next, disclaimer. Progress goes only through `update_personalized_module` and does not count toward the 8/8 ring, streaks or badges. Offline: saved lessons stay readable; writes are disabled with the offline note.
+7. Tests and evals: unit tests for scoring, selection, facts, schema, every validator rule in both languages with positive and negative examples, the 8 hand-written modules passing every limit and text rule, the generator with a fake client and recorded good and bad fixtures, and the planner; RLS integration tests (`phase12.integration.test.ts`). `pnpm eval:learn` runs the three personas and writes `docs/pitch/learn-personalization-report.md`.
+
+**Verified so far:** 320 shared unit tests pass (106 new) plus 38 simulator tests; lint, typecheck, production build and `pnpm audit:bundle` pass. `pnpm eval:learn`: the three personas get three different sets (Student: buffer in days, reading your score, small repeats; Gig worker: buffer in days, small repeats, borrowing under pressure; Salaried: scam safety, buffer in days, reading your score). **Not verified:** live model output (no OpenAI calls were made), Bangla quality, the RLS integration tests and `pnpm audit:rls` (no local stack was running), the UI in a browser.
+
+**Still to do by hand:** review and apply the migration (`pnpm sb migration list`, `pnpm sb db push --dry-run`, then `pnpm sb db push`); set `OPENAI_LEARN_MODEL` only if a model other than the coach's is wanted; deploy `generate-learn-modules`; have the native Bangla speaker review ten generated modules; run the integration tests and `pnpm audit:rls` on the local stack.
+
+---
+
 ### LLM abuse limits (after the security review)
 
 - **Slots before calls.** Per-user limits (coach 20, voice 60 across the three voice functions, categorizer 20, each per 10 minutes) now take a slot in `audit_log` before the model is called (`_shared/limits.ts`), then count; a request over the limit gives its slot back. The earlier count-then-write check let parallel requests all slip through. A test fires 30 parallel categorizer calls and the database holds exactly 20 slots.
@@ -959,6 +1172,6 @@ Teammates get the Supabase **Developer** role on the project, so everyone can ru
 
 ### 17.7 Current status
 
-Phases 0 to 8 are merged (PRs #1 to #12), plus the UI revamp and the dark-mode and header work from teammates. Phase 9 (voice for the coach: listen to answers and speak a question with the browser's own speech tools, plus a language-detection fix) is on branch `feat/phase9-voice`. The web app is deployed on Vercel against the shared cloud project. Remaining: native-speaker Bangla review, backup video, a dry run on the real phone including `docs/pitch/voice-checklist.md`.
+Phases 0 to 10 and the UX pass are merged (PRs #1 to #16), plus the UI revamp and the dark-mode and header work from teammates. Phase 12 (F28, personalized learn modules) is on branch `feat/phase12-personalized-learn`; its migration and Edge Function are not yet applied or deployed. The web app is deployed on Vercel against the shared cloud project. Remaining: native-speaker Bangla review, backup video, a dry run on the real phone including `docs/pitch/voice-checklist.md`.
 
 ---

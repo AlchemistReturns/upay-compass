@@ -454,3 +454,6 @@ verify_jwt = false
 
 [functions.voice-speak]
 verify_jwt = false
+
+[functions.generate-learn-modules]
+verify_jwt = false

@@ -12,9 +12,7 @@ For the full design (decisions, data model, security, evaluation results) see [s
 
 **Solution.** upay Compass turns wallet transactions into plain-language insight and guidance, in **Bangla and English**:
 
-```
-Connect → Understand → Plan → Save → Get guided → Improve
-```
+![Compass loop](docs/img/loop.png)
 
 **Purpose.** Help a person understand their money, build a saving habit and move toward financial independence, while keeping every number auditable and the person in control. There is no live upay system, so the app runs on **simulated or user-entered data** behind a swappable adapter (`adapters/upay-sim`); a real upay feed could replace it later. No real money moves, and simulated data is labelled as simulated.
 
@@ -49,9 +47,15 @@ Connect → Understand → Plan → Save → Get guided → Improve
 | **Speech to text** (`voice-transcribe`) | `gpt-4o-transcribe` (`OPENAI_TRANSCRIBE_MODEL`) | Transcribe a short recording, only when the browser's own speech recognition is missing or blocked. | Store audio. |
 | **Text to speech** (`voice-speak`) | `tts-1` (`OPENAI_TTS_MODEL`) | Read a stored coach answer aloud, only when the device has no voice for the language. | Speak text sent by the client. |
 
+**Voice commands: the model never chooses the amount.** The flow below shows how a spoken sentence is parsed, validated by code, confirmed by the person, and only then executed.
+
+![Voice command flow](docs/img/voiceflow.png)
+
 Not AI (deterministic, tested code): health score, readiness, forecast, unusual-payment detection, nudges, learn ranking. All model calls are made from Supabase Edge Functions; the OpenAI key never reaches the browser. Sending data to OpenAI needs the person's consent (separate for the coach and for voice), and every call is rate limited and audited without storing what was said.
 
 ## 3. Technology stack
+
+![System architecture](docs/img/architecture.png)
 
 - **Language and tooling:** TypeScript, Node.js, pnpm workspaces, ESLint, Prettier, Husky, Vitest.
 - **Frontend:** Next.js 16 (App Router), React 19, Tailwind CSS 4, Base UI, TanStack Query, i18next (English and Bangla), Recharts, zod, installable PWA with a service worker.
@@ -244,6 +248,7 @@ Without those two variables the integration tests are skipped. Add `RLS_TEST_SEE
 - `supabase/`: migrations, Edge Functions, config
 - `scripts/`: evaluations and audits
 - `docs/pitch/`: architecture, demo script, fairness report, impact model, fallback plan, voice checklist
+- `docs/img/`: diagrams used in this README
 - `spec.md`: the full specification and developer guide (Section 17)
 
 ## 12. Known limits

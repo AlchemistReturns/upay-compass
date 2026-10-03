@@ -7,6 +7,8 @@ const base: HealthInputs = {
   income: 90000,
   spend: 60000,
   essentialSpend: 30000,
+  essentialMonths: [10000, 10000, 10000],
+  essentialThisMonth: 4000,
   incomeBuckets: [30000, 30000, 30000],
   balance: 40000,
   budgets: [{ categoryId: 1, limit: 1000, spent: 500 }],
@@ -29,7 +31,7 @@ describe("computeHealthScore", () => {
       ...base,
       income: 30000,
       spend: 27000, // saved 10% -> half of the 20% target = 50
-      essentialSpend: 18000, // 6000 a month
+      essentialMonths: [6000, 6000, 6000], // 6000 a month
       balance: 3000, // half a month of buffer -> 0.5 / 3 = 16.67
       budgets: [{ categoryId: 7, limit: 1000, spent: 1250 }], // 25% over -> 50
       incomeBuckets: [10000, 10000, 10000], // CV 0 -> 100
@@ -47,7 +49,7 @@ describe("computeHealthScore", () => {
       ...base,
       income: 30000,
       spend: 27000,
-      essentialSpend: 18000,
+      essentialMonths: [6000, 6000, 6000],
       balance: 3000,
       budgets: [{ categoryId: 7, limit: 1000, spent: 1250 }],
       incomeBuckets: [10000, 10000, 10000],
@@ -73,6 +75,8 @@ describe("computeHealthScore", () => {
       income: 0,
       spend: 200,
       essentialSpend: 0,
+      essentialMonths: [],
+      essentialThisMonth: 0,
       incomeBuckets: [],
       balance: 100,
       budgets: [],
@@ -139,6 +143,8 @@ describe("parseHealthInputs", () => {
       income: "1000.5",
       spend: 400,
       essential_spend: 200,
+      essential_months: [100, 90],
+      essential_this_month: 30,
       income_buckets: [500, 500.5],
       balance: 900,
       budgets: [{ category_id: 3, limit: 100, spent: 40 }],
@@ -149,6 +155,8 @@ describe("parseHealthInputs", () => {
       income: 1000.5,
       spend: 400,
       essentialSpend: 200,
+      essentialMonths: [100, 90],
+      essentialThisMonth: 30,
       incomeBuckets: [500, 500.5],
       balance: 900,
       budgets: [{ categoryId: 3, limit: 100, spent: 40 }],
@@ -160,5 +168,82 @@ describe("parseHealthInputs", () => {
     expect(parsed.txCount).toBe(0);
     expect(parsed.historyDays).toBe(1);
     expect(parsed.budgets).toEqual([]);
+  });
+});
+
+describe("buffer on a monthly basis", () => {
+  const fresh = {
+    ...base,
+    historyDays: 1,
+    txCount: 2,
+    essentialMonths: [] as number[],
+  };
+
+  it("uses this month so far, unscaled, until a month has completed", () => {
+    // 25,000 in and 4,000 of essentials in one day: the balance is 21,000
+    const r = computeHealthScore({ ...fresh, balance: 21000, essentialThisMonth: 4000 });
+    expect(r.components.buffer.available).toBe(true);
+    expect(r.components.buffer.basis).toBe("month_so_far");
+    expect(r.components.buffer.raw).toBeCloseTo(5.25, 5); // 21000 / 4000, not 21000 / 120000
+    expect(r.components.buffer.score).toBe(100);
+  });
+
+  it("never multiplies a short history up to a month", () => {
+    const r = computeHealthScore({ ...fresh, balance: 6000, essentialThisMonth: 12000 });
+    expect(r.components.buffer.raw).toBeCloseTo(0.5, 5); // 6000 / 12000
+    expect(r.components.buffer.score).toBeCloseTo(16.6667, 3);
+  });
+
+  it("counts rent paid once a month once, whenever in the month you look", () => {
+    // rent 12,000 paid once, plus 3,000 of other essentials, over two complete months
+    const months = computeHealthScore({
+      ...base,
+      balance: 30000,
+      essentialMonths: [15000, 15000],
+      essentialThisMonth: 0,
+    });
+    expect(months.components.buffer.basis).toBe("months");
+    expect(months.components.buffer.raw).toBeCloseTo(2, 5); // 30000 / 15000
+  });
+
+  it("averages the complete months, up to three", () => {
+    const r = computeHealthScore({
+      ...base,
+      balance: 30000,
+      essentialMonths: [10000, 20000, 30000],
+      essentialThisMonth: 1000,
+    });
+    expect(r.components.buffer.raw).toBeCloseTo(1.5, 5); // 30000 / 20000
+    expect(r.components.buffer.basis).toBe("months");
+  });
+
+  it("falls back to this month when the complete months logged no essentials", () => {
+    const r = computeHealthScore({
+      ...base,
+      balance: 8000,
+      essentialMonths: [0],
+      essentialThisMonth: 4000,
+    });
+    expect(r.components.buffer.basis).toBe("month_so_far");
+    expect(r.components.buffer.raw).toBeCloseTo(2, 5);
+  });
+
+  it("is neutral when there are no essentials to measure against", () => {
+    const r = computeHealthScore({ ...fresh, essentialThisMonth: 0 });
+    expect(r.components.buffer.available).toBe(false);
+    expect(r.components.buffer.score).toBe(50);
+  });
+
+  it("does not inflate the save-more tip for a one-day history", () => {
+    const r = computeHealthScore({
+      ...fresh,
+      income: 25000,
+      spend: 24000,
+      balance: 1000,
+      essentialThisMonth: 100,
+    });
+    const tip = r.actions.find((a) => a.id === "save_more");
+    // needs 5,000 saved to reach 20%, has 1,000: 4,000 more, not 4,000 x 30
+    expect(tip?.params.extraMonthly).toBe(4000);
   });
 });

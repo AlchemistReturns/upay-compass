@@ -310,7 +310,7 @@ Each component is normalized to 0-100 over the last 90 days, then weighted. The 
 
 - **Savings rate:** (income - spending) / income, where transfers into the Savings category count as saving, not spending. 20% saved scores 100, linear from 0%.
 - **Budget adherence:** average over this month's budgets; within the limit scores 100, 50% over scores 0.
-- **Emergency buffer:** wallet balance divided by monthly essential spending; 3 months scores 100.
+- **Emergency buffer:** wallet balance divided by a month of essential spending, measured on a **monthly basis from what was logged, with no scaling**: the average of the complete calendar months (Bangladesh time, up to three), or, until one has completed, this month's essentials so far, marked "this month so far" on the screen. A short history is never multiplied up to a month (a day of essentials used to be multiplied by 30 and scored the buffer near zero). 3 months scores 100.
 - **Income stability:** coefficient of variation of income across the last three **complete calendar months** (Bangladesh time; months from the first transaction's month onward are skipped); 0% variation scores 100, 50% or more scores 0. (Rolling 30-day windows were used until Phase 7 and mis-scored steady monthly income; see F18.)
 - A component that cannot be measured yet (no income, no budgets, under two complete months) counts as a neutral 50 and is labelled as such. Confidence is "low" under 15 transactions or 28 days of history, and the screen says so.
 

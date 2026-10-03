@@ -125,7 +125,7 @@ function componentDetail(
         ? t("score.detail_budget_ok")
         : t("score.detail_budget_over", { count: raw });
     case "buffer":
-      return t("score.detail_buffer", {
+      return t(c.basis === "month_so_far" ? "score.detail_buffer_so_far" : "score.detail_buffer", {
         months: (Math.round(raw * 10) / 10).toLocaleString(),
         target: BUFFER_TARGET_MONTHS,
       });

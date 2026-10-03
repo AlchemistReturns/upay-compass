@@ -60,3 +60,22 @@ Tick each box on the device you will demo on, with a Bangla and an English answe
 - **Bangla voices are not on every device.** Android with Google's speech engine usually has one; a Windows desktop often does not. When there is none, Listen is hidden for Bangla answers.
 - **Voice input is not private in the way typing is:** Chrome and Edge send the audio to their speech service. The app says so under the text box.
 - **No cloud voice service is used** (such as ElevenLabs or Google Cloud text-to-speech). A cloud voice would sound better and cover Bangla everywhere, but it needs a key kept on a server, costs money per character, sends every answer to a third party, and does not work offline. It is a sensible later upgrade for Bangla only.
+
+## Phase 10: server voice and voice commands
+
+The header **Voice commands** button (any screen) and the coach microphone and Listen now also work
+where the browser has no speech tools, by sending a short recording or the answer text to OpenAI
+(after a one-time consent). Checked by a computer on a production build with synthesized English and
+Bangla audio: transcription, every command type, the server Listen path, consent, audit entries
+(no spoken words), and accessibility. **Not checked: a real human voice, and real devices.** Run
+these on the demo devices:
+
+- [ ] Brave desktop: coach microphone records and transcribes (no "network" error); Bangla and English.
+- [ ] Firefox: microphone button present, records, transcribes.
+- [ ] Android Chrome: say "add 500 taka for tea"; the card shows 500, Food, today; Confirm saves; Undo removes.
+- [ ] Say the same in Bangla ("আজ চায়ে ৫০ টাকা খরচ করেছি"); the amount on the card is 50.
+- [ ] "Remove my last payment" lists candidates; nothing is deleted until one is picked and confirmed.
+- [ ] "Set a food budget of 4000", "save 30000 for a car", "add 500 to my laptop goal".
+- [ ] "Can I afford a 5000 taka phone" opens the coach with the question answered.
+- [ ] On a device with no Bangla voice, Listen on a Bangla answer asks for consent, then plays.
+- [ ] Say a wrong or noisy number: the card must never show an amount you did not say.

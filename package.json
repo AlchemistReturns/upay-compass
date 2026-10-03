@@ -21,7 +21,8 @@
     "audit:bundle": "node scripts/audit-bundle.mjs",
     "impact:model": "node --experimental-transform-types --disable-warning=ExperimentalWarning scripts/impact-model.mjs",
     "audit:fairness": "node --experimental-transform-types --disable-warning=ExperimentalWarning scripts/audit-fairness.mjs",
-    "eval:anomaly": "node --experimental-transform-types --disable-warning=ExperimentalWarning scripts/eval-anomaly.mjs"
+    "eval:anomaly": "node --experimental-transform-types --disable-warning=ExperimentalWarning scripts/eval-anomaly.mjs",
+    "eval:voice": "node --experimental-transform-types --disable-warning=ExperimentalWarning scripts/eval-voice.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7",

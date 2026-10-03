@@ -10,6 +10,7 @@ import { UserMenu } from "@/components/user-menu";
 import { useAuth } from "@/features/auth/auth-provider";
 import { useUnreadNudgeCount } from "@/features/nudges/use-nudges";
 import { useRealtimeInvalidate } from "@/features/realtime/use-realtime-invalidate";
+import { VoiceCommandButton } from "@/features/voice/voice-command-button";
 import { NAV_BACK, NAV_FORWARD } from "@/components/page-transition";
 import { cn } from "@/lib/utils";
 
@@ -71,6 +72,7 @@ function AccountCluster() {
   const { session } = useAuth();
   return (
     <div className="liquid flex h-12 shrink-0 items-center gap-0 rounded-full p-0.5">
+      {session && <VoiceCommandButton className={CLUSTER_BUTTON} />}
       {session && <NudgeBell />}
       <LanguageToggle className={CLUSTER_BUTTON} />
       {session && <UserMenu triggerClassName={CLUSTER_BUTTON} />}

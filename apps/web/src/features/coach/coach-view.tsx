@@ -9,6 +9,7 @@ import {
   EyeOff,
   Gauge,
   MessageCircleQuestion,
+  Loader2,
   Mic,
   ShieldCheck,
   Sparkles,
@@ -20,8 +21,9 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { detectReplyLanguage } from "@compass/shared";
-import { useSpeechRecognition } from "@/features/voice/use-speech-recognition";
-import { useSpeechSynthesis } from "@/features/voice/use-speech-synthesis";
+import { useVoiceInput } from "@/features/voice/use-voice-input";
+import { COACH_PREFILL_KEY } from "@/features/voice/voice-sheet";
+import { useSpeak } from "@/features/voice/use-speak";
 import { OfflineNote } from "@/features/pwa/offline-note";
 import { useOnline } from "@/features/pwa/use-online";
 import { PageHeader, TOOLBAR_BUTTON } from "@/components/page-header";
@@ -307,7 +309,7 @@ function ListenButton({
   id: string;
   text: string;
   appLang: "bn" | "en";
-  tts: ReturnType<typeof useSpeechSynthesis>;
+  tts: ReturnType<typeof useSpeak>;
 }) {
   const { t } = useTranslation();
   // an answer is in the language of the question; the app language only breaks a tie
@@ -319,10 +321,13 @@ function ListenButton({
       type="button"
       aria-pressed={speaking}
       aria-label={speaking ? t("coach.stop_listening") : t("coach.listen")}
-      onClick={() => (speaking ? tts.stop() : tts.speak(text, id, lang))}
+      disabled={tts.loadingId === id}
+      onClick={() => (speaking ? tts.stop() : void tts.speak(text, id, lang))}
       className="text-primary mt-2 -mb-1 flex min-h-11 items-center gap-1.5 text-[13px] font-semibold"
     >
-      {speaking ? (
+      {tts.loadingId === id ? (
+        <Loader2 className="size-4 animate-spin" aria-hidden />
+      ) : speaking ? (
         <Square className="size-3.5" fill="currentColor" aria-hidden />
       ) : (
         <Volume2 className="size-4" aria-hidden />
@@ -345,8 +350,8 @@ export function CoachView() {
   const [declined, setDeclined] = useState(false);
   const bottom = useRef<HTMLDivElement>(null);
   const confirm = useConfirm();
-  const tts = useSpeechSynthesis();
-  const stt = useSpeechRecognition({
+  const tts = useSpeak((problem) => toast.error(t(`coach.voice_problem_${problem}`)));
+  const stt = useVoiceInput({
     lang: appLang,
     onTranscript: (spoken) => setText(spoken),
     onProblem: (problem) =>
@@ -379,6 +384,24 @@ export function CoachView() {
     if (empty) return;
     bottom.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages.length, chat.pending?.answer, chat.status, empty]);
+
+  // A question spoken or typed in the voice sheet arrives here: ask it once the coach is ready.
+  const prefillTaken = useRef(false);
+  useEffect(() => {
+    if (prefillTaken.current || !profile.isSuccess) return;
+    let question: string | null = null;
+    try {
+      question = sessionStorage.getItem(COACH_PREFILL_KEY);
+      if (question) sessionStorage.removeItem(COACH_PREFILL_KEY);
+    } catch {
+      // ignore
+    }
+    prefillTaken.current = true;
+    if (!question) return;
+    if (profile.data?.coach_consent_at) void chat.send(question);
+    else setText(question);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile.isSuccess]);
 
   // A new question or a new answer ends any reading aloud.
   useEffect(() => {
@@ -492,7 +515,9 @@ export function CoachView() {
               >
                 <input
                   aria-label={t("coach.input_label")}
-                  placeholder={stt.listening ? t("coach.listening") : t("coach.input_placeholder")}
+                  placeholder={
+                    stt.state === "listening" ? t("coach.listening") : t("coach.input_placeholder")
+                  }
                   maxLength={1000}
                   value={text}
                   onChange={(e) => setText(e.target.value)}
@@ -502,20 +527,25 @@ export function CoachView() {
                 {stt.supported && (
                   <button
                     type="button"
-                    aria-pressed={stt.listening}
-                    aria-label={stt.listening ? t("coach.mic_stop") : t("coach.mic_start")}
-                    title={stt.listening ? t("coach.mic_stop") : t("coach.mic_start")}
-                    disabled={busy || !online}
-                    onClick={() => (stt.listening ? stt.stop() : stt.start())}
+                    aria-pressed={stt.state === "listening"}
+                    aria-busy={stt.state === "processing"}
+                    aria-label={
+                      stt.state === "listening" ? t("coach.mic_stop") : t("coach.mic_start")
+                    }
+                    title={stt.state === "listening" ? t("coach.mic_stop") : t("coach.mic_start")}
+                    disabled={busy || !online || stt.state === "processing"}
+                    onClick={() => (stt.state === "listening" ? void stt.stop() : stt.start())}
                     className={cn(
                       "tap grid size-11 shrink-0 place-items-center rounded-full disabled:opacity-35",
-                      stt.listening
+                      stt.state === "listening"
                         ? "bg-destructive text-white"
                         : "bg-secondary text-primary hover:bg-secondary/70",
                     )}
                   >
-                    {stt.listening ? (
+                    {stt.state === "listening" ? (
                       <Square className="size-4" fill="currentColor" aria-hidden />
+                    ) : stt.state === "processing" ? (
+                      <Loader2 className="size-5 animate-spin" aria-hidden />
                     ) : (
                       <Mic className="size-5" aria-hidden />
                     )}
@@ -533,9 +563,13 @@ export function CoachView() {
                 </button>
               </form>
               <OfflineNote />
-              {stt.listening && (
+              {stt.state !== "idle" && (
                 <p role="status" className="text-primary text-center text-xs font-semibold">
-                  {t("coach.listening")}
+                  {stt.state === "processing"
+                    ? t("coach.processing")
+                    : stt.elapsed > 0
+                      ? t("coach.recording", { seconds: stt.elapsed })
+                      : t("coach.listening")}
                 </p>
               )}
               <p className="text-muted-foreground text-center text-[11px] leading-4">

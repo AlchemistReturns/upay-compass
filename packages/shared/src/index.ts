@@ -19,3 +19,7 @@ export * from "./learn-rank.ts";
 export * from "./anomaly.ts";
 export * from "./explain.ts";
 export * from "./speech.ts";
+export * from "./voice-limits.ts";
+export * from "./spoken-number.ts";
+export * from "./voice-command.ts";
+export * from "./voice-prompt.ts";

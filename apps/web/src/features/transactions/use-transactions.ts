@@ -182,6 +182,18 @@ export function useDeleteTransaction(id: string) {
   });
 }
 
+/** Delete a payment by id (the id is chosen at call time, unlike `useDeleteTransaction`). */
+export function useDeleteTransactionById() {
+  const invalidate = useInvalidateMoney();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("transactions").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: invalidate,
+  });
+}
+
 export function useIngestDemoData() {
   const { userId } = useAuth();
   const queryClient = useQueryClient();

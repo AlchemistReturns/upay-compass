@@ -445,3 +445,12 @@ verify_jwt = false
 
 [functions.compute-readiness-score]
 verify_jwt = false
+
+[functions.voice-transcribe]
+verify_jwt = false
+
+[functions.voice-command]
+verify_jwt = false
+
+[functions.voice-speak]
+verify_jwt = false

@@ -95,3 +95,32 @@ export function recognitionProblem(error: string): RecognitionProblem | null {
       return "other";
   }
 }
+
+/**
+ * What went wrong when the browser would not give us the microphone (the error name from
+ * getUserMedia). Reuses the same wording keys as speech recognition problems.
+ */
+export function microphoneProblem(errorName: string): RecognitionProblem {
+  switch (errorName) {
+    case "NotAllowedError":
+    case "SecurityError":
+    case "PermissionDeniedError":
+      return "denied";
+    case "NotFoundError":
+    case "DevicesNotFoundError":
+    case "OverconstrainedError":
+      return "no_mic";
+    default:
+      return "other";
+  }
+}
+
+/** The file extension for a recorded blob's type (what the transcriber needs to recognise it). */
+export function audioExtension(mimeType: string): string {
+  const t = mimeType.toLowerCase();
+  if (t.includes("mp4") || t.includes("m4a") || t.includes("aac")) return "m4a";
+  if (t.includes("ogg")) return "ogg";
+  if (t.includes("mpeg") || t.includes("mp3")) return "mp3";
+  if (t.includes("wav")) return "wav";
+  return "webm";
+}

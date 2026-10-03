@@ -169,7 +169,20 @@
     "not_found": "We could not find that module.",
     "disclaimer": "General education only, not financial advice.",
     "up_next": "Up next",
-    "start": "Start reading"
+    "start": "Start reading",
+    "recommended": "Recommended for you",
+    "also_for_you": "Also for you",
+    "next_card": "Next: {{title}}",
+    "reason_nudge_budget": "You have a budget alert.",
+    "reason_nudge_forecast": "Your forecast shows a low balance ahead.",
+    "reason_nudge_goal": "One of your goals is behind schedule.",
+    "reason_nudge_overspend": "You spent more than usual in a category.",
+    "reason_nudge_unusual": "We spotted an unusual payment.",
+    "reason_weak_savings": "Your savings rate is below target.",
+    "reason_weak_buffer": "Your emergency buffer is thin.",
+    "reason_weak_stability": "Your income varies a lot between periods.",
+    "reason_weak_budget": "Some of your budgets are over their limit.",
+    "reason_next_up": "Next in the course."
   },
   "login": {
     "title": "Sign in",
@@ -345,7 +358,7 @@
     "detail_budget_over_one": "{{count}} budget is over its limit.",
     "detail_budget_over_other": "{{count}} budgets are over their limits.",
     "detail_buffer": "Your wallet covers {{months}} months of essential spending (target {{target}}).",
-    "detail_stability": "Your income varies by {{pct}}% between 30-day periods (lower is steadier).",
+    "detail_stability": "Your income varies by {{pct}}% between months (lower is steadier).",
     "moved": "What moved your score",
     "moved_first": "This is your first score. Changes will show up here next time.",
     "moved_none": "No change since the last score.",
@@ -357,7 +370,7 @@
     "action_fix_budget_one": "{{count}} budget is over its limit. {{category}} is {{amount}} over.",
     "action_fix_budget_other": "{{count}} budgets are over their limits. {{category}} is {{amount}} over.",
     "action_build_buffer": "Your wallet covers {{months}} months of essentials. Reaching {{target}} months needs about {{amount}} more.",
-    "action_smooth_income": "Your income varies by {{pct}}% between 30-day periods. Setting some aside in better weeks smooths the lean ones.",
+    "action_smooth_income": "Your income varies by {{pct}}% between months. Setting some aside in better weeks smooths the lean ones.",
     "how": "The score blends four parts: savings rate (30%), budget adherence (25%), emergency buffer (25%) and income stability (20%), from your last 90 days. It is calculated by code from your own numbers, and it is for learning, not financial advice.",
     "out_of": "out of 100"
   },
@@ -509,5 +522,26 @@
     "system": "Auto",
     "light": "Light",
     "dark": "Dark"
+  },
+  "readiness": {
+    "title": "Credit readiness",
+    "disclaimer_lead": "Informational only.",
+    "disclaimer": "This is not a credit decision, is not shared with any lender, and does not affect your upay account.",
+    "info_only": "Informational only",
+    "see_yours": "See your credit readiness",
+    "no_data": "Add some transactions first. We need them to work out your readiness.",
+    "low_confidence": "There is not much history yet, so treat this as a rough estimate. It becomes more reliable after a few months of activity.",
+    "component_income": "Income consistency",
+    "component_punctuality": "Bill punctuality",
+    "component_savings": "Savings consistency",
+    "component_budget": "Budget adherence",
+    "detail_punctuality": "{{onTime}} of {{payments}} payments across {{bills}} regular bills were on time (within a day of the usual date).",
+    "detail_savings": "You set money aside in {{active}} of the last {{observed}} months.",
+    "need_income": "Not enough history yet, so this counts as a neutral 50. We need at least two full calendar months.",
+    "need_bills": "No regular bill found yet, so this counts as a neutral 50. We need a bill paid at least three times.",
+    "need_months": "Not enough months yet, so this counts as a neutral 50. We need at least two months of history.",
+    "need_budgets": "No budgets set yet, so this counts as a neutral 50.",
+    "punctuality_proxy": "Measured against the date we expect each bill from your own pattern, because upay does not give us real due dates. A close estimate, not a real due-date check.",
+    "how": "The score blends four parts: income consistency (30%), bill punctuality (30%), savings consistency (25%) and budget adherence (15%). It is calculated by code from your own numbers. It is for learning only: it is not a credit decision, it is not shared with any lender, and it does not affect your upay account."
   }
 }

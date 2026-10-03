@@ -22,6 +22,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { detectReplyLanguage } from "@compass/shared";
 import { useVoiceInput } from "@/features/voice/use-voice-input";
+import { COACH_PREFILL_KEY } from "@/features/voice/voice-sheet";
 import { useSpeechSynthesis } from "@/features/voice/use-speech-synthesis";
 import { OfflineNote } from "@/features/pwa/offline-note";
 import { useOnline } from "@/features/pwa/use-online";
@@ -380,6 +381,24 @@ export function CoachView() {
     if (empty) return;
     bottom.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages.length, chat.pending?.answer, chat.status, empty]);
+
+  // A question spoken or typed in the voice sheet arrives here: ask it once the coach is ready.
+  const prefillTaken = useRef(false);
+  useEffect(() => {
+    if (prefillTaken.current || !profile.isSuccess) return;
+    let question: string | null = null;
+    try {
+      question = sessionStorage.getItem(COACH_PREFILL_KEY);
+      if (question) sessionStorage.removeItem(COACH_PREFILL_KEY);
+    } catch {
+      // ignore
+    }
+    prefillTaken.current = true;
+    if (!question) return;
+    if (profile.data?.coach_consent_at) void chat.send(question);
+    else setText(question);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile.isSuccess]);
 
   // A new question or a new answer ends any reading aloud.
   useEffect(() => {

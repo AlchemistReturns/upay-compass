@@ -62,8 +62,14 @@ Deno.serve(async (req) => {
   body.append("response_format", "json");
   if (language) body.append("language", language);
   // Digits keep amounts checkable; the names help it spell the person's own shops.
+  const spoken =
+    language === "en"
+      ? "Mobile wallet payments, in English."
+      : language === "bn"
+        ? "Mobile wallet payments, in Bangla (shop and app names may be in English)."
+        : "Mobile wallet payments, in Bangla or English.";
   const prompt = [
-    "Mobile wallet payments in Bangla or English. Write all numbers as digits.",
+    `${spoken} Write all numbers as digits.`,
     hints.length > 0 ? `Names that may be spoken: ${hints.join(", ")}.` : "",
   ]
     .filter(Boolean)

@@ -16,14 +16,24 @@ function show(
   opts?: { description?: string; undo?: { label: string; onClick: () => void } },
 ) {
   haptic(kind === "error" ? "warning" : kind === "success" ? "success" : "light");
-  return manager.add({
+  const id: string = manager.add({
     title,
     description: opts?.description,
     type: kind,
     priority: kind === "error" ? "high" : "low",
     timeout: opts?.undo ? 6000 : 3200,
-    actionProps: opts?.undo ? { children: opts.undo.label, onClick: opts.undo.onClick } : undefined,
+    actionProps: opts?.undo
+      ? {
+          children: opts.undo.label,
+          // taking the action also dismisses the toast, so it does not linger over the header
+          onClick: () => {
+            opts.undo!.onClick();
+            manager.close(id);
+          },
+        }
+      : undefined,
   });
+  return id;
 }
 
 export const toast = {

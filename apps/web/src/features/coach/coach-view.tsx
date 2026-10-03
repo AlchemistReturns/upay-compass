@@ -9,13 +9,19 @@ import {
   EyeOff,
   Gauge,
   MessageCircleQuestion,
+  Mic,
   ShieldCheck,
   Sparkles,
+  Square,
   Trash2,
   TrendingDown,
+  Volume2,
   Wallet,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { detectReplyLanguage } from "@compass/shared";
+import { useSpeechRecognition } from "@/features/voice/use-speech-recognition";
+import { useSpeechSynthesis } from "@/features/voice/use-speech-synthesis";
 import { OfflineNote } from "@/features/pwa/offline-note";
 import { useOnline } from "@/features/pwa/use-online";
 import { PageHeader, TOOLBAR_BUTTON } from "@/components/page-header";
@@ -59,7 +65,15 @@ function CoachMark({ className }: { className?: string }) {
 }
 
 /** User messages are teal; coach answers are white cards, so the chat reads as part of the app. */
-function Bubble({ role, children }: { role: "user" | "assistant"; children: React.ReactNode }) {
+function Bubble({
+  role,
+  children,
+  action,
+}: {
+  role: "user" | "assistant";
+  children: React.ReactNode;
+  action?: React.ReactNode;
+}) {
   const assistant = role === "assistant";
   return (
     <div className={cn("rise flex items-end gap-2.5", assistant ? "justify-start" : "justify-end")}>
@@ -73,6 +87,7 @@ function Bubble({ role, children }: { role: "user" | "assistant"; children: Reac
         )}
       >
         {children}
+        {action}
       </div>
     </div>
   );
@@ -279,8 +294,47 @@ function ConsentCard({ onDone }: { onDone: () => void }) {
   );
 }
 
-export function CoachView() {
+/**
+ * "Listen" under a coach answer. Hidden when this browser has no voice for the answer's language
+ * (for example Bangla on a desktop with English voices only), rather than showing a dead button.
+ */
+function ListenButton({
+  id,
+  text,
+  appLang,
+  tts,
+}: {
+  id: string;
+  text: string;
+  appLang: "bn" | "en";
+  tts: ReturnType<typeof useSpeechSynthesis>;
+}) {
   const { t } = useTranslation();
+  // an answer is in the language of the question; the app language only breaks a tie
+  const lang = detectReplyLanguage(text, appLang);
+  if (!tts.canSpeak(lang)) return null;
+  const speaking = tts.speakingId === id;
+  return (
+    <button
+      type="button"
+      aria-pressed={speaking}
+      aria-label={speaking ? t("coach.stop_listening") : t("coach.listen")}
+      onClick={() => (speaking ? tts.stop() : tts.speak(text, id, lang))}
+      className="text-primary mt-2 -mb-1 flex min-h-11 items-center gap-1.5 text-[13px] font-semibold"
+    >
+      {speaking ? (
+        <Square className="size-3.5" fill="currentColor" aria-hidden />
+      ) : (
+        <Volume2 className="size-4" aria-hidden />
+      )}
+      {speaking ? t("coach.stop_listening") : t("coach.listen")}
+    </button>
+  );
+}
+
+export function CoachView() {
+  const { t, i18n } = useTranslation();
+  const appLang = i18n.language === "bn" ? "bn" : "en";
   const online = useOnline();
   const { userId } = useAuth();
   const profile = useProfile(userId);
@@ -291,6 +345,21 @@ export function CoachView() {
   const [declined, setDeclined] = useState(false);
   const bottom = useRef<HTMLDivElement>(null);
   const confirm = useConfirm();
+  const tts = useSpeechSynthesis();
+  const stt = useSpeechRecognition({
+    lang: appLang,
+    onTranscript: (spoken) => setText(spoken),
+    onProblem: (problem) =>
+      toast.error(
+        t(
+          // "network" from the browser usually means its speech service could not be reached, not
+          // that the device is offline; only say "no internet" when the browser agrees
+          problem === "network" && navigator.onLine
+            ? "coach.voice_problem_service"
+            : `coach.voice_problem_${problem}`,
+        ),
+      ),
+  });
 
   async function clearChat() {
     const ok = await confirm({ title: t("coach.clear_confirm"), confirmLabel: t("coach.clear") });
@@ -311,10 +380,18 @@ export function CoachView() {
     bottom.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages.length, chat.pending?.answer, chat.status, empty]);
 
+  // A new question or a new answer ends any reading aloud.
+  useEffect(() => {
+    if (chat.status !== "idle") tts.stop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chat.status]);
+
   function submit(e: React.FormEvent) {
     e.preventDefault();
     const value = text.trim();
     if (!value) return;
+    stt.stop();
+    tts.stop();
     setText("");
     haptic("light");
     void chat.send(value);
@@ -370,7 +447,15 @@ export function CoachView() {
             {empty && <Welcome disabled={busy || !online} onPick={(q) => void chat.send(q)} />}
 
             {messages.map((m) => (
-              <Bubble key={m.id} role={m.role}>
+              <Bubble
+                key={m.id}
+                role={m.role}
+                action={
+                  m.role === "assistant" ? (
+                    <ListenButton id={m.id} text={m.content} appLang={appLang} tts={tts} />
+                  ) : undefined
+                }
+              >
                 {m.content}
               </Bubble>
             ))}
@@ -407,13 +492,35 @@ export function CoachView() {
               >
                 <input
                   aria-label={t("coach.input_label")}
-                  placeholder={t("coach.input_placeholder")}
+                  placeholder={stt.listening ? t("coach.listening") : t("coach.input_placeholder")}
                   maxLength={1000}
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                   disabled={busy}
                   className="placeholder:text-muted-foreground/80 h-11 min-w-0 flex-1 bg-transparent text-base outline-none disabled:opacity-60"
                 />
+                {stt.supported && (
+                  <button
+                    type="button"
+                    aria-pressed={stt.listening}
+                    aria-label={stt.listening ? t("coach.mic_stop") : t("coach.mic_start")}
+                    title={stt.listening ? t("coach.mic_stop") : t("coach.mic_start")}
+                    disabled={busy || !online}
+                    onClick={() => (stt.listening ? stt.stop() : stt.start())}
+                    className={cn(
+                      "tap grid size-11 shrink-0 place-items-center rounded-full disabled:opacity-35",
+                      stt.listening
+                        ? "bg-destructive text-white"
+                        : "bg-secondary text-primary hover:bg-secondary/70",
+                    )}
+                  >
+                    {stt.listening ? (
+                      <Square className="size-4" fill="currentColor" aria-hidden />
+                    ) : (
+                      <Mic className="size-5" aria-hidden />
+                    )}
+                  </button>
+                )}
                 <button
                   type="submit"
                   aria-label={t("coach.send")}
@@ -426,9 +533,19 @@ export function CoachView() {
                 </button>
               </form>
               <OfflineNote />
+              {stt.listening && (
+                <p role="status" className="text-primary text-center text-xs font-semibold">
+                  {t("coach.listening")}
+                </p>
+              )}
               <p className="text-muted-foreground text-center text-[11px] leading-4">
                 {t("coach.disclaimer")}
               </p>
+              {stt.supported && (
+                <p className="text-muted-foreground text-center text-[11px] leading-4">
+                  {t("coach.voice_privacy")}
+                </p>
+              )}
             </div>
           </div>
         </div>

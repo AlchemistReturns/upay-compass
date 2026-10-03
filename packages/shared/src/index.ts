@@ -18,3 +18,4 @@ export * from "./readiness.ts";
 export * from "./learn-rank.ts";
 export * from "./anomaly.ts";
 export * from "./explain.ts";
+export * from "./speech.ts";

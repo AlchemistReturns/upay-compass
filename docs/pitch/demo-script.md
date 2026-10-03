@@ -15,6 +15,12 @@ Before going on stage: sign in once, open **Home**, and press the **Gig** button
 | 2:40 | "It installs like an app and still opens with no signal." | Show the install card, switch to airplane mode, reload: the dashboard is still there |
 | 2:50 | "For upay: anonymous insights about groups of people, never one person." | Admin view (sign in as the admin phone, or show the screenshot) |
 
+## If there is time (about 30 seconds each)
+
+- **Voice:** in the coach tap the microphone and speak a question in English, then tap Listen on the answer. Only where the browser supports it; Bangla listening depends on the device (see `voice-checklist.md`).
+- **Unusual payment:** add a payment about ten times the usual at a place you use often. The alert appears; open it and show "Why this decision" (the score against the threshold).
+- **Credit readiness:** open it from Home. Point at the "informational only" banner first, then the four components.
+
 ## If something goes wrong
 
 - Press **Demo tools > Gig** on Home to reset to the starting state in a few seconds.

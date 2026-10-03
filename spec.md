@@ -278,6 +278,7 @@ create policy "own rows" on transactions for all
 | F21 | Responsible credit readiness scorecard (informational only) | 7 |
 | F22 | Unusual-payment detection (robust statistics, replaces the flat overspend rule) | 8 |
 | F23 | "Why this decision" explanations (category and unusual-payment reasons) | 8 |
+| F24 | Voice for the coach (listen to answers, speak a question) using the browser's own speech tools | 9 |
 
 ---
 
@@ -403,7 +404,7 @@ Reference data (the 12 categories, and later the learn modules) is inserted by m
 
 ### 11.2 Phases
 
-**Status:** Phases 0 to 8 complete (Phase 8 on its branch, not yet merged). Phase 9 (voice for the coach) is planned. Remaining: Bangla copy review, backup video, a dry run on the real phone.
+**Status:** Phases 0 to 9 complete (Phase 9 on its branch, not yet merged). Remaining: native-speaker Bangla review, backup video, a dry run on the real phone (including the voice checklist). Remaining: Bangla copy review, backup video, a dry run on the real phone.
 
 ### Phase 0 — Foundations
 
@@ -628,6 +629,26 @@ Reference data (the 12 categories, and later the learn modules) is inserted by m
 
 ---
 
+### Phase 9 — Accessibility & Voice (F24)
+
+**Decision: no external voice API.** The browser's Web Speech API does both jobs (speaking answers, listening to questions), so there is no key, no server code, no cost and no extra place the user's words are sent for reading aloud. A cloud voice (ElevenLabs, Google Cloud text-to-speech) would sound better and would cover Bangla on every device, but it needs a key kept on a server, costs per character, sends every answer to a third party and does not work offline. It is a sensible later upgrade for Bangla only.
+
+**Build process**
+1. **Pure helpers** (`packages/shared/src/speech.ts`, 14 tests): `pickVoice` (an exact locale first, then another locale of the same language, then none; a voice on the device beats an online one), `prepareSpeech` (turns an answer into speakable text: the taka sign said as the word "taka" or "টাকা", markdown marks removed, sentence-sized pieces never above 180 characters because some browsers stop a long passage part-way), and `recognitionProblem` (names a recognition error, quiet when we stopped it ourselves).
+2. **Listen** (`useSpeechSynthesis`, a Listen/Stop control under each coach answer): uses an installed voice for the answer's language, taken from the answer's script (the app language breaks a tie; the plan said `profiles.language`, but an answer follows the language of the question). **Hidden where there is no voice for that language**, rather than a dead button. Stops when a new question starts, when the person leaves the screen or when the app is hidden.
+3. **Speak a question** (`useSpeechRecognition`, a microphone button in the text box): asks the browser for `bn-BD` or `en-US` by the app language; the words appear in the box while you speak and stay there for you to read and send, nothing is sent automatically. Hidden where the browser has no speech recognition. A note under the box says voice input uses the browser's speech service, which may send the voice to its maker. Plain-language messages for a blocked microphone, no microphone, no speech heard, an unsupported language, no network.
+4. **A real bug found on the way:** `detectReplyLanguage` treated the taka sign (U+09F3, in the Bangla Unicode block but not a letter) as Bangla script, so an English question such as the app's own suggestion chip "Can I afford ৳5,000 for a phone?" was answered in Bangla and its answer was read with a Bangla voice. It now looks for Bangla letters only (tests added). This function also runs inside the `coach-chat` Edge Function, which needs redeploying to the cloud project.
+
+**Verify:** a manual checklist on two real browsers (desktop Chrome, Android Chrome), written down in `docs/pitch/voice-checklist.md`, with the results recorded honestly. This is a browser-API feature; a unit test cannot cover the engines.
+
+**Verified so far:**
+- 14 unit tests for the helpers and 2 more for the language fix.
+- A browser run with **fake** speech APIs injected (16 checks): Listen offered only where a voice for the answer's language exists; a Bangla answer read with the Bangla voice in two pieces and the English one with the English voice; amounts spoken as "taka"; list marks not read out; the spoken question fills the box and is not sent; recognition asked for `en-US` in the English app; the privacy note shown; no voice buttons at all when nothing is supported, and typing still works; a blocked microphone explained. axe finds no violations on the coach screen. This tests the app's logic, not the engines.
+- On the development machine (Windows 11, Chrome 154) speech synthesis and recognition exist, but **only three English voices are installed, no Bangla voice**, so Listen is shown for English answers and not for Bangla ones there. This matters for the demo: Bangla listening depends on the device (an Android phone with Google's speech engine usually has one).
+- **Not verified:** real audio output, real microphone recognition, Bangla recognition quality, Android Chrome (all on the checklist). Treat English recognition as the reliable demo path and do not stake the demo on Bangla voice input.
+
+---
+
 ### 11.3 Build Order and Parallelism
 
 ```
@@ -666,6 +687,7 @@ The team is growing. The table below maps the work streams; agree on who takes w
 - RLS everywhere; secrets only in Edge Functions; zod validation on inputs.
 - Consent screen explains what is sent to the AI coach.
 - Phone numbers and identifiers never included in LLM prompts.
+- Voice (F24) uses the browser's own speech tools. Reading answers aloud happens on the device. Speaking a question is different: Chrome and Edge send the audio to their speech service to turn it into text, so the screen says so under the text box. No audio or transcript goes to our servers except as the typed-in question the person chooses to send.
 - User can export and delete their data.
 - Audit log for sensitive actions (auth events, data export/delete, admin access).
 
@@ -709,9 +731,12 @@ Planned for later:
 8. Forecast shows an upcoming low-balance risk
 9. Ask the Coach in Bangla: "Can I afford ৳5,000 for a phone?"
 10. Coach answers with the user's real numbers and safe guidance
-11. Show the in-app nudge, then install the PWA
-12. Go offline, dashboard still loads
-13. Admin view: anonymized aggregate impact for upay
+11. (If the device supports it) Tap the microphone and speak a question in English, then tap Listen on the answer
+12. Add a payment about ten times the usual; show the unusual-payment alert and open "Why this decision"
+13. Open credit readiness: the standing "informational only" banner and the four components
+14. Show the in-app nudge, then install the PWA
+15. Go offline, dashboard still loads
+16. Admin view: anonymized aggregate impact for upay
 
 ---
 
@@ -835,6 +860,6 @@ Teammates get the Supabase **Developer** role on the project, so everyone can ru
 
 ### 17.7 Current status
 
-Phases 0 to 7 are merged (PRs #1 to #10), plus the UI revamp (PRs #8 and #9). Phase 8 (unusual-payment detection with an injected-anomaly evaluation, "why this decision" explanations) is on branch `feat/phase8-anomaly-explain`. The web app is deployed on Vercel against the shared cloud project. Remaining: native-speaker Bangla review, backup video, a dry run on the real phone; Phase 9 (voice for the coach) is planned.
+Phases 0 to 8 are merged (PRs #1 to #12), plus the UI revamp and the dark-mode and header work from teammates. Phase 9 (voice for the coach: listen to answers and speak a question with the browser's own speech tools, plus a language-detection fix) is on branch `feat/phase9-voice`. The web app is deployed on Vercel against the shared cloud project. Remaining: native-speaker Bangla review, backup video, a dry run on the real phone including `docs/pitch/voice-checklist.md`.
 
 ---

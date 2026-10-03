@@ -4,12 +4,14 @@
  * is not cached here; the app keeps the last read results in IndexedDB (see offline-cache.ts).
  * Supabase and every other cross-origin request is never touched.
  *
- *  - Static build assets (/_next/static, icons): cache-first (their URLs change with content).
+ *  - Static build assets (/_next/static, icons): network-first, falling back to the saved copy when
+ *    offline. (Cache-first went stale: in development the file names do not change with content, so
+ *    an old service worker kept serving old code next to new code and the app broke.)
  *  - Page navigations: network-first, falling back to the last copy of that page. The pages are
  *    client-rendered shells, so the HTML is the same for every user.
  *  - Anything else: straight to the network.
  */
-const VERSION = "v2";
+const VERSION = "v3";
 const PAGES = `compass-pages-${VERSION}`;
 const ASSETS = `compass-assets-${VERSION}`;
 const ROUTES = [
@@ -76,13 +78,18 @@ self.addEventListener("fetch", (event) => {
 
   if (isAsset(url)) {
     event.respondWith(
-      caches.open(ASSETS).then(async (cache) => {
-        const hit = await cache.match(request);
-        if (hit) return hit;
-        const response = await fetch(request);
-        if (response.ok) cache.put(request, response.clone());
-        return response;
-      }),
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(ASSETS).then((cache) => cache.put(request, copy));
+          }
+          return response;
+        })
+        .catch(async () => {
+          const hit = await caches.match(request);
+          return hit || Response.error();
+        }),
     );
     return;
   }

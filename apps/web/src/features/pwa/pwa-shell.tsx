@@ -5,13 +5,26 @@ import { WifiOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useOnline } from "./use-online";
 
-/** Registers the service worker (production builds only) and shows a banner while offline. */
+/** Registers the service worker (production builds only; removes a leftover one in development) and shows a banner while offline. */
 export function PwaShell() {
   const { t } = useTranslation();
   const online = useOnline();
 
   useEffect(() => {
-    if (process.env.NODE_ENV !== "production" || !("serviceWorker" in navigator)) return;
+    if (!("serviceWorker" in navigator)) return;
+    if (process.env.NODE_ENV !== "production") {
+      // Development: never keep a service worker or its saved files from an earlier production run
+      // on this address, or old code is served next to new code.
+      void navigator.serviceWorker
+        .getRegistrations()
+        .then((all) => all.forEach((r) => void r.unregister()));
+      void caches
+        ?.keys()
+        .then((keys) =>
+          keys.filter((k) => k.startsWith("compass-")).forEach((k) => void caches.delete(k)),
+        );
+      return;
+    }
     void navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" }).catch(() => {
       // the app works without it; only offline reading is lost
     });

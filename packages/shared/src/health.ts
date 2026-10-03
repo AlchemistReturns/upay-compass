@@ -15,7 +15,7 @@ export type HealthInputs = {
   spend: number;
   /** Money out in essential categories over the window. */
   essentialSpend: number;
-  /** Income per 30-day bucket, newest first (up to 3). */
+  /** Income per complete calendar month (Bangladesh time), newest first (up to 3). */
   incomeBuckets: number[];
   /** Current wallet balance. */
   balance: number;
@@ -31,7 +31,7 @@ export const COMPONENT_KEYS = Object.keys(HEALTH_WEIGHTS) as ComponentKey[];
 export const SAVINGS_TARGET_RATE = 0.2;
 /** Three months of essential spending in the wallet earns full marks. */
 export const BUFFER_TARGET_MONTHS = 3;
-/** Income varying by 50% or more between 30-day periods earns zero. */
+/** Income varying by 50% or more between months earns zero. */
 export const STABILITY_ZERO_CV = 0.5;
 /** A budget 50% over its limit earns zero for that budget. */
 export const BUDGET_OVERSHOOT_ZERO = 0.5;

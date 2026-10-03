@@ -63,6 +63,21 @@ describe.skipIf(!url || !anon)("phase 7: readiness scores", () => {
     ]);
   }, 120_000);
 
+  it("a perfectly regular monthly income (student persona) scores as stable", async () => {
+    // student persona: Rs 8,000 on the 5th and Rs 3,000 on the 25th, every month
+    const reset = await a.client.functions.invoke("reset-demo", { body: { persona: "student" } });
+    expect(reset.error).toBeNull();
+    await a.client.functions.invoke("compute-health-score", { body: {} });
+    const { data } = await a.client
+      .from("health_scores")
+      .select("breakdown")
+      .order("computed_at", { ascending: false })
+      .limit(1);
+    const stability = (data![0]!.breakdown as { components: { stability: { score: number } } })
+      .components.stability.score;
+    expect(stability).toBeGreaterThanOrEqual(95);
+  }, 120_000);
+
   it("one user's readiness history is invisible to another", async () => {
     const seen = await b.client.from("readiness_scores").select("id").eq("user_id", a.id);
     expect(seen.data).toEqual([]);

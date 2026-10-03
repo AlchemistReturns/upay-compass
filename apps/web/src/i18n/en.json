@@ -503,5 +503,26 @@
     "coach_stop": "Stop sharing",
     "coach_stop_confirm": "Stop sharing your numbers with the coach? The coach will not answer until you allow it again. Your chat history stays until you clear it.",
     "toast_sharing_off": "Coach sharing turned off"
+  },
+  "readiness": {
+    "title": "Credit readiness",
+    "disclaimer_lead": "Informational only.",
+    "disclaimer": "This is not a credit decision, is not shared with any lender, and does not affect your upay account.",
+    "info_only": "Informational only",
+    "see_yours": "See your credit readiness",
+    "no_data": "Add some transactions first. We need them to work out your readiness.",
+    "low_confidence": "There is not much history yet, so treat this as a rough estimate. It becomes more reliable after a few months of activity.",
+    "component_income": "Income consistency",
+    "component_punctuality": "Bill punctuality",
+    "component_savings": "Savings consistency",
+    "component_budget": "Budget adherence",
+    "detail_punctuality": "{{onTime}} of {{payments}} payments across {{bills}} regular bills were on time (within a day of the usual date).",
+    "detail_savings": "You set money aside in {{active}} of the last {{observed}} months.",
+    "need_income": "Not enough history yet, so this counts as a neutral 50. We need at least two 30-day periods.",
+    "need_bills": "No regular bill found yet, so this counts as a neutral 50. We need a bill paid at least three times.",
+    "need_months": "Not enough months yet, so this counts as a neutral 50. We need at least two months of history.",
+    "need_budgets": "No budgets set yet, so this counts as a neutral 50.",
+    "punctuality_proxy": "Measured against the date we expect each bill from your own pattern, because upay does not give us real due dates. A close estimate, not a real due-date check.",
+    "how": "The score blends four parts: income consistency (30%), bill punctuality (30%), savings consistency (25%) and budget adherence (15%). It is calculated by code from your own numbers. It is for learning only: it is not a credit decision, it is not shared with any lender, and it does not affect your upay account."
   }
 }

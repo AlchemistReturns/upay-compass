@@ -91,7 +91,8 @@ function savingsComponent(i: HealthInputs): Component {
   };
 }
 
-function budgetComponent(i: HealthInputs): Component {
+/** Budget adherence component; also the 'budget' measure of the readiness scorecard. */
+export function budgetComponent(i: Pick<HealthInputs, "budgets">): Component {
   if (i.budgets.length === 0) return unavailable("budget");
   const scores = i.budgets.map((b) => {
     const ratio = b.spent / b.limit;
@@ -118,7 +119,8 @@ function bufferComponent(i: HealthInputs): Component {
   };
 }
 
-function stabilityComponent(i: HealthInputs): Component {
+/** Income stability component; also the 'income consistency' measure of the readiness scorecard. */
+export function stabilityComponent(i: Pick<HealthInputs, "incomeBuckets">): Component {
   const b = i.incomeBuckets;
   if (b.length < 2) return unavailable("stability");
   const mean = b.reduce((a, c) => a + c, 0) / b.length;

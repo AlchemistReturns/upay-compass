@@ -13,6 +13,7 @@ import { aiCategorize, type AiItem } from "./ai-categorize.ts";
 import { adminClient } from "./http.ts";
 import { refreshHealthScore } from "./health.ts";
 import { refreshForecast } from "./flow.ts";
+import { refreshReadiness } from "./readiness.ts";
 
 const BATCH_SIZE = 200;
 
@@ -180,6 +181,7 @@ export async function ingestForUser(
   // Best effort: a failed score refresh must not fail the ingestion itself.
   const health = await refreshHealthScore(client, userId).catch(() => null);
   await refreshForecast(client, userId).catch(() => null);
+  await refreshReadiness(client, userId).catch(() => null);
 
   return { ok: true, summary, healthScore: health?.score ?? null };
 }

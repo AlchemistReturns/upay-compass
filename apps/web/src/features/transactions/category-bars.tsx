@@ -22,17 +22,17 @@ export function CategoryBars({ data }: { data: CategorySpend[] }) {
   const max = Math.max(...data.map((r) => r.total), 1);
 
   return (
-    <section className="rounded-xl border p-4">
+    <section className="finance-card p-4 sm:p-5">
       <div className="mb-3 flex items-start justify-between gap-2">
         <div>
-          <h2 className="font-medium">{t("dashboard.category_title")}</h2>
+          <h2 className="section-title">{t("dashboard.category_title")}</h2>
           <p className="text-muted-foreground text-xs">{t("dashboard.category_hint")}</p>
         </div>
         {data.length > 0 && (
           <button
             type="button"
             onClick={() => setAsTable((v) => !v)}
-            className="text-muted-foreground min-h-11 min-w-11 text-xs underline"
+            className="text-primary hover:bg-secondary min-h-11 min-w-11 shrink-0 rounded-full px-3 text-xs font-medium transition-colors"
           >
             {asTable ? t("dashboard.show_chart") : t("dashboard.show_table")}
           </button>

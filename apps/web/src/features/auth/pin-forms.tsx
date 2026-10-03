@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { LockKeyhole } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { pinSchema } from "@compass/shared";
 import { Button } from "@/components/ui/button";
@@ -91,33 +92,39 @@ export function LockScreen() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4">
-      <h1 className="mb-1 text-xl font-semibold">{t("lock.title")}</h1>
-      <form onSubmit={submit} className="space-y-4" noValidate>
-        <div className="space-y-2">
-          <Label htmlFor="lock-pin">{t("lock.enter")}</Label>
-          <Input
-            id="lock-pin"
-            type="password"
-            inputMode="numeric"
-            autoComplete="off"
-            autoFocus
-            value={pin}
-            onChange={(e) => setPin(digitsOnly(e.target.value))}
-          />
-        </div>
-        {error && (
-          <p role="alert" className="text-destructive text-sm">
-            {error}
-          </p>
-        )}
-        <Button type="submit" className="w-full" disabled={busy || pin.length < 4}>
-          {t("lock.unlock")}
-        </Button>
-        <Button type="button" variant="ghost" className="w-full" onClick={() => void signOut()}>
-          {t("common.logout")}
-        </Button>
-      </form>
+    <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-8">
+      <div className="finance-card p-6 sm:p-8">
+        <span className="mx-auto mb-4 grid size-14 place-items-center rounded-2xl bg-gradient-to-br from-brand-deep to-primary text-white shadow-[var(--shadow-raised)]">
+          <LockKeyhole className="size-6" aria-hidden />
+        </span>
+        <h1 className="mb-6 text-center text-xl font-semibold">{t("lock.title")}</h1>
+        <form onSubmit={submit} className="space-y-4" noValidate>
+          <div className="space-y-2">
+            <Label htmlFor="lock-pin">{t("lock.enter")}</Label>
+            <Input
+              id="lock-pin"
+              type="password"
+              inputMode="numeric"
+              autoComplete="off"
+              autoFocus
+              value={pin}
+              onChange={(e) => setPin(digitsOnly(e.target.value))}
+              className="h-12 text-center text-lg tracking-[0.5em]"
+            />
+          </div>
+          {error && (
+            <p role="alert" className="text-destructive text-sm">
+              {error}
+            </p>
+          )}
+          <Button type="submit" className="w-full" disabled={busy || pin.length < 4}>
+            {t("lock.unlock")}
+          </Button>
+          <Button type="button" variant="ghost" className="w-full" onClick={() => void signOut()}>
+            {t("common.logout")}
+          </Button>
+        </form>
+      </div>
     </div>
   );
 }

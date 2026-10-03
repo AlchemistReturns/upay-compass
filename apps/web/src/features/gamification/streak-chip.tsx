@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Flame } from "lucide-react";
+import { ChevronRight, Flame } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useGamification } from "./use-gamification";
 
@@ -12,12 +12,15 @@ export function StreakChip() {
   const days = state.data?.streak_days ?? 0;
   if (days < 1) return null;
   return (
-    <Link
-      href="/learn"
-      className="bg-muted inline-flex min-h-11 items-center gap-1.5 self-start rounded-full px-4 text-sm"
-    >
-      <Flame className="text-primary size-4" aria-hidden />
-      {t("gamification.streak", { count: days })}
+    <Link href="/learn" className="finance-card flex min-h-20 items-center gap-3 p-4">
+      <span className="icon-chip bg-reward-soft text-reward">
+        <Flame className="size-5" aria-hidden />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="text-muted-foreground text-xs font-medium">{t("nav.learn")}</div>
+        <div className="text-sm font-semibold">{t("gamification.streak", { count: days })}</div>
+      </div>
+      <ChevronRight className="text-muted-foreground size-5 shrink-0" aria-hidden />
     </Link>
   );
 }

@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useOnline } from "@/features/pwa/use-online";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { formatMoney } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/features/auth/auth-provider";
 import { useProfile } from "@/features/profile/use-profile";
 import { useSetRoundup, type Goal, type GoalContribution } from "./use-goals";
@@ -47,11 +49,29 @@ export function RoundupCard({
   }
 
   return (
-    <section className="rounded-xl border p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className="font-medium">{t("goals.roundup_title")}</h2>
-          <p className="text-muted-foreground mt-0.5 text-sm">{t("goals.roundup_body")}</p>
+    <section
+      className={cn(
+        "finance-card p-4 sm:p-5",
+        // amber while it is on: round-ups are a reward-style habit
+        enabled && "border-[#f6dca3]! [background:var(--reward-soft)]!",
+      )}
+    >
+      <div className="flex items-start gap-3">
+        <span className={cn("icon-chip size-11 rounded-2xl", enabled && "bg-reward text-white")}>
+          <RefreshCw className="size-5" aria-hidden />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 className="section-title">{t("goals.roundup_title")}</h2>
+          {rounded.length > 0 ? (
+            <p className={cn("mt-0.5 text-sm font-medium", enabled && "text-reward-ink")}>
+              {t("goals.roundup_total", {
+                amount: formatMoney(total, lang),
+                count: rounded.length,
+              })}
+            </p>
+          ) : (
+            <p className="text-muted-foreground mt-0.5 text-sm">{t("goals.roundup_body")}</p>
+          )}
         </div>
         <button
           type="button"
@@ -64,7 +84,7 @@ export function RoundupCard({
         >
           <span
             className={`absolute inset-x-0 top-1.5 h-8 rounded-full transition-colors ${
-              enabled ? "bg-primary" : "bg-muted-foreground/30"
+              enabled ? "bg-reward-ink" : "bg-muted-foreground/30"
             }`}
           />
           <span
@@ -99,9 +119,7 @@ export function RoundupCard({
       )}
 
       {rounded.length > 0 && (
-        <p className="mt-3 text-sm">
-          {t("goals.roundup_total", { amount: formatMoney(total, lang), count: rounded.length })}
-        </p>
+        <p className="text-muted-foreground mt-3 text-xs leading-5">{t("goals.roundup_body")}</p>
       )}
       {error && (
         <p role="alert" className="text-destructive mt-2 text-sm">

@@ -80,8 +80,8 @@ export function BudgetForm({
   }
 
   return (
-    <form onSubmit={submit} className="space-y-4 rounded-xl border p-4" noValidate>
-      <h2 className="font-medium">{existing ? t("budgets.edit") : t("budgets.add")}</h2>
+    <form onSubmit={submit} className="finance-card space-y-4 p-4 sm:p-5" noValidate>
+      <h2 className="section-title">{existing ? t("budgets.edit") : t("budgets.add")}</h2>
 
       <div className="space-y-2">
         <Label htmlFor="budget-category">{t("budgets.category")}</Label>

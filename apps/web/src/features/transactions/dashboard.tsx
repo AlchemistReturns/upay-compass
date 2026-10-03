@@ -19,11 +19,13 @@ import type { Period } from "@compass/shared";
 import { PageHeader } from "@/components/page-header";
 import {
   AnimatedNumber,
+  EmptyState,
   ErrorState,
   LoadingCards,
   Pill,
   SectionHeader,
 } from "@/components/compass";
+import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatMoney, formatSignedMoney } from "@/lib/format";
 import { useAuth } from "@/features/auth/auth-provider";
@@ -35,9 +37,7 @@ import { ReadinessCard } from "@/features/readiness/readiness-card";
 import { NextModuleCard } from "@/features/learn/next-module-card";
 import { InstallPrompt } from "@/features/pwa/install-prompt";
 import { useAutoNudges } from "@/features/nudges/use-auto-nudges";
-import { DemoTools } from "@/features/demo/demo-tools";
 import { CategoryBars } from "./category-bars";
-import { DemoLoader } from "./demo-loader";
 import { PeriodTabs } from "./period-tabs";
 import { TransactionList } from "./transaction-list";
 import { useDashboard } from "./use-dashboard";
@@ -333,10 +333,21 @@ export function Dashboard() {
       {recent.isError && <ErrorState onRetry={() => void recent.refetch()} />}
 
       {noTransactions && (
-        <div className="space-y-5 pb-4">
-          <DemoLoader suggested={profile.data?.income_type ?? null} />
-          <DemoTools />
-        </div>
+        <EmptyState
+          icon={Wallet}
+          title={t("home.empty_title")}
+          body={t("home.empty_body")}
+          action={
+            <Link
+              href="/transactions/new"
+              className={buttonVariants({ size: "lg" })}
+              transitionTypes={NAV_FORWARD}
+            >
+              <Plus aria-hidden />
+              {t("transactions.add")}
+            </Link>
+          }
+        />
       )}
 
       {recent.isSuccess && !noTransactions && (
@@ -424,8 +435,6 @@ export function Dashboard() {
               <TransactionList rows={recent.data} framed={false} />
             </div>
           </section>
-
-          <DemoTools />
         </div>
       )}
     </>

@@ -45,7 +45,9 @@
     "greeting_afternoon": "Good afternoon",
     "greeting_evening": "Good evening",
     "subtitle": "Here is your money at a glance.",
-    "at_glance": "At a glance"
+    "at_glance": "At a glance",
+    "empty_title": "Nothing here yet",
+    "empty_body": "Add your first payment or income to see your balance, budgets and tips."
   },
   "budgets": {
     "title": "Budgets",

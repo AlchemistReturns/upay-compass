@@ -61,9 +61,14 @@ Deno.serve(async (req) => {
   body.append("model", Deno.env.get("OPENAI_TRANSCRIBE_MODEL") || DEFAULT_MODEL);
   body.append("response_format", "json");
   if (language) body.append("language", language);
-  if (hints.length > 0) {
-    body.append("prompt", `Mobile wallet payments. Names that may be spoken: ${hints.join(", ")}.`);
-  }
+  // Digits keep amounts checkable; the names help it spell the person's own shops.
+  const prompt = [
+    "Mobile wallet payments in Bangla or English. Write all numbers as digits.",
+    hints.length > 0 ? `Names that may be spoken: ${hints.join(", ")}.` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  body.append("prompt", prompt);
 
   try {
     const controller = new AbortController();

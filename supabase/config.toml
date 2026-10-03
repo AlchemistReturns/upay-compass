@@ -448,3 +448,6 @@ verify_jwt = false
 
 [functions.voice-transcribe]
 verify_jwt = false
+
+[functions.voice-command]
+verify_jwt = false

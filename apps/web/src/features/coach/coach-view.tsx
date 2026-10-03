@@ -8,6 +8,7 @@ import {
   ChevronRight,
   EyeOff,
   Gauge,
+  Info,
   MessageCircleQuestion,
   Loader2,
   Mic,
@@ -19,6 +20,7 @@ import {
   Volume2,
   Wallet,
 } from "lucide-react";
+import { Popover } from "@base-ui/react/popover";
 import { useTranslation } from "react-i18next";
 import { detectReplyLanguage } from "@compass/shared";
 import { useVoiceInput } from "@/features/voice/use-voice-input";
@@ -337,6 +339,51 @@ function ListenButton({
   );
 }
 
+/**
+ * What the coach sees and where voice goes, behind an info button by the disclaimer so the
+ * screen stays clear. Opens on hover with a mouse and on tap on a phone.
+ */
+function CoachInfo({ voice }: { voice: boolean }) {
+  const { t } = useTranslation();
+  return (
+    <Popover.Root>
+      <Popover.Trigger
+        openOnHover
+        delay={120}
+        aria-label={t("coach.info_label")}
+        className="hover:text-foreground data-[popup-open]:text-foreground grid size-7 shrink-0 place-items-center rounded-full transition-colors"
+      >
+        <Info className="size-3.5" aria-hidden />
+      </Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Positioner side="top" sideOffset={6} collisionPadding={12} className="z-50">
+          <Popover.Popup className="bg-popover text-popover-foreground ring-border/70 w-[min(21rem,calc(100vw-1.5rem))] shadow-[var(--shadow-float)] ring-1 origin-[var(--transform-origin)] space-y-3 rounded-2xl p-4 text-left text-[12.5px] leading-5 transition-[scale,opacity] duration-200 ease-[var(--ease-out-soft)] outline-none data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0">
+            <section>
+              <Popover.Title className="mb-1 flex items-center gap-1.5 text-[13px] font-bold">
+                <ShieldCheck className="text-primary size-4" aria-hidden />
+                {t("coach.info_data")}
+              </Popover.Title>
+              <p className="text-muted-foreground">{t("coach.context_line")}</p>
+            </section>
+            {voice && (
+              <section>
+                <h3 className="mb-1 flex items-center gap-1.5 text-[13px] font-bold">
+                  <Mic className="text-primary size-4" aria-hidden />
+                  {t("coach.info_voice")}
+                </h3>
+                <ul className="text-muted-foreground list-disc space-y-1 pl-4">
+                  <li>{t("coach.voice_privacy_in")}</li>
+                  <li>{t("coach.voice_privacy_out")}</li>
+                </ul>
+              </section>
+            )}
+          </Popover.Popup>
+        </Popover.Positioner>
+      </Popover.Portal>
+    </Popover.Root>
+  );
+}
+
 export function CoachView() {
   const { t, i18n } = useTranslation();
   const appLang = i18n.language === "bn" ? "bn" : "en";
@@ -455,11 +502,6 @@ export function CoachView() {
 
       {profile.isSuccess && consented && (
         <div className="mx-auto w-full max-w-2xl">
-          <p className="callout mb-5 items-center text-xs font-medium">
-            <ShieldCheck className="size-4 shrink-0" aria-hidden />
-            {t("coach.context_line")}
-          </p>
-
           {/* room at the bottom for the docked composer */}
           <div
             className="flex flex-col gap-4 pb-52 lg:pb-40"
@@ -572,14 +614,10 @@ export function CoachView() {
                       : t("coach.listening")}
                 </p>
               )}
-              <p className="text-muted-foreground text-center text-[11px] leading-4">
-                {t("coach.disclaimer")}
-              </p>
-              {stt.supported && (
-                <p className="text-muted-foreground text-center text-[11px] leading-4">
-                  {t("coach.voice_privacy")}
-                </p>
-              )}
+              <div className="text-muted-foreground flex items-center justify-center gap-1 text-[11px] leading-4">
+                <span>{t("coach.disclaimer")}</span>
+                <CoachInfo voice={stt.supported} />
+              </div>
             </div>
           </div>
         </div>

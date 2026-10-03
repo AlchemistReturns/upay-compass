@@ -50,17 +50,18 @@ export function VoiceTryButton({ className }: { className?: string }) {
   );
 }
 
-const FAB_PAGES = ["/", "/transactions"];
+/** The coach has its own microphone in the chat box, so the floating one stays off there. */
+const NO_FAB_PAGES = ["/coach"];
 
 /**
- * A floating microphone for the two screens where people record money (Home and the payments
- * list), so adding by voice is one thumb-tap away. Other screens keep the header microphone.
+ * A floating microphone on every signed-in screen except the coach, so adding by voice is one
+ * thumb-tap away wherever the person is.
  */
 export function VoiceFab() {
   const { t } = useTranslation();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  if (!FAB_PAGES.includes(pathname)) return null;
+  if (NO_FAB_PAGES.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return null;
   return (
     <>
       <button

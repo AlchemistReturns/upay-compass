@@ -158,14 +158,22 @@
     "mic_start": "Speak your question",
     "mic_stop": "Stop listening",
     "listening": "Listening…",
-    "voice_privacy": "Voice input uses your browser's speech service, which may send your voice to its provider. Answers are read aloud on your device.",
+    "voice_privacy": "Voice input first uses your browser's speech service, which may send your voice to its maker. If that is not available, with your permission your recording goes to OpenAI to be turned into text. Answers are read aloud on your device.",
     "voice_problem_denied": "The microphone is blocked. Allow it in your browser settings to speak a question.",
     "voice_problem_no_mic": "No microphone was found.",
     "voice_problem_no_speech": "We did not hear anything. Try again.",
     "voice_problem_unsupported_language": "Your browser cannot recognise speech in this language. Type your question instead.",
     "voice_problem_network": "Voice input needs an internet connection.",
     "voice_problem_other": "Voice input did not work. Type your question instead.",
-    "voice_problem_service": "Your browser's speech service could not be reached, even though you are online. A VPN, firewall, ad blocker or privacy browser (such as Brave) can block it. Try Chrome on your phone, or type your question."
+    "voice_problem_service": "Your browser's speech service could not be reached, even though you are online. A VPN, firewall, ad blocker or privacy browser (such as Brave) can block it. Try Chrome on your phone, or type your question.",
+    "processing": "Turning your voice into text…",
+    "recording": "Recording… {{seconds}}s. Tap the square to finish.",
+    "voice_problem_consent_required": "Voice needs your permission first. Tap the microphone and agree to continue.",
+    "voice_problem_rate_limited": "You have used voice a lot in a short time. Try again in a few minutes.",
+    "voice_problem_unavailable": "Voice transcription is not available right now. Type your question instead.",
+    "voice_problem_too_short": "That was too short to hear. Try again.",
+    "voice_problem_too_long": "That recording was too long. Keep it under 30 seconds.",
+    "voice_problem_failed": "We could not turn that into text. Try again, or type your question."
   },
   "learn": {
     "title": "Learn",
@@ -580,5 +588,10 @@
     "anomaly_merchant": "You paid {{amount}}. Your {{observations}} earlier payments to {{merchant}} are typically about {{typical}}, and this is far above that (score {{z}}; we flag anything above 3.5).",
     "anomaly_weekday": "You paid {{amount}}. Your {{observations}} earlier {{category}} payments on this day of the week are typically about {{typical}}, and this is far above that (score {{z}}; we flag anything above 3.5).",
     "anomaly_new": "This is your first payment to {{merchant}}, and {{amount}} is more than twice a typical {{category}} payment of about {{typical}}."
+  },
+  "voice": {
+    "consent_title": "Send your voice to OpenAI?",
+    "consent_body": "To understand speech in any browser, your recording is sent to OpenAI to be turned into text, and the words of a spoken command may name a shop or person. Recordings are not stored. You can keep typing instead.",
+    "consent_accept": "I agree"
   }
 }

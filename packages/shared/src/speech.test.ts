@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { SPEECH_LOCALE, pickVoice, prepareSpeech, recognitionProblem } from "./speech";
+import {
+  SPEECH_LOCALE,
+  audioExtension,
+  microphoneProblem,
+  pickVoice,
+  prepareSpeech,
+  recognitionProblem,
+} from "./speech";
 
 const v = (lang: string, localService = true, name = lang) => ({ lang, localService, name });
 
@@ -103,5 +110,20 @@ describe("recognitionProblem", () => {
     expect(recognitionProblem("network")).toBe("network");
     expect(recognitionProblem("aborted")).toBeNull();
     expect(recognitionProblem("something-new")).toBe("other");
+  });
+});
+
+describe("microphone problems and recording file types", () => {
+  it("maps getUserMedia error names", () => {
+    expect(microphoneProblem("NotAllowedError")).toBe("denied");
+    expect(microphoneProblem("NotFoundError")).toBe("no_mic");
+    expect(microphoneProblem("AbortError")).toBe("other");
+  });
+
+  it("names the file after what the browser recorded", () => {
+    expect(audioExtension("audio/webm;codecs=opus")).toBe("webm");
+    expect(audioExtension("audio/mp4")).toBe("m4a");
+    expect(audioExtension("audio/ogg;codecs=opus")).toBe("ogg");
+    expect(audioExtension("")).toBe("webm");
   });
 });

@@ -9,6 +9,7 @@ import {
   EyeOff,
   Gauge,
   MessageCircleQuestion,
+  Loader2,
   Mic,
   ShieldCheck,
   Sparkles,
@@ -20,7 +21,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { detectReplyLanguage } from "@compass/shared";
-import { useSpeechRecognition } from "@/features/voice/use-speech-recognition";
+import { useVoiceInput } from "@/features/voice/use-voice-input";
 import { useSpeechSynthesis } from "@/features/voice/use-speech-synthesis";
 import { OfflineNote } from "@/features/pwa/offline-note";
 import { useOnline } from "@/features/pwa/use-online";
@@ -346,7 +347,7 @@ export function CoachView() {
   const bottom = useRef<HTMLDivElement>(null);
   const confirm = useConfirm();
   const tts = useSpeechSynthesis();
-  const stt = useSpeechRecognition({
+  const stt = useVoiceInput({
     lang: appLang,
     onTranscript: (spoken) => setText(spoken),
     onProblem: (problem) =>
@@ -492,7 +493,9 @@ export function CoachView() {
               >
                 <input
                   aria-label={t("coach.input_label")}
-                  placeholder={stt.listening ? t("coach.listening") : t("coach.input_placeholder")}
+                  placeholder={
+                    stt.state === "listening" ? t("coach.listening") : t("coach.input_placeholder")
+                  }
                   maxLength={1000}
                   value={text}
                   onChange={(e) => setText(e.target.value)}
@@ -502,20 +505,25 @@ export function CoachView() {
                 {stt.supported && (
                   <button
                     type="button"
-                    aria-pressed={stt.listening}
-                    aria-label={stt.listening ? t("coach.mic_stop") : t("coach.mic_start")}
-                    title={stt.listening ? t("coach.mic_stop") : t("coach.mic_start")}
-                    disabled={busy || !online}
-                    onClick={() => (stt.listening ? stt.stop() : stt.start())}
+                    aria-pressed={stt.state === "listening"}
+                    aria-busy={stt.state === "processing"}
+                    aria-label={
+                      stt.state === "listening" ? t("coach.mic_stop") : t("coach.mic_start")
+                    }
+                    title={stt.state === "listening" ? t("coach.mic_stop") : t("coach.mic_start")}
+                    disabled={busy || !online || stt.state === "processing"}
+                    onClick={() => (stt.state === "listening" ? void stt.stop() : stt.start())}
                     className={cn(
                       "tap grid size-11 shrink-0 place-items-center rounded-full disabled:opacity-35",
-                      stt.listening
+                      stt.state === "listening"
                         ? "bg-destructive text-white"
                         : "bg-secondary text-primary hover:bg-secondary/70",
                     )}
                   >
-                    {stt.listening ? (
+                    {stt.state === "listening" ? (
                       <Square className="size-4" fill="currentColor" aria-hidden />
+                    ) : stt.state === "processing" ? (
+                      <Loader2 className="size-5 animate-spin" aria-hidden />
                     ) : (
                       <Mic className="size-5" aria-hidden />
                     )}
@@ -533,9 +541,13 @@ export function CoachView() {
                 </button>
               </form>
               <OfflineNote />
-              {stt.listening && (
+              {stt.state !== "idle" && (
                 <p role="status" className="text-primary text-center text-xs font-semibold">
-                  {t("coach.listening")}
+                  {stt.state === "processing"
+                    ? t("coach.processing")
+                    : stt.elapsed > 0
+                      ? t("coach.recording", { seconds: stt.elapsed })
+                      : t("coach.listening")}
                 </p>
               )}
               <p className="text-muted-foreground text-center text-[11px] leading-4">

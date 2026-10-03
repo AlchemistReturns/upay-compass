@@ -22,6 +22,7 @@ import {
   type Goal,
   type GoalContribution,
 } from "./use-goals";
+import { moneyMoveErrorKey } from "./use-savings";
 
 const QUICK_AMOUNTS = [100, 500, 1000] as const;
 
@@ -49,8 +50,8 @@ function AddMoneyForm({
     try {
       const id = await contribute.mutateAsync({ goalId: goal.id, amount: value });
       onDone({ id, amount: value });
-    } catch {
-      setError(t("common.error"));
+    } catch (e) {
+      setError(t(moneyMoveErrorKey(e)));
     }
   }
 

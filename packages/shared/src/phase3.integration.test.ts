@@ -171,6 +171,15 @@ describe.skipIf(!url || !anon)("phase 3: budgets, goals, round-ups, nudges", () 
     let bGoalId: string;
 
     it("contributes, undoes, and completes a goal; clients cannot forge any of it", async () => {
+      // goals are funded from the wallet, so there must be money in it
+      await a.client.from("transactions").insert({
+        user_id: a.id,
+        amount: 5000,
+        direction: "in",
+        channel: "add_money",
+        counterparty: "Funding",
+        occurred_at: new Date().toISOString(),
+      });
       const g = await a.client
         .from("goals")
         .insert({ user_id: a.id, title: "Phone", target_amount: 1000 })

@@ -105,7 +105,7 @@
     "need_monthly": "To finish by {{date}}, set aside about {{amount}} a month.",
     "target_date": "Target date {{date}}",
     "need_monthly_short": "about {{amount}} a month needed",
-    "simulated": "Simulated: this earmarks money inside the demo, nothing real moves.",
+    "simulated": "Simulated: this moves money from your wallet into the goal inside the demo; nothing real moves.",
     "roundup_title": "Round-up savings",
     "roundup_body": "Each payment you make is rounded up to the next ৳10 and the difference is set aside for a goal. You can turn it off or undo any round-up.",
     "roundup_goal": "Save round-ups into",
@@ -367,7 +367,8 @@
     "this_month": "This month",
     "in_amount": "{{amount}} in",
     "out_amount": "{{amount}} out",
-    "spent_share": "You have spent {{pct}}% of this month’s income."
+    "spent_share": "You have spent {{pct}}% of this month’s income.",
+    "savings_line": "Plus {{amount}} in savings"
   },
   "transactions": {
     "recent": "Recent transactions",
@@ -736,5 +737,19 @@
     "done": "Done",
     "voice_hint": "Or just say it: \"add 500 taka for tea\".",
     "try_voice": "Try voice"
+  },
+  "savings": {
+    "title": "Savings",
+    "in_goals": "In goals",
+    "free": "Not in a goal",
+    "add": "Add to savings",
+    "withdraw": "Withdraw",
+    "explain": "Money you add to savings leaves your wallet balance and counts toward your savings score and your emergency buffer. Money in goals is part of your savings.",
+    "hint_add": "Simulated: moves money from your wallet into savings; nothing real moves.",
+    "hint_withdraw": "Simulated: moves savings that are not in a goal back to your wallet. To free money in a goal, undo its contribution.",
+    "toast_added": "{{amount}} moved to savings",
+    "toast_withdrawn": "{{amount}} moved back to your wallet",
+    "error_balance": "Your wallet does not have enough money for that.",
+    "error_free": "You can only withdraw savings that are not in a goal."
   }
 }

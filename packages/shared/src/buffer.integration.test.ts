@@ -9,7 +9,7 @@ describe.skipIf(!url || !anon)("buffer on a monthly basis (database)", () => {
   let billsId: number;
 
   beforeAll(async () => {
-    a = await signIn("+8801700000003");
+    a = await signIn("+8801700000006");
     const cats = await a.client.from("categories").select("id,key");
     foodId = cats.data!.find((c) => c.key === "food")!.id;
     billsId = cats.data!.find((c) => c.key === "bills")!.id;

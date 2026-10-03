@@ -18,6 +18,7 @@ import { useRealtimeInvalidate } from "@/features/realtime/use-realtime-invalida
 import { GoalCard } from "./goal-card";
 import { RoundupCard } from "./roundup-card";
 import { useContributions, useCreateGoal, useGoals, type Goal } from "./use-goals";
+import { SavingsCard } from "./savings-card";
 
 /** Teal summary at the top: everything saved across goals, as a ring and in words. */
 function GoalsSummary({ goals, onNew }: { goals: Goal[]; onNew: () => void }) {
@@ -172,6 +173,7 @@ export function GoalsView() {
 
       {goals.isSuccess && contributions.isSuccess && (
         <div className="space-y-5 pb-4">
+          <SavingsCard />
           {goals.data.length > 0 ? (
             <GoalsSummary goals={goals.data} onNew={startNew} />
           ) : (

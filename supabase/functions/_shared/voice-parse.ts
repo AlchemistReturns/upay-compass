@@ -1,4 +1,5 @@
 import { RAW_COMMAND_JSON_SCHEMA, voiceParsePrompt, type GoalRef } from "@compass/shared";
+import { reasonFromError, type CallMeter } from "./monitor.ts";
 
 const DEFAULT_MODEL = "gpt-4.1-mini";
 const TIMEOUT_MS = 20_000;
@@ -7,12 +8,14 @@ export async function parseVoiceCommand(
   text: string,
   today: string,
   goals: GoalRef[],
+  meter?: CallMeter,
 ): Promise<unknown | null> {
   const apiKey = Deno.env.get("OPENAI_API_KEY");
   if (!apiKey) return null;
   const model = Deno.env.get("OPENAI_VOICE_MODEL") || DEFAULT_MODEL;
   // reasoning models take no temperature and a different token field
   const reasoning = /^(gpt-5|o\d)/.test(model);
+  meter?.model(model);
 
   try {
     const controller = new AbortController();
@@ -32,11 +35,16 @@ export async function parseVoiceCommand(
       }),
     });
     clearTimeout(timer);
-    if (!res.ok) return null;
+    if (!res.ok) {
+      meter?.reason(`http_${res.status}`);
+      return null;
+    }
     const payload = await res.json();
+    meter?.usage(payload?.usage);
     const content = payload?.choices?.[0]?.message?.content;
     return typeof content === "string" ? JSON.parse(content) : null;
-  } catch {
+  } catch (e) {
+    meter?.reason(reasonFromError(e));
     return null;
   }
 }

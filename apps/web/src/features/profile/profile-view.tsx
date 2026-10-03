@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Languages, LogOut, Phone, ShieldCheck, SunMoon } from "lucide-react";
+import { Languages, LogOut, Phone, SunMoon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import { INCOME_TYPES, incomeSchema, type IncomeType } from "@compass/shared";
@@ -12,38 +11,20 @@ import { useSetLanguage } from "@/components/language-toggle";
 import { Button } from "@/components/ui/button";
 import { Segmented } from "@/components/segmented";
 import { ThemeSwitch } from "@/components/theme-switch";
-import { useConfirm } from "@/components/confirm";
 import { toast } from "@/components/toaster";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
-import { formatShortDate } from "@/lib/format";
 import { useAuth } from "@/features/auth/auth-provider";
 import { OfflineNote } from "@/features/pwa/offline-note";
 import { useOnline } from "@/features/pwa/use-online";
-import { supabase } from "@/lib/supabase";
+import { AiActivityCard } from "./ai-activity-card";
 import { Avatar, formatPhone } from "./avatar";
 import { useProfile, useUpdateProfile, type Profile } from "./use-profile";
 
 const detailsSchema = incomeSchema.extend({
   full_name: z.string().trim().max(60),
 });
-
-/** Withdraw coach consent: the coach function refuses to answer until it is given again. */
-function useStopCoachSharing() {
-  const { userId } = useAuth();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ coach_consent_at: null })
-        .eq("id", userId!);
-      if (error) throw error;
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["profile", userId] }),
-  });
-}
 
 /** Seeded from the loaded profile once (the parent keys it by profile id). */
 function DetailsForm({ profile }: { profile: Profile }) {
@@ -144,23 +125,8 @@ function DetailsForm({ profile }: { profile: Profile }) {
 export function ProfileView() {
   const { t, i18n } = useTranslation();
   const { userId, signOut } = useAuth();
-  const online = useOnline();
   const profile = useProfile(userId);
   const setLanguage = useSetLanguage();
-  const stopSharing = useStopCoachSharing();
-  const confirm = useConfirm();
-
-  async function stopCoachSharing() {
-    const ok = await confirm({
-      title: t("profile.coach_stop"),
-      description: t("profile.coach_stop_confirm"),
-      confirmLabel: t("profile.coach_stop"),
-    });
-    if (!ok) return;
-    stopSharing.mutate(undefined, {
-      onSuccess: () => toast.success(t("profile.toast_sharing_off")),
-    });
-  }
   const p = profile.data;
   const name = p?.full_name?.trim() || null;
 
@@ -232,34 +198,7 @@ export function ProfileView() {
             <ThemeSwitch />
           </section>
 
-          <section className="finance-card space-y-3 p-5 sm:p-6">
-            <h2 className="flex items-center gap-2 text-[17px] font-bold">
-              <ShieldCheck className="text-primary size-[18px]" aria-hidden />
-              {t("profile.coach_title")}
-            </h2>
-            <p className="text-muted-foreground text-sm leading-6">
-              {p.coach_consent_at
-                ? t("profile.coach_on", {
-                    date: formatShortDate(p.coach_consent_at, i18n.language),
-                  })
-                : t("profile.coach_off")}
-            </p>
-            {p.coach_consent_at && (
-              <Button
-                variant="secondary"
-                loading={stopSharing.isPending}
-                disabled={!online}
-                onClick={() => void stopCoachSharing()}
-              >
-                {t("profile.coach_stop")}
-              </Button>
-            )}
-            {stopSharing.isError && (
-              <p role="alert" className="text-destructive text-sm">
-                {t("common.error")}
-              </p>
-            )}
-          </section>
+          <AiActivityCard profile={p} />
 
           <Button variant="destructive" className="w-full" onClick={() => void signOut()}>
             <LogOut className="ic-forward size-4" aria-hidden />

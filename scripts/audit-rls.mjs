@@ -63,6 +63,28 @@ for (const table of SERVER_WRITTEN) {
   else console.log(`✓ signed-in users can only read ${table}`);
 }
 
+// Monitoring (model_events) holds no content but is still operator-only: no policies and no
+// grants for the browser roles, so only Edge Functions (service role) write it and only
+// system_health() (security definer, aggregates only) reads it.
+const NO_CLIENT_ACCESS = ["model_events"];
+for (const table of NO_CLIENT_ACCESS) {
+  const privs = psql(
+    `select string_agg(grantee || ':' || privilege_type, ',') from information_schema.role_table_grants where table_schema='public' and table_name='${table}' and grantee in ('anon','authenticated')`,
+  )[0]?.[0];
+  const policies = psql(
+    `select count(*) from pg_policy p join pg_class c on c.oid=p.polrelid where c.relname='${table}'`,
+  )[0]?.[0];
+  if (privs) fail(`browser roles have grants on ${table}: ${privs}`);
+  else if (policies !== "0") fail(`${table} has ${policies} policies, expected none`);
+  else console.log(`✓ ${table}: no policies and no anon/authenticated grants`);
+}
+const purge = psql(
+  "select has_function_privilege('anon','public.purge_model_events()','execute'), has_function_privilege('authenticated','public.purge_model_events()','execute')",
+)[0];
+if (purge && purge.some((v) => v === "t"))
+  fail("purge_model_events() is callable by browser roles");
+else console.log("✓ purge_model_events() is not callable by browser roles");
+
 // Column-level: users must not be able to write server-controlled profile columns.
 const profileCols = psql(
   "select column_name from information_schema.column_privileges where table_schema='public' and table_name='profiles' and grantee='authenticated' and privilege_type='UPDATE' order by 1",

@@ -9,6 +9,7 @@ import {
 import { aiCategorize, type AiItem } from "../_shared/ai-categorize.ts";
 import { authenticate, corsHeaders, json } from "../_shared/http.ts";
 import { takeSlot } from "../_shared/limits.ts";
+import { startCall } from "../_shared/monitor.ts";
 
 /** At most this many calls per user in this many minutes (each can reach the model). */
 const RATE_LIMIT = 20;
@@ -101,7 +102,14 @@ Deno.serve(async (req) => {
       });
     }
   }
-  const labels = await aiCategorize([...items.values()]);
+  // one monitoring event per request that reaches the model; a request whose items were not all
+  // labelled still succeeded for the person (they go to review), so it is a fallback, not an error
+  const call = items.size > 0 ? startCall("categorize-transaction") : null;
+  const labels = await aiCategorize([...items.values()], call ?? undefined);
+  if (call) {
+    if (labels.size < items.size) call.fallback();
+    call.end();
+  }
 
   for (const row of unknown) {
     const label = labels.get(normalizeKeyword(row.counterparty) || row.id);

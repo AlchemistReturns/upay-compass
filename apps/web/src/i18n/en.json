@@ -617,7 +617,21 @@
     "coach_off": "Off. You can turn it on from the Coach screen.",
     "coach_stop": "Stop sharing",
     "coach_stop_confirm": "Stop sharing your numbers with the coach? The coach will not answer until you allow it again. Your chat history stays until you clear it.",
-    "toast_sharing_off": "Coach sharing turned off"
+    "toast_sharing_off": "Coach sharing turned off",
+    "ai_title": "Performance and activity",
+    "ai_hint": "Only your own activity from the last 30 days. What you said or wrote is not kept here, only that it happened.",
+    "ai_coach": "Coach questions",
+    "ai_voice": "Voice requests",
+    "ai_lessons": "Lessons made for you",
+    "ai_last": "Last used {{date}}",
+    "ai_empty": "You haven't used any AI feature in the last 30 days.",
+    "ai_shared_title": "What you have allowed to be shared",
+    "ai_shared_none": "Nothing. AI features stay off until you allow them.",
+    "ai_shared_voice": "Your voice recordings and the words of spoken commands, only when you use voice.",
+    "ai_stop_coach": "Stop sharing numbers",
+    "ai_stop_voice": "Stop sharing voice",
+    "voice_stop_confirm": "Stop sending your voice to the AI? Voice features will ask for your permission again next time.",
+    "toast_voice_off": "Voice sharing is off"
   },
   "appearance": {
     "title": "Appearance",
@@ -751,5 +765,142 @@
     "toast_withdrawn": "{{amount}} moved back to your wallet",
     "error_balance": "Your wallet does not have enough money for that.",
     "error_free": "You can only withdraw savings that are not in a goal."
+  },
+  "monitor": {
+    "title": "Performance & health",
+    "subtitle": "How the AI and the app are doing.",
+    "open": "Performance & health",
+    "not_allowed": "This page is only for administrators.",
+    "range_label": "Time range",
+    "range_24h": "24 hours",
+    "range_7d": "7 days",
+    "refresh": "Refresh",
+    "sample_label": "Show sample data",
+    "sample_banner": "SIMULATED traffic.",
+    "sample_hint": "Made up in this browser to show how the page looks. It is not real and nothing is saved.",
+    "scenario_label": "Example",
+    "scenario_normal": "Normal day",
+    "scenario_outage": "AI outage",
+    "hero": {
+      "ok": "Everything looks healthy",
+      "ok_body": "The AI is answering, the safety checks are working and nothing needs your attention.",
+      "watch": "Worth a look",
+      "problem": "Needs attention",
+      "attention": "Check: {{list}}.",
+      "unknown": "Not enough activity yet",
+      "unknown_body": "Health shows up here once people have used the AI features a little."
+    },
+    "updated_one": "Updated {{time}} · based on {{formatted}} AI request",
+    "updated_other": "Updated {{time}} · based on {{formatted}} AI requests",
+    "status": {
+      "ok": "Good",
+      "watch": "Watch",
+      "problem": "Problem",
+      "unknown": "Not enough data"
+    },
+    "unit_seconds": "s",
+    "trend": "Trend over the last {{range}}.",
+    "hidden": "Hidden: fewer than {{count}} people.",
+    "empty_title": "No AI activity yet",
+    "empty_body": "Health shows up here once the coach, voice or smart filing are used. To see how it looks right now, turn on sample data.",
+    "empty_action": "Show sample data",
+    "show_details": "Show details",
+    "hide_details": "Hide details",
+    "cards": {
+      "responding": {
+        "question": "Is the app responding?",
+        "short": "Speed",
+        "caption": "typical wait, in seconds",
+        "meaning": "Half of AI requests finish within {{typical}} seconds. The slowest 5% take {{slowest}} seconds or more.",
+        "unknown": "Not enough requests yet to judge speed (at least {{min}} needed)."
+      },
+      "ai_available": {
+        "question": "Is the AI available?",
+        "short": "AI availability",
+        "caption": "answered by the AI itself",
+        "meaning": "{{unavailable}} of {{total}} requests got a backup answer or an error because the AI could not help.",
+        "unknown": "Not enough requests yet (at least {{min}} needed)."
+      },
+      "safety": {
+        "question": "Are the safety checks working?",
+        "short": "Safety checks",
+        "caption": "of AI answers stopped by a check",
+        "meaning": "{{stopped}} of {{checked}} checked answers were stopped before reaching a person. A few is healthy; a sudden jump means the AI or its instructions have drifted.",
+        "unknown": "Needs at least {{min}} checked answers."
+      },
+      "accuracy": {
+        "question": "Is it accurate?",
+        "short": "Accuracy",
+        "caption": "of payments left as filed",
+        "meaning": "Across {{people}} people: {{rules}}% filed by rules, {{ai}}% by AI and {{corrected}}% corrected by people.",
+        "note": "Approximate: people only fix what they notice, and one fix also relabels later payments from the same shop. Last 30 days.",
+        "unknown": "Needs at least {{min}} payments."
+      },
+      "forecast": {
+        "question": "Is the forecast reliable?",
+        "short": "Forecast",
+        "caption_better": "less error than a simple baseline",
+        "caption_worse": "more error than a simple baseline",
+        "caption": "error against a simple baseline",
+        "meaning": "The baseline repeats the same days four weeks earlier. Over the last 30 days the forecast beat it for {{better}}% of {{people}} people.",
+        "note": "Each person's latest 30-day test, middle value across people.",
+        "unknown": "Needs at least {{min}} people with a forecast."
+      },
+      "cost": {
+        "question": "What does it cost?",
+        "short": "Cost",
+        "caption": "per active person a month (estimate)",
+        "meaning": "Worked out from token counts for {{people}} active people, projected to a month.",
+        "note": "ESTIMATE using OpenAI list prices from {{date}}. Reading answers aloud and cached-input discounts are not included. Your invoice is the real number.",
+        "unknown": "Needs at least {{min}} requests from 5 or more people."
+      }
+    },
+    "features": {
+      "coach_chat": "Coach",
+      "categorize_transaction": "Smart filing",
+      "voice_command": "Voice commands",
+      "voice_transcribe": "Voice to text",
+      "voice_speak": "Read aloud",
+      "generate_learn_modules": "Made-for-you lessons"
+    },
+    "details": {
+      "requests_title": "Requests over time",
+      "requests_label": "Bar chart of requests in each period",
+      "features_title": "By feature",
+      "col_time": "Time",
+      "col_requests": "Requests",
+      "col_backup": "Backup answer",
+      "col_failed": "Failed",
+      "col_feature": "Feature",
+      "col_slowest": "Slowest 5%",
+      "legend_ok": "Answered by the AI",
+      "legend_backup": "Backup answer",
+      "legend_failed": "Failed"
+    },
+    "panels": {
+      "trends": "Trends",
+      "per_hour": "Per hour",
+      "per_hours": "Per {{count}} hours",
+      "requests": "Requests",
+      "latency": "Response time",
+      "latency_sub": "The slowest 5% of requests in each period",
+      "healthy_line": "healthy up to here",
+      "available": "Answered by the AI itself",
+      "available_sub": "Share of requests that did not need a backup answer",
+      "col_answered": "Answered by AI",
+      "cost": "Estimated cost",
+      "cost_sub": "ESTIMATE in US dollars for each period",
+      "col_cost": "Estimated cost",
+      "features_sub": "Requests per feature; amber is backup answers or failures",
+      "filing": "How payments get filed",
+      "filing_sub": "Spending in the last 30 days, by who filed it",
+      "mix_rules": "Rules",
+      "mix_ai": "AI",
+      "mix_review": "Sent to review",
+      "mix_corrected": "Corrected by people",
+      "forecast": "Forecast against a simple baseline",
+      "forecast_sub": "Each person's latest 30-day test",
+      "forecast_text": "of {{people}} people had a forecast with less error than repeating the same days from four weeks earlier."
+    }
   }
 }

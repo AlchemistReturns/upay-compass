@@ -1,4 +1,5 @@
 import { CATEGORY_KEYS, isCategoryKey, type CategoryKey } from "@compass/shared";
+import { reasonFromError, type CallMeter } from "./monitor.ts";
 
 export type AiItem = {
   /** Caller's key for this item; echoed back in the result map. */
@@ -24,11 +25,15 @@ export function redact(text: string): string {
  * it labelled; anything missing or invalid is left for the caller to mark as "other / needs review".
  * With no API key, or on any failure, it returns an empty map instead of throwing.
  */
-export async function aiCategorize(items: AiItem[]): Promise<Map<string, CategoryKey>> {
+export async function aiCategorize(
+  items: AiItem[],
+  meter?: CallMeter,
+): Promise<Map<string, CategoryKey>> {
   const result = new Map<string, CategoryKey>();
   const apiKey = Deno.env.get("OPENAI_API_KEY");
   if (!apiKey || items.length === 0) return result;
   const model = Deno.env.get("OPENAI_CATEGORIZE_MODEL") || DEFAULT_MODEL;
+  meter?.model(model);
 
   for (let i = 0; i < items.length; i += BATCH_SIZE) {
     const batch = items.slice(i, i + BATCH_SIZE);
@@ -70,14 +75,21 @@ export async function aiCategorize(items: AiItem[]): Promise<Map<string, Categor
         }),
       });
       clearTimeout(timer);
-      if (!res.ok) continue;
+      if (!res.ok) {
+        meter?.reason(`http_${res.status}`);
+        continue;
+      }
 
       const payload = await res.json();
+      meter?.usage(payload?.usage);
       const parsed = JSON.parse(payload?.choices?.[0]?.message?.content ?? "{}");
       for (const row of Array.isArray(parsed?.results) ? parsed.results : []) {
         if (ids.has(row?.id) && isCategoryKey(row?.category)) result.set(row.id, row.category);
+        // the allow-list check refused this answer
+        else if (ids.has(row?.id)) meter?.reason("check_invalid_category");
       }
-    } catch {
+    } catch (e) {
+      meter?.reason(reasonFromError(e));
       // network error, timeout or malformed JSON: leave this batch unlabelled
     }
   }

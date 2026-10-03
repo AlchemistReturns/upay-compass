@@ -9,6 +9,7 @@ import {
 import { adminClient, authenticate, corsHeaders, json } from "../_shared/http.ts";
 import { takeSlot } from "../_shared/limits.ts";
 import { loadFlow, refreshForecast } from "../_shared/flow.ts";
+import { reasonFromError, startCall } from "../_shared/monitor.ts";
 import {
   HISTORY_MESSAGES,
   dataMessage,
@@ -105,17 +106,21 @@ Deno.serve(async (req) => {
 
       let reply = "";
       let usedFallback = false;
+      const call = startCall("coach-chat", context.language);
       try {
-        reply = await streamChat(messages, (delta) => send({ delta }), abort.signal);
+        reply = await streamChat(messages, (delta) => send({ delta }), abort.signal, call);
       } catch (e) {
         console.error("coach model failed:", e instanceof Error ? e.message : e);
+        call.reason(reasonFromError(e));
         if (!reply) {
           usedFallback = true;
+          call.fallback();
           reply = fallbackReply(context);
           send({ delta: reply, fallback: true });
         }
       } finally {
         clearTimeout(timer);
+        call.end();
       }
 
       await admin

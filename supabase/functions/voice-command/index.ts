@@ -3,6 +3,7 @@ import { addDays, dhakaDay, validateCommand, type Command } from "@compass/share
 import { authenticate, corsHeaders, json } from "../_shared/http.ts";
 import { parseVoiceCommand } from "../_shared/voice-parse.ts";
 import { auditVoice, guardVoice } from "../_shared/voice.ts";
+import { startCall } from "../_shared/monitor.ts";
 
 const bodySchema = z.object({
   text: z.string().trim().min(1).max(500),
@@ -81,17 +82,24 @@ Deno.serve(async (req) => {
   const { data: goalRows } = await client.from("goals").select("id,title").eq("status", "active");
   const goals = (goalRows ?? []).map((g) => ({ id: g.id as string, title: g.title as string }));
 
-  const raw = await parseVoiceCommand(text, today, goals);
+  const call = startCall("voice-command", body.data.language);
+  const raw = await parseVoiceCommand(text, today, goals, call);
   if (raw === null) {
+    call.reason("model_failed");
+    call.end("error");
     await auditVoice(client, user.id, "voice_command", { ok: false, reason: "model_failed" });
     return json({ error: "parse_failed" }, 502);
   }
 
   const result = validateCommand(raw, { transcript: text, today, goals });
   if (!result.ok) {
+    // the validator stopped the model's output: a safety check doing its job, not a failure
+    call.reason(`check_${result.reason}`);
+    call.end();
     await auditVoice(client, user.id, "voice_command", { ok: false, reason: result.reason });
     return json({ status: "rejected", reason: result.reason, transcript: text });
   }
+  call.end();
 
   const command = result.command;
   const candidates =

@@ -10,7 +10,8 @@ import {
 } from "@compass/shared";
 import { adminClient, authenticate, corsHeaders, json } from "../_shared/http.ts";
 import { takeSlot } from "../_shared/limits.ts";
-import { loadLearnSignalInput, openAiLearnClient } from "../_shared/learn.ts";
+import { loadLearnSignalInput, makeOpenAiLearnClient } from "../_shared/learn.ts";
+import { startCall } from "../_shared/monitor.ts";
 
 const bodySchema = z.object({ language: z.enum(["bn", "en"]).optional() });
 
@@ -68,6 +69,9 @@ Deno.serve(async (req) => {
   const plan = planLearnRefresh(signals, stored, now);
 
   const admin = adminClient();
+  // one monitoring event per request (tokens add up over its model calls)
+  const call = startCall("generate-learn-modules", language);
+  const learnClient = makeOpenAiLearnClient(call);
   const showIds: string[] = [];
   let generated = 0;
   let rejected = 0;
@@ -86,7 +90,7 @@ Deno.serve(async (req) => {
       planned.pick.topic,
       planned.facts,
       language,
-      openAiLearnClient,
+      learnClient,
     );
     if (!result.ok) {
       if (result.unavailable) unavailable = true;
@@ -121,6 +125,14 @@ Deno.serve(async (req) => {
     showIds.push(saved.id as string);
   }
   showIds.push(...plan.finished.map((r) => r.id));
+
+  // the validator stopped at least one module, or the model was unavailable
+  if (rejected > 0) call.reason("check_rejected_module");
+  if (unavailable) {
+    call.reason("model_unavailable");
+    call.fallback();
+  }
+  call.end();
 
   await client.from("audit_log").insert({
     user_id: user.id,

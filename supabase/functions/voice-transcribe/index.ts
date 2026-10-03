@@ -1,6 +1,7 @@
 import { VOICE_MAX_BYTES, VOICE_MIN_BYTES } from "@compass/shared";
 import { authenticate, corsHeaders, json } from "../_shared/http.ts";
 import { auditVoice, guardVoice } from "../_shared/voice.ts";
+import { reasonFromError, startCall } from "../_shared/monitor.ts";
 
 const DEFAULT_MODEL = "gpt-4o-transcribe";
 const TIMEOUT_MS = 30_000;
@@ -76,6 +77,8 @@ Deno.serve(async (req) => {
     .join(" ");
   body.append("prompt", prompt);
 
+  const call = startCall("voice-transcribe", language);
+  call.model(Deno.env.get("OPENAI_TRANSCRIBE_MODEL") || DEFAULT_MODEL);
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
@@ -91,12 +94,20 @@ Deno.serve(async (req) => {
       language,
       ok: res.ok,
     });
-    if (!res.ok) return json({ error: "transcription_failed" }, 502);
+    if (!res.ok) {
+      call.reason(`http_${res.status}`);
+      call.end("error");
+      return json({ error: "transcription_failed" }, 502);
+    }
 
     const payload = await res.json();
+    call.usage(payload?.usage);
+    call.end();
     const text = typeof payload?.text === "string" ? payload.text.trim() : "";
     return json({ text });
-  } catch {
+  } catch (e) {
+    call.reason(reasonFromError(e));
+    call.end("error");
     await auditVoice(client, user.id, "voice_transcribe", {
       bytes: audio.size,
       language,

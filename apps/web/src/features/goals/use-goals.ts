@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/features/auth/auth-provider";
 import { requestBadgeCheck } from "@/features/gamification/gamification";
+import { useRefreshHealth } from "@/features/health/use-health";
 
 export type Goal = {
   id: string;
@@ -62,9 +63,15 @@ export function useContributions() {
 function useInvalidateGoals() {
   const { userId } = useAuth();
   const queryClient = useQueryClient();
+  const refreshHealth = useRefreshHealth();
   return async () => {
+    // money moved into or out of a goal changes the savings score, so refresh it
+    void refreshHealth();
     await queryClient.invalidateQueries({ queryKey: ["goals", userId] });
     await queryClient.invalidateQueries({ queryKey: ["profile", userId] });
+    // money in a goal has left the wallet, so balances and the score move too
+    await queryClient.invalidateQueries({ queryKey: ["savings", userId] });
+    await queryClient.invalidateQueries({ queryKey: ["dashboard", userId] });
   };
 }
 

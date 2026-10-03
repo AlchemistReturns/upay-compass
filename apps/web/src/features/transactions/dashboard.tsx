@@ -36,6 +36,7 @@ import { BAND_COLOR } from "@/features/health/health-card";
 import { useHealthSnapshots } from "@/features/health/use-health";
 import { useReadinessSnapshots } from "@/features/readiness/use-readiness";
 import { useRealtimeInvalidate } from "@/features/realtime/use-realtime-invalidate";
+import { useSavings } from "@/features/goals/use-savings";
 import { GetStarted } from "@/features/onboarding/get-started";
 import { VoiceTryButton } from "@/features/voice/voice-command-button";
 import { InstallPrompt } from "@/features/pwa/install-prompt";
@@ -176,6 +177,7 @@ function BalancePanel({
   expense: number | undefined;
   simulated: boolean;
 }) {
+  const savings = useSavings();
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const health = useHealthSnapshots();
@@ -207,6 +209,13 @@ function BalancePanel({
           <AnimatedNumber value={balance} format={(n) => formatMoney(n, lang)} />
         )}
       </div>
+      {savings.data && savings.data.total > 0 && (
+        <p className="text-on-dark-muted mt-2 text-[13px] font-semibold">
+          <span className="num">
+            {t("dashboard.savings_line", { amount: formatMoney(savings.data.total, lang) })}
+          </span>
+        </p>
+      )}
 
       {income !== undefined && expense !== undefined && (
         <div className="mt-5 lg:mb-6">

@@ -11,7 +11,7 @@
  *    client-rendered shells, so the HTML is the same for every user.
  *  - Anything else: straight to the network.
  */
-const VERSION = "v3";
+const VERSION = "v4";
 const PAGES = `compass-pages-${VERSION}`;
 const ASSETS = `compass-assets-${VERSION}`;
 const ROUTES = [
@@ -26,6 +26,8 @@ const ROUTES = [
   "/nudges",
   "/readiness",
   "/profile",
+  // one shell for every "Made for you" lesson (the id is a query string, never precached)
+  "/learn/for-you",
   // one page per learn module (keep in step with LEARN_SLUGS in packages/shared/src/learn.ts)
   ...[
     "budget-basics",

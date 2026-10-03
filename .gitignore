@@ -13,3 +13,6 @@ next-env.d.ts
 supabase/.temp
 supabase/.branches
 
+
+# local live-run output
+.local-learn-run-*.md

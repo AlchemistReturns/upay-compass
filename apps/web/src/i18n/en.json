@@ -432,7 +432,7 @@
     "card_ok": "Your balance looks safe for the next 30 days.",
     "card_low": "Balance may dip to {{amount}} around {{day}}.",
     "card_negative": "Balance may go below zero around {{day}} (down to {{amount}}).",
-    "card_insufficient": "Not enough history for a forecast yet.",
+    "card_insufficient": "Not enough history for a forecast yet. It needs about 4 weeks and 20 payments; keep adding yours.",
     "insufficient": "There is not enough transaction history yet to forecast honestly. Add or load a few weeks of transactions and check back.",
     "no_data": "Add some transactions first. We need them to build a forecast.",
     "status_ok": "Good news: your balance is expected to stay above your safety buffer ({{buffer}}) for the next 30 days.",

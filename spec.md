@@ -410,7 +410,7 @@ Reference data (the 12 categories, and later the learn modules) is inserted by m
 
 ### 11.2 Phases
 
-**Status:** Phases 0 to 9 complete and merged; Phase 10 (voice commands) in progress on its own branch. Remaining: native-speaker Bangla review, backup video, a dry run on the real phone (including the voice checklist). Remaining: Bangla copy review, backup video, a dry run on the real phone.
+**Status:** Phases 0 to 9 complete and merged; Phase 10 (voice commands) complete on its own branch, awaiting review and cloud deploy. Remaining: native-speaker Bangla review, backup video, a dry run on the real phone (including the voice checklist).
 
 ### Phase 0 — Foundations
 
@@ -705,7 +705,24 @@ preview card ("Add Rs 500, Food, Tea Stall, today") -> user confirms -> existing
 
 **Verify:** every command type works end to end by voice on a production build in two browsers including Brave; a spoken amount in Bangla words, Bangla digits and "5k" all read correctly; a deliberately wrong amount from the model is rejected by code; removal always shows candidates and needs a tap; consent is required and refused without it; an audit entry exists for each call and no audio is stored.
 
-**Status:** in progress on branch `feat/phase10-voice-commands`; steps are recorded below as they pass.
+**Built (all five steps).**
+- Search order for voice input: the browser's own speech recognition first (free), then, if it is missing or blocked (Brave, Firefox), a recording sent to `voice-transcribe`. The same order applies to reading aloud: an on-device voice first, `voice-speak` only when there is none, with replays reusing the fetched audio.
+- Models are set by `OPENAI_TRANSCRIBE_MODEL` (default `gpt-4o-transcribe`; `whisper-1` rejects `bn`), `OPENAI_VOICE_MODEL` (default `gpt-4.1-mini`, strict JSON schema) and `OPENAI_TTS_MODEL` (default `tts-1`, voice `nova`; `gpt-4o-mini-tts` without instructions garbled Bangla). Code defaults are enough; the secrets are only needed to override.
+- The amount cross-check uses the spoken amounts in the sentence (`candidateAmounts`: digits, English number words, Bangla number words, lakh, crore, "দেড়", "আড়াই").
+- Rate limit: 60 voice calls per 10 minutes per person, counted from `audit_log`. Merchant names (from the person's own history) are sent as a vocabulary hint, and the consent text says so.
+- A voice-command header button opens the sheet from any screen; a spoken question is handed to the coach.
+
+**Verified so far**
+- `pnpm eval:voice` (real model, 100 golden sentences): intent accuracy 100/100, **0 wrong amounts accepted**. The prompt was tuned on this set, so the number is optimistic. A separate 24-sentence holdout (`pnpm eval:voice -- --holdout`) gives 22/24 with the other 2 safely refused, 0 wrong amounts accepted. The holdout is the fairer measure.
+- Browser runs against a production build with real (synthesized) audio in English and Bangla: server transcription, every command type (add, undo, edit on the card, budget, goal, add to goal, ambiguous goal blocks Confirm, removal with a pick, refusals, a hostile sentence changes nothing, coach hand-off, Bangla card), the server Listen path (consent, one request per answer, replays reuse the audio). Every confirmed change was checked in SQL, and the audit entries contain no spoken words.
+- axe-core: no violations on the voice sheet states in English and Bangla. `pnpm audit:rls` and `pnpm audit:bundle` pass. Full test suite: 288 passing.
+
+**Known limits**
+- Bangla recognition was tested with synthesized speech, not a human speaker; check on a real phone (see `docs/pitch/voice-checklist.md`).
+- A sentence with several items ("tea 50 and lunch 120") is refused as unclear; say one thing at a time.
+- The Realtime API is not built.
+
+**Status:** complete on branch `feat/phase10-voice-commands`; cloud migration and function deploys pending the team's go-ahead.
 
 ---
 
@@ -874,6 +891,7 @@ pnpm dev           # http://localhost:3000
 | `pnpm sb functions deploy <name> --use-api` | Deploy an Edge Function to the cloud project |
 | `pnpm sb functions serve --env-file supabase/.env.functions` | Serve functions locally with your local secrets (needs the local stack; pulls an extra image the first time) |
 | `pnpm eval:anomaly` | Print the unusual-payment detection evaluation (injected anomalies against the old flat rule); pure code, deterministic, no stack needed |
+| `pnpm eval:voice` | Real-model evaluation of voice command parsing on the golden set (`-- --holdout` for the unseen set); needs `OPENAI_API_KEY`, costs a few cents; fails if any wrong amount is accepted |
 | `pnpm audit:fairness` | Persona fairness report (loads each persona into the test account through the local functions; needs the stack up and functions served; writes `docs/pitch/fairness-report.md`) |
 | `pnpm impact:model` | Print the unit-economics model; `--update` writes it into the pitch doc, `--check` fails if the doc has drifted |
 | `pnpm audit:rls` | Security audit of the local database (RLS, anon grants, security definer functions, user-writable columns); needs the local stack up |

@@ -126,7 +126,7 @@ export function TransactionForm({ existing }: { existing?: TransactionRow }) {
               aria-pressed={direction === d}
               onClick={() => setDirection(d)}
               className={cn(
-                "relative min-h-10 flex-1 rounded-full text-sm font-semibold transition-colors duration-300",
+                "relative min-h-11 flex-1 rounded-full text-sm font-semibold transition-colors duration-300",
                 direction === d
                   ? d === "in"
                     ? "text-white"

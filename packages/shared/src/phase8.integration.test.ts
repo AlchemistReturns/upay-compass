@@ -6,11 +6,13 @@ type Created = { candidates: number; created: number };
 /** Unusual-payment alerts end to end. Needs a running stack with the functions served. */
 describe.skipIf(!url || !anon)("phase 8: unusual payment nudges", () => {
   let a: TestUser;
+  let other: TestUser;
   let foodId: number;
   let txId: string;
 
   beforeAll(async () => {
     a = await signIn("+8801700000004");
+    other = await signIn("+8801700000002");
     const cats = await a.client.from("categories").select("id,key");
     foodId = cats.data!.find((c) => c.key === "food")!.id;
   });
@@ -91,5 +93,34 @@ describe.skipIf(!url || !anon)("phase 8: unusual payment nudges", () => {
       .single();
     await a.client.functions.invoke("generate-nudges", { body: {} });
     expect(await unusualFor(ins.data!.id as string)).toHaveLength(0);
+  });
+
+  it("transaction_explain returns the facts for the flagged payment, and only for the owner", async () => {
+    const r = await a.client.rpc("transaction_explain", { p_id: txId });
+    expect(r.error).toBeNull();
+    const e = r.data as {
+      category_source: string;
+      category_key: string;
+      anomaly: { rule: string; bucket: string; amount: number; z: number } | null;
+    };
+    expect(e.category_source).toBe("rule");
+    expect(e.category_key).toBe("food");
+    expect(e.anomaly).toMatchObject({ rule: "robust_z", bucket: "merchant", amount: 1800 });
+    expect(e.anomaly!.z).toBeGreaterThan(3.5);
+
+    const theirs = await other.client.rpc("transaction_explain", { p_id: txId });
+    expect(theirs.data).toBeNull(); // not theirs: RLS hides the payment
+  });
+
+  it("transaction_explain has no anomaly for an ordinary payment", async () => {
+    const { data } = await a.client
+      .from("transactions")
+      .select("id")
+      .eq("counterparty", "Biryani House")
+      .lt("amount", 300)
+      .limit(1)
+      .single();
+    const r = await a.client.rpc("transaction_explain", { p_id: data!.id });
+    expect((r.data as { anomaly: unknown }).anomaly).toBeNull();
   });
 });

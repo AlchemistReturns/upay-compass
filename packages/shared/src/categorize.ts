@@ -16,6 +16,8 @@ export type CategorizeResult = {
   /** `user` when a saved correction matched, otherwise `rule`. */
   source: "user" | "rule";
   matchedBy: "user_rule" | "direction" | "channel" | "keyword" | "channel_default";
+  /** The keyword that matched, when `matchedBy` is "keyword" (lower case). */
+  keyword?: string;
 };
 
 export const normalizeKeyword = (counterparty: string) => counterparty.trim().toLowerCase();
@@ -69,7 +71,9 @@ export function categorize(
 
   const text = `${counterparty} ${(tx.note ?? "").toLowerCase()}`;
   const hit = ALL_KEYWORDS.find(({ word }) => matches(text, word));
-  if (hit) return { category: hit.category, source: "rule", matchedBy: "keyword" };
+  if (hit) {
+    return { category: hit.category, source: "rule", matchedBy: "keyword", keyword: hit.word };
+  }
 
   if (tx.channel === "send_money") {
     return { category: "family", source: "rule", matchedBy: "channel_default" };

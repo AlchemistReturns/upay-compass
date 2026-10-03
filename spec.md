@@ -203,6 +203,9 @@ goal_contributions(id uuid pk, goal_id uuid, user_id uuid, amount numeric, sourc
 
 health_scores(id uuid pk, user_id uuid, score int, breakdown jsonb, computed_at)
   -- history of snapshots; readable by the owner, written only by the compute-health-score function (service role)
+transactions index (Phase 8): (user_id, category_id, occurred_at desc), for the unusual-payment lookups.
+transaction_explain(id) -> jsonb  -- security invoker: category_source, needs_review, category_key, the saved correction that applies,
+  -- and the unusual-payment alert raised for the payment (rule, bucket, amount, typical, z, observations)
 readiness_scores(id uuid pk, user_id uuid, score int, breakdown jsonb, computed_at)
   -- credit readiness (informational only); same pattern as health_scores: owner reads, written only by
   -- the compute-readiness-score function (service role); history of snapshots
@@ -215,6 +218,8 @@ coach_messages(id uuid pk, user_id uuid, role text, content text, created_at)  -
 nudges(id uuid pk, user_id uuid, type text, data jsonb, dedupe_key text, read boolean default false, created_at)
   -- unique (user_id, dedupe_key). Text is rendered in the client from type + data so it follows the UI language.
   -- Created only by triggers/functions; users can read them and set read = true, nothing else.
+  -- types: budget_threshold, budget_exceeded (triggers); goal_behind, bill_due, forecast_risk,
+  -- unusual_transaction (generate-nudges; dedupe_key unusual:<transaction id>). overspend rows from before Phase 8 still render.
 
 learn_modules(id serial pk, slug text unique, position int, level int 1-3, minutes int,
               title_en, title_bn, summary_en, summary_bn, body_md_en, body_md_bn)
@@ -261,7 +266,7 @@ create policy "own rows" on transactions for all
 | F9 | Financial Health Score with explainable breakdown | 3 |
 | F10 | Cashflow forecast and low-balance risk flags | 4 |
 | F11 | AI Coach chat (Bangla/English, streaming, grounded in user data) | 4 |
-| F12 | Smart nudges (overspend, unusual spend, goal behind, bill due) | 4 |
+| F12 | Smart nudges (unusual payment, goal behind, bill due, forecast dip, budget alerts) | 4, 8 |
 | F13 | Learn hub: short financial literacy modules | 5 |
 | F14 | Gamification: streaks and badges | 5 |
 | F15 | PWA: installable, cached offline read | 5 |
@@ -271,6 +276,8 @@ create policy "own rows" on transactions for all
 | F19 | Unit-economics model (measured vs assumed, reproducible) | 7 |
 | F20 | Financial literacy personalizer (recommended learn modules) | 7 |
 | F21 | Responsible credit readiness scorecard (informational only) | 7 |
+| F22 | Unusual-payment detection (robust statistics, replaces the flat overspend rule) | 8 |
+| F23 | "Why this decision" explanations (category and unusual-payment reasons) | 8 |
 
 ---
 
@@ -321,7 +328,16 @@ A component without enough history counts as a neutral 50 and is labelled. **Ass
 - Suggested prompts: "Why did I overspend this week?", "Can I afford ৳5,000 for a phone?"
 - Confidence rule: if data is too thin (few transactions), the coach says so and asks for more history instead of guessing.
 
-**Nudges (F12).** Rule-driven, not LLM-driven: budget at 80%, spend 2× above category norm, goal behind schedule, bill due in 3 days.
+**Nudges (F12).** Rule-driven, not LLM-driven: budget at 80% and over the limit, an unusual payment, goal behind schedule, bill due in 3 days, a forecast dip. (The Phase 4 rule "a category's week at 2x its usual week" was replaced in Phase 8 by the unusual-payment detector below.)
+
+**Unusual-payment detection (F22).** Statistics in TypeScript, not machine learning (Edge Functions run Deno, so there is no scikit-learn): say so plainly when presenting it. `packages/shared/src/anomaly.ts`. A payment is flagged when it is far above what this user normally pays:
+
+1. **Robust z-score against the closest relevant history.** Take the user's earlier payments from the trailing 90 days: first those to the **same merchant**; if there are fewer than 5, those in the same **category and weekday** bucket. With at least 5, compute the median and the MAD (median absolute deviation) and the modified z-score `(amount - median) / (1.4826 x MAD)`, which equals the textbook `0.6745 x (amount - median) / MAD`. The scale has a floor of Rs 20 so a bucket where the person always pays almost the same amount cannot blow up. Flag **z above 3.5** (the Iglewicz-Hoaglin threshold).
+2. **Sparse history** (fewer than 5 in either bucket): flag a **first-time merchant** whose amount is more than twice the category median and at least Rs 300 above it (needs 3 earlier payments in the category). New or rare categories are blind spots for rule 1.
+
+Only **upward** outliers are flagged (an unusually small payment is nothing to warn about). Money in, transfers into savings and recurring payments (rent, bills, subscriptions) are never flagged. Each alert is raised once per payment (`dedupe_key = unusual:<id>`) and carries the amount, the typical amount, the score and which history it was compared with. Two departures from the first plan, both found by the evaluation below: the bucket is the merchant first (a category such as food mixes a Rs 100 canteen lunch with a Rs 400 delivery order, so a category bucket alone rang the alarm on every delivery order and missed a Rs 1,100 canteen lunch on a grocery day), and the plan's formula divided by 1.4826 twice (0.6745 and 1.4826 are the same conversion), so the standard form is used.
+
+**Explainability (F23).** Explanations are data, never model text: `explainTransaction` (pure, `packages/shared/src/explain.ts`) turns the facts into a kind (saved correction, income by direction, recharge or bill channel, keyword with the keyword named, channel default, AI suggestion, unmatched and sent for review) and the unusual-payment numbers; the app renders sentences from translation templates. The database side (`transaction_explain`) only supplies what the browser cannot know: how the category was decided and the alert, if any.
 
 ---
 
@@ -387,7 +403,7 @@ Reference data (the 12 categories, and later the learn modules) is inserted by m
 
 ### 11.2 Phases
 
-**Status:** Phases 0 to 7 complete (Phase 7 on its branch, not yet merged). Phases 8 and 9 (anomaly detection, explainability, voice) are planned. Remaining: Bangla copy review, backup video, a dry run on the real phone.
+**Status:** Phases 0 to 8 complete (Phase 8 on its branch, not yet merged). Phase 9 (voice for the coach) is planned. Remaining: Bangla copy review, backup video, a dry run on the real phone.
 
 ### Phase 0 — Foundations
 
@@ -501,7 +517,7 @@ Reference data (the 12 categories, and later the learn modules) is inserted by m
    - **Numbers come from code, not the model:** "can I afford X?" is detected in the message (Latin or Bangla digits, "5k", "হাজার", "লাখ") and decided by `canAfford` against the forecast: **yes** (stays above the safety buffer), **tight** (stays positive but dips under it), **no** (would go below zero), or **insufficient**. A plain-English explanation sentence with every figure is handed to the model, which only restates it.
    - With the `x-coach-debug: 1` header the final event includes the exact summary the model was shown (the user's own numbers); the evaluation script uses it to check grounding.
 5. **Chat UI** (`/coach`): a consent screen listing exactly what is and is not shared; streaming bubbles with a typing indicator; suggested-question chips; error and retry; a rate-limit message; clear chat (deletes the history); a standing "educational guidance, not financial advice" line.
-6. **Nudges:** pure rules in `packages/shared/src/nudge-rules.ts`, applied by the Edge Function `generate-nudges`: a category at 2x its average week (and at least ৳300 more), a goal behind schedule (or with a target date and no savings after 14 days), a recurring payment due within 3 days, a forecast dip within 14 days. Each has a dedupe key (per week, per month or per due date), so calling the function repeatedly never repeats an alert. Budget alerts (80%, over limit) are raised by database triggers as spending happens. The inbox, bell and unread badge render all types in the user's language.
+6. **Nudges:** pure rules in `packages/shared/src/nudge-rules.ts`, applied by the Edge Function `generate-nudges`: a category at 2x its average week (and at least ৳300 more; **replaced in Phase 8** by unusual-payment detection), a goal behind schedule (or with a target date and no savings after 14 days), a recurring payment due within 3 days, a forecast dip within 14 days. Each has a dedupe key (per week, per month or per due date), so calling the function repeatedly never repeats an alert. Budget alerts (80%, over limit) are raised by database triggers as spending happens. The inbox, bell and unread badge render all types in the user's language.
    - **Scheduling is deferred:** the app evaluates the rules at most once an hour while it is open (`useAutoNudges`) and recomputes the forecast and score when their screens open stale. Real `pg_cron` jobs (hourly nudges, daily forecast and score for every user) need `pg_cron`, `pg_net` and a shared secret in Vault; that is left for when the app is deployed.
 
 **Verify:** coach test set of ~15 questions checked for grounded numbers and guardrail behavior; forecast backtest on seeded personas; the demo gig-worker account shows a visible low-balance warning.
@@ -587,6 +603,31 @@ Reference data (the 12 categories, and later the learn modules) is inserted by m
 
 ---
 
+### Phase 8 — AI/ML Depth & Explainability (F22, F23)
+
+**Build process**
+1. **Unusual-payment detection (F22):** `anomaly.ts` (rules in Section 9), tested against hand-computed buckets (a tight bucket held at the Rs 20 floor, a wide bucket using 1.4826 x MAD, the 3.5 boundary, four earlier payments not being enough, weekday and category buckets staying separate, the 90-day window, recurring payments and savings never flagged, order independence, the merchant-first behaviour and the sparse-history rule). Migration `20261005090000_phase8_anomaly_index.sql` adds the category index. `generate-nudges` now loads 125 days of payments, raises `unusual_transaction` nudges for the last 7 days and no longer raises the flat overspend alert; adding a payment in the app triggers a check, so the alert shows up straight away. The inbox renders it in both languages and opens the payment.
+2. **Evaluation, like the categorizer and the forecast** (`pnpm eval:anomaly`, `adapters/upay-sim/src/anomaly-eval.ts`, asserted by a test): one food payment at 8x, 9x and 10x the typical one is injected per persona per month, across 5 fixed seeds (45 injected payments); false alarms are counted on the unmodified data. On the same data:
+
+| | Finds the injected payments | False alarms per persona per month |
+|---|---|---|
+| Old flat rule (category's week at 2x) | 31 of 45 (69%) | 9.40 |
+| Category and weekday bucket only (first plan) | 36 of 45 (80%) | 2.78 |
+| **Shipped (merchant first, then category and weekday)** | **43 of 45 (96%)** | **1.76** |
+
+   The category-only version also missed most injected payments for the salaried persona (6 of 15), whose food category mixes canteen lunches with a weekly grocery shop; comparing with the merchant first fixes both the misses and the false alarms. Many remaining "false alarms" are payments that really were higher than usual (for example a Rs 200 tea in the simulator's second tea-stall price band). The sample is small and simulated: a sanity check, not a measurement of real users.
+3. **Explainability (F23):** migration `20261005100000_phase8_explain.sql` (`transaction_explain`); `explain.ts` with tests for every categorization source; `categorize()` now also returns the keyword that matched; an "Why this decision" card on the payment page names the rule (or the merchant the user taught the app, or that the AI suggested it, or that nothing matched and it awaits review) and, for a flagged payment, the amount, the typical amount, the score and the threshold. The readiness screen already has the "what moved your score" treatment (built in Phase 7 as a shared component).
+4. **Accessibility follow-up:** the payment page and alerts inbox now pass axe in both languages (the destructive colour was darkened for contrast, the unread alert date uses the normal muted colour, the Spent and Received toggle is 44 px tall).
+
+**Verify:** unit tests for the MAD and z-score math; the injected-anomaly evaluation compared with the old rule; a 10x payment added in the app produces exactly one alert; explanations checked for every categorization source in both languages.
+
+**Verified so far (local stack):**
+- 222 shared tests (new: 16 anomaly, 12 explain, and 5 integration tests: an alert for a 10x payment, exactly once, with the numbers; no more flat overspend alerts; an ordinary payment raises nothing; `transaction_explain` returns the facts for the owner only) and 38 simulator tests (5 of them the evaluation).
+- Browser run on a production build (10 checks): keyword, channel, income, AI and saved-correction explanations; a payment of Rs 1,800 at a place that normally costs about Rs 135, added in the app, produced exactly one alert, readable in the inbox, which opens the payment with the flagged explanation (score 44.9 against the 3.5 threshold); English and Bangla.
+- Not verified: the cloud project (the new migrations and the changed `generate-nudges` function go there after review).
+
+---
+
 ### 11.3 Build Order and Parallelism
 
 ```
@@ -639,6 +680,7 @@ The team is growing. The table below maps the work streams; agree on who takes w
 - Coach answers that cite the user's actual numbers
 - Unit economics: measured figures and labelled assumptions in `docs/pitch/impact-metrics.md`, reproduced with `pnpm impact:model`
 - Fairness: `docs/pitch/fairness-report.md`, reproduced with `pnpm audit:fairness`
+- Unusual-payment detection: finds 96% of injected anomalies with 1.76 false alarms per persona per month, against 69% and 9.40 for the old flat rule, reproduced with `pnpm eval:anomaly`
 
 ---
 
@@ -745,6 +787,7 @@ pnpm dev           # http://localhost:3000
 | `pnpm sb db push` | Apply pending migrations to the cloud project (Section 17.6) |
 | `pnpm sb functions deploy <name> --use-api` | Deploy an Edge Function to the cloud project |
 | `pnpm sb functions serve --env-file supabase/.env.functions` | Serve functions locally with your local secrets (needs the local stack; pulls an extra image the first time) |
+| `pnpm eval:anomaly` | Print the unusual-payment detection evaluation (injected anomalies against the old flat rule); pure code, deterministic, no stack needed |
 | `pnpm audit:fairness` | Persona fairness report (loads each persona into the test account through the local functions; needs the stack up and functions served; writes `docs/pitch/fairness-report.md`) |
 | `pnpm impact:model` | Print the unit-economics model; `--update` writes it into the pitch doc, `--check` fails if the doc has drifted |
 | `pnpm audit:rls` | Security audit of the local database (RLS, anon grants, security definer functions, user-writable columns); needs the local stack up |
@@ -792,6 +835,6 @@ Teammates get the Supabase **Developer** role on the project, so everyone can ru
 
 ### 17.7 Current status
 
-Phases 0 to 6 are merged (PRs #1 to #7), plus the UI revamp (PRs #8 and #9). Phase 7 (credit readiness scorecard, learn personalizer, unit-economics model, persona fairness audit and the income-stability fix it found) is on branch `feat/phase7-readiness-quickwins`. The web app is deployed on Vercel against the shared cloud project. Remaining: native-speaker Bangla review, backup video, a dry run on the real phone; phases 8 and 9 are planned.
+Phases 0 to 7 are merged (PRs #1 to #10), plus the UI revamp (PRs #8 and #9). Phase 8 (unusual-payment detection with an injected-anomaly evaluation, "why this decision" explanations) is on branch `feat/phase8-anomaly-explain`. The web app is deployed on Vercel against the shared cloud project. Remaining: native-speaker Bangla review, backup video, a dry run on the real phone; Phase 9 (voice for the coach) is planned.
 
 ---

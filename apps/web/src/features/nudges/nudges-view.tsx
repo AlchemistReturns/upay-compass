@@ -113,7 +113,7 @@ export function NudgesView() {
                             {body}
                           </div>
                         )}
-                        <div className="text-muted-foreground/80 mt-1.5 text-xs font-medium">
+                        <div className="text-muted-foreground mt-1.5 text-xs font-medium">
                           {formatShortDate(n.created_at, i18n.language)}
                         </div>
                       </div>

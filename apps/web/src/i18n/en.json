@@ -169,7 +169,20 @@
     "not_found": "We could not find that module.",
     "disclaimer": "General education only, not financial advice.",
     "up_next": "Up next",
-    "start": "Start reading"
+    "start": "Start reading",
+    "recommended": "Recommended for you",
+    "also_for_you": "Also for you",
+    "next_card": "Next: {{title}}",
+    "reason_nudge_budget": "You have a budget alert.",
+    "reason_nudge_forecast": "Your forecast shows a low balance ahead.",
+    "reason_nudge_goal": "One of your goals is behind schedule.",
+    "reason_nudge_overspend": "You spent more than usual in a category.",
+    "reason_nudge_unusual": "We spotted an unusual payment.",
+    "reason_weak_savings": "Your savings rate is below target.",
+    "reason_weak_buffer": "Your emergency buffer is thin.",
+    "reason_weak_stability": "Your income varies a lot between periods.",
+    "reason_weak_budget": "Some of your budgets are over their limit.",
+    "reason_next_up": "Next in the course."
   },
   "login": {
     "title": "Sign in",

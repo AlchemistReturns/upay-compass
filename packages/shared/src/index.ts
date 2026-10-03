@@ -15,3 +15,4 @@ export * from "./coach-context.ts";
 export * from "./coach-fallback.ts";
 export * from "./learn.ts";
 export * from "./readiness.ts";
+export * from "./learn-rank.ts";

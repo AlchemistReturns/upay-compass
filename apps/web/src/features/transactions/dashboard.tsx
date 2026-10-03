@@ -8,13 +8,9 @@ import {
   ArrowUpRight,
   LineChart,
   type LucideIcon,
-  MoonStar,
   Plus,
   Scale,
   Sparkles,
-  Sun,
-  Sunrise,
-  Sunset,
   Target,
   Wallet,
 } from "lucide-react";
@@ -23,11 +19,13 @@ import type { Period } from "@compass/shared";
 import { PageHeader } from "@/components/page-header";
 import {
   AnimatedNumber,
+  EmptyState,
   ErrorState,
   LoadingCards,
   Pill,
   SectionHeader,
 } from "@/components/compass";
+import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatMoney, formatSignedMoney } from "@/lib/format";
 import { useAuth } from "@/features/auth/auth-provider";
@@ -39,9 +37,7 @@ import { ReadinessCard } from "@/features/readiness/readiness-card";
 import { NextModuleCard } from "@/features/learn/next-module-card";
 import { InstallPrompt } from "@/features/pwa/install-prompt";
 import { useAutoNudges } from "@/features/nudges/use-auto-nudges";
-import { DemoTools } from "@/features/demo/demo-tools";
 import { CategoryBars } from "./category-bars";
-import { DemoLoader } from "./demo-loader";
 import { PeriodTabs } from "./period-tabs";
 import { TransactionList } from "./transaction-list";
 import { useDashboard } from "./use-dashboard";
@@ -62,7 +58,7 @@ function useGreeting() {
   const [now, setNow] = useState<Date | null>(null);
   // eslint-disable-next-line react-hooks/set-state-in-effect -- the clock is read after mount
   useEffect(() => setNow(new Date()), []);
-  if (!now) return { greeting: t("home.title"), date: undefined, Icon: undefined };
+  if (!now) return { greeting: t("home.title"), date: undefined };
   const hour = Number(
     new Intl.DateTimeFormat("en-GB", {
       hour: "numeric",
@@ -77,16 +73,7 @@ function useGreeting() {
     month: "long",
     timeZone: "Asia/Dhaka",
   }).format(now);
-  // the sky over Dhaka right now: sunrise, sun, sunset, then the moon
-  const Icon =
-    hour >= 5 && hour < 9
-      ? Sunrise
-      : hour < 16 && hour >= 9
-        ? Sun
-        : hour >= 16 && hour < 19
-          ? Sunset
-          : MoonStar;
-  return { greeting: t(`home.greeting_${key}`), date, Icon };
+  return { greeting: t(`home.greeting_${key}`), date };
 }
 
 /** Round shortcut on the balance panel. `primary` is the lime main action. */
@@ -324,7 +311,7 @@ export function Dashboard() {
   const { summary, month, byCategory, trend, balance } = useDashboard(period);
   const recent = useTransactionList(8);
   const lang = i18n.language;
-  const { greeting, date, Icon: SkyIcon } = useGreeting();
+  const { greeting, date } = useGreeting();
 
   useTransactionsRealtime();
   useAutoNudges(recent.isSuccess && recent.data.length > 0);
@@ -337,15 +324,6 @@ export function Dashboard() {
     <>
       <PageHeader
         eyebrow={date}
-        eyebrowIcon={
-          SkyIcon && (
-            <SkyIcon
-              className="text-reward ic-spin-in size-4 [animation-delay:.2s]"
-              strokeWidth={2.2}
-              aria-hidden
-            />
-          )
-        }
         lead={firstName ? `${greeting},` : undefined}
         title={firstName ?? greeting}
         subtitle={noTransactions ? undefined : t("home.subtitle")}
@@ -355,10 +333,21 @@ export function Dashboard() {
       {recent.isError && <ErrorState onRetry={() => void recent.refetch()} />}
 
       {noTransactions && (
-        <div className="space-y-5 pb-4">
-          <DemoLoader suggested={profile.data?.income_type ?? null} />
-          <DemoTools />
-        </div>
+        <EmptyState
+          icon={Wallet}
+          title={t("home.empty_title")}
+          body={t("home.empty_body")}
+          action={
+            <Link
+              href="/transactions/new"
+              className={buttonVariants({ size: "lg" })}
+              transitionTypes={NAV_FORWARD}
+            >
+              <Plus aria-hidden />
+              {t("transactions.add")}
+            </Link>
+          }
+        />
       )}
 
       {recent.isSuccess && !noTransactions && (
@@ -446,8 +435,6 @@ export function Dashboard() {
               <TransactionList rows={recent.data} framed={false} />
             </div>
           </section>
-
-          <DemoTools />
         </div>
       )}
     </>

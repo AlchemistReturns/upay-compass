@@ -48,14 +48,13 @@ export function LoginForm() {
       return;
     }
     setBusy(true);
-    // Proving the OTP counts as unlocking: set the flag first so the app does not ask for the
-    // PIN straight after login (the session change fires before verifyOtp resolves).
-    writeUnlockFlag(true);
+    // The OTP proves the phone, but a returning user with a PIN must still enter it: make sure no
+    // earlier unlock in this browser session carries over.
+    writeUnlockFlag(false);
     const { error: err } = await supabase.auth.verifyOtp({ phone, token: code, type: "sms" });
     setBusy(false);
     // On success the auth provider picks up the session and the page redirects.
     if (err) {
-      writeUnlockFlag(false);
       setOtp("");
       setError(t("login.otp_failed"));
     }

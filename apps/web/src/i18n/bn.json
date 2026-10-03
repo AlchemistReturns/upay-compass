@@ -45,7 +45,9 @@
     "greeting_afternoon": "শুভ দুপুর",
     "greeting_evening": "শুভ সন্ধ্যা",
     "subtitle": "এক নজরে আপনার টাকার হিসাব।",
-    "at_glance": "এক নজরে"
+    "at_glance": "এক নজরে",
+    "empty_title": "এখনও কিছু নেই",
+    "empty_body": "আপনার ব্যালেন্স, বাজেট ও পরামর্শ দেখতে প্রথম খরচ বা আয় যোগ করুন।"
   },
   "budgets": {
     "title": "বাজেট",

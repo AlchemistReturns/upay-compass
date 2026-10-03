@@ -47,8 +47,8 @@ The central design rule is **"AI for language, code for numbers."** Language mod
 | Backend | Supabase (Postgres with row level security, Auth, Realtime, Edge Functions) |
 | AI | OpenAI models, called only from server-side functions, always optional |
 | Data | Simulated or user-entered; no real money moves |
-| Automated tests | 451 (365 unit tests run anywhere, 86 integration tests against a running stack) |
-| Database migrations | 18 |
+| Automated tests | 464 (369 unit tests run anywhere, 95 integration tests against a running stack) |
+| Database migrations | 19 |
 | Server functions | 13 |
 
 ---
@@ -199,7 +199,7 @@ flowchart TB
 | `apps/web` | The Next.js PWA |
 | `packages/shared` | Types, zod schemas, and the pure logic (health, readiness, forecast, categorizer, anomaly, explain, voice validation) |
 | `adapters/upay-sim` | The simulated upay feed and its three personas |
-| `supabase/` | 18 migrations, 13 Edge Functions, configuration |
+| `supabase/` | 19 migrations, 13 Edge Functions, configuration |
 | `scripts/` | Evaluations and audits |
 | `docs/` | Pitch material, this report |
 | `spec.md` | The full specification and developer guide |
@@ -215,6 +215,7 @@ erDiagram
   PROFILES ||--o{ BUDGETS : sets
   PROFILES ||--o{ GOALS : sets
   GOALS ||--o{ GOAL_CONTRIBUTIONS : receives
+  PROFILES ||--o{ SAVINGS_ENTRIES : "free savings"
   CATEGORIES ||--o{ TRANSACTIONS : classifies
   CATEGORIES ||--o{ BUDGETS : limits
   PROFILES ||--o{ HEALTH_SCORES : snapshots
@@ -264,7 +265,7 @@ sequenceDiagram
 | F2 | **Bilingual onboarding** | Language, income type, then straight to the app. Language switch in the header at any time. |
 | F3-F5 | **Dashboard and transactions** | Wallet balance, income and spending by period, category breakdown, weekly chart, searchable payment list, add, edit, delete with Undo, and one-tap "repeat a recent payment". |
 | F4 | **Auto-categorization** | Most payments are filed automatically; corrections teach the app and are never overridden. |
-| F6-F8 | **Budgets, goals, round-ups** | Monthly budgets with alerts, savings goals with projected finish dates, optional round-up of each payment to the next Rs 10 into a goal. |
+| F6-F8 | **Budgets, goals, savings account, round-ups** | Monthly budgets with alerts, savings goals with projected finish dates, optional round-up of each payment to the next Rs 10 into a goal. |
 | F9 | **Financial health score** | A 0 to 100 score from four published components, with "what moved your score" and the top 3 improvement actions. |
 | F21 | **Credit readiness (informational)** | A second transparent scorecard that shows what would improve readiness. It is not a credit decision and is not shared with anyone. |
 | F10 | **30-day forecast** | Detects recurring income and bills, projects the balance, flags days it may fall below a safety buffer. |
@@ -284,27 +285,30 @@ A transparent 0 to 100 score. Each of four components is normalized to 0-100 and
 
 | Component | Weight | How it is measured | Full marks |
 |---|---|---|---|
-| Savings rate | 30% | (income − spending) ÷ income over the last 90 days (or since the first transaction); transfers into Savings count as saving, not spending. | 20% saved |
+| Savings rate | 30% | **Explicit saving** ÷ income over the last 90 days (or since the first transaction). Saving is money the person put into the savings account (deposits, goal contributions, round-ups, less withdrawals) plus payments filed under Savings. | 20% of income put aside |
 | Budget adherence | 25% | Average over this month's budgets: within the limit scores 100, falling to 0 at 50% over. | Every budget within its limit |
-| Emergency buffer | 25% | Wallet balance ÷ **a typical month of essential spending**, measured on a monthly basis (below). | 3 months of essentials in the wallet |
+| Emergency buffer | 25% | (Wallet balance + savings balance) ÷ **a typical month of essential spending**, measured on a monthly basis (below). | 3 months of essentials in reserve |
 | Income stability | 20% | Variation of income across the last three complete calendar months (Bangladesh time): steady scores 100, 50% variation or more scores 0. | Steady monthly income |
 
-**Savings rate in practice.** With 25,000 in and 4,000 spent, the rate is 84%. That is above the 20% target, which already earns full marks, and the screen says exactly that ("You saved 84% of your income, above the 20% target, so this part earns full marks"). Spending more than you earn is shown as such, not as a negative saving.
+**Savings is its own balance.** Moving money into savings takes it out of the wallet, so the wallet always shows what is left to spend: `wallet = opening + money in − money out − savings`. Goals are funded from the wallet too (the app refuses a contribution the wallet cannot cover), and round-ups move money the same way. Free savings can be withdrawn back to the wallet; money allocated to a goal is freed by undoing its contribution. The Goals screen shows the savings total split into "in goals" and "not in a goal", and Home shows "Plus ৳X in savings" under the wallet balance.
+
+**Savings rate in practice.** Saving is measured from what was put aside on purpose, not from whatever was left unspent. A person who receives 25,000, spends 4,000 and moves 5,000 into savings has saved 5,000, which is 20% of income, and scores full marks on this part; the screen says so ("You saved 20% of your income, above the 20% target, so this part earns full marks"). Someone who leaves 21,000 untouched in the wallet but moves nothing into savings scores 0 here, which is the nudge to save deliberately. Withdrawals reduce the figure, never below zero, and spending more than you earn is described as such.
 
 **Emergency buffer on a monthly basis.** Whatever a person logs in a month is that month's spending, so the buffer adds up what was logged and never stretches a short history into a month. A payment made once (rent) counts once; a payment made three times counts three times.
 
 - *Typical month of essentials* is the average of the complete calendar months in the data, up to the last three. Essential categories are Food, Transport, Recharge and Data, Bills and Utilities, Education and Health.
 - *Until a month has completed*, the buffer uses this month's essentials so far, and the screen labels it "based on this month so far" and notes that it gets more accurate as the month goes on. Early in a month it can look generous, and it settles as spending is logged.
 - If no essential spending is logged at all, the buffer cannot be measured and counts as a neutral 50.
-- *Worked example:* 25,000 in and 4,000 of essentials gives a wallet of 21,000, so the buffer is 21,000 ÷ 4,000 = 5.25 months and scores 100. With rent of 12,000 plus 3,000 of other essentials in each of the last two months, the typical month is 15,000, so a 30,000 wallet is 2 months and scores 67.
+- *Savings count toward the buffer.* An emergency fund is liquid reserves, so the buffer uses the wallet and the savings account together: moving money into savings never lowers it.
+- *Worked example:* 25,000 in and 4,000 of essentials gives 21,000 in reserve, so the buffer is 21,000 ÷ 4,000 = 5.25 months and scores 100, whether it sits in the wallet or in savings. With rent of 12,000 plus 3,000 of other essentials in each of the last two months, the typical month is 15,000, so a 30,000 wallet is 2 months and scores 67.
 
 If a component cannot be measured yet (no income, no budgets, no essentials), it counts as a neutral 50 and is **labelled as neutral**. Confidence is shown as low under 15 transactions or 28 days of history, and the screen says so. Improvement actions are *data* (an id and numbers) rendered through translation templates, never free text from a model. The score is recomputed in the background whenever a payment is added, edited, deleted or restored, so it never lags what the person just entered.
 
 ```mermaid
 flowchart LR
-  T[Transactions] --> S["Savings rate 30%<br/>last 90 days"]
+  T[Transactions] --> S["Savings rate 30%<br/>explicit saving,<br/>last 90 days"]
   T --> B["Budget adherence 25%<br/>this month's budgets"]
-  T --> E["Emergency buffer 25%<br/>balance ÷ typical month<br/>of essentials"]
+  T --> E["Emergency buffer 25%<br/>(wallet + savings) ÷ typical<br/>month of essentials"]
   T --> I["Income stability 20%<br/>last 3 complete months"]
   S --> W[Weighted sum]
   B --> W
@@ -323,7 +327,7 @@ A second, separate scorecard that answers the brief's "responsible credit readin
 |---|---|---|
 | Income consistency | 30% | The health score's income stability |
 | Bill punctuality | 30% | Each recurring bill payment against the date expected from the person's own pattern |
-| Savings consistency | 25% | Months with any goal contribution or round-up |
+| Savings consistency | 25% | Months with any goal contribution, round-up or savings deposit |
 | Budget adherence | 15% | The health score's budget adherence |
 
 An assumption is shown on the screen: because the simulated feed has no real due dates, punctuality is measured against the date the detector expects from the person's own history.
@@ -582,7 +586,7 @@ All results below are measured in the repository on simulated data. The command 
 | **Client secrets** | None found in the production bundle. | `pnpm audit:bundle` |
 | **Accessibility** | No axe-core violations on 12 screens in English and Bangla; the voice sheet scanned clean in both languages. | Browser runs recorded in `spec.md` |
 | **Performance** | Mobile Lighthouse on the production build: performance 98 (real throttling), accessibility 100, best practices 100. | Lighthouse |
-| **Automated tests** | 365 unit tests that run anywhere, plus 86 integration tests (row level security, PIN, voice and coach guards, undo, the monthly buffer in the database, rate limits under parallel load) that run against a stack. | `pnpm test` |
+| **Automated tests** | 369 unit tests that run anywhere, plus 95 integration tests (row level security, PIN, voice and coach guards, undo, the monthly buffer and the savings account in the database, rate limits under parallel load) that run against a stack. | `pnpm test` |
 
 ### 8.2 What the evaluations taught the build
 
@@ -592,6 +596,7 @@ Evaluations changed the design more than once. Honest examples:
 - **Unusual-payment detection** first compared against a whole category, which rang the alarm on every delivery order and missed a Rs 1,100 canteen lunch. Comparing against the same merchant first fixed it, and the evaluation also caught a formula that divided by 1.4826 twice.
 - **Voice parsing** initially refused ordinary past-tense sentences ("Bought medicine") as unclear; the prompt was corrected and re-measured.
 - **The emergency buffer** originally scaled the essentials seen in a short history up to a month, so a day with 4,000 of food spending was read as 120,000 a month and scored the buffer 6 out of 100. Measuring it on a monthly basis from what was logged fixed it: the same data now scores 100, labelled "this month so far", and tests cover a one-day history, rent paid once a month and a three-month average.
+- **Savings as leftover money** was the first definition of the savings rate: whatever was not spent counted as saved, so a person who simply left money in the wallet scored full marks, and the score said "you saved 100%" next to a target of 20%. Savings is now an explicit balance: money moved into it leaves the wallet, the rate is measured from what was put aside on purpose, and the buffer counts the wallet and savings together so saving never hurts it.
 - **A parallel-request test** showed the first rate-limit design could be bypassed by a burst; it now takes a slot before the model call, and a test fires 30 parallel calls and finds exactly 20 slots.
 
 ### 8.3 Caveat on the voice numbers

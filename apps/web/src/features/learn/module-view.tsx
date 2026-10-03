@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2 } from "lucide-react";
+import { ArrowRight, CircleCheck, Clock } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { PageHeader } from "@/components/page-header";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { LoadingCards } from "@/components/compass";
+import { Button } from "@/components/ui/button";
+import { haptic } from "@/lib/haptics";
 import { useOnline } from "@/features/pwa/use-online";
 import { Markdown } from "./markdown";
 import { useCompleteModule, useCompletedModules, useModules } from "./use-learn";
+import { NAV_FORWARD } from "@/components/page-transition";
 
 export function ModuleView({ slug }: { slug: string }) {
   const { t, i18n } = useTranslation();
@@ -21,48 +23,57 @@ export function ModuleView({ slug }: { slug: string }) {
   const m = all.data?.find((x) => x.slug === slug);
   const finished = m ? (completed.data?.has(m.id) ?? false) : false;
   const next = m ? all.data?.find((x) => x.position > m.position) : undefined;
+  const total = all.data?.length ?? 0;
 
   return (
     <>
-      <PageHeader title={t("learn.title")} />
-      <Link
-        href="/learn"
-        className="text-muted-foreground mb-3 inline-flex min-h-11 items-center gap-1 text-sm"
-      >
-        <ArrowLeft className="size-4" aria-hidden />
-        {t("learn.back")}
-      </Link>
+      <PageHeader
+        back="/learn"
+        eyebrow={m ? `${t("learn.title")} · ${m.position}/${total}` : undefined}
+        title={m ? (bn ? m.title_bn : m.title_en) : t("learn.title")}
+      />
 
-      {all.isPending && (
-        <p className="text-muted-foreground" role="status">
-          {online ? t("common.loading") : t("pwa.offline_no_data")}
-        </p>
-      )}
+      {all.isPending &&
+        (online ? (
+          <LoadingCards rows={3} />
+        ) : (
+          <p className="text-muted-foreground" role="status">
+            {t("pwa.offline_no_data")}
+          </p>
+        ))}
       {all.isError && <p>{t("common.error")}</p>}
       {all.isSuccess && !m && <p>{t("learn.not_found")}</p>}
 
       {m && (
-        <article className="space-y-4 pb-4">
-          <div>
-            <h2 className="text-xl font-semibold">{bn ? m.title_bn : m.title_en}</h2>
-            <p className="text-muted-foreground text-sm">
-              {t("learn.minutes", { count: m.minutes })}
-            </p>
+        <article className="mx-auto max-w-2xl space-y-4 pb-4">
+          <div className="text-muted-foreground -mt-2 flex items-center gap-1.5 px-1 text-[13px] font-semibold">
+            <Clock className="size-3.5" aria-hidden />
+            {t("learn.minutes", { count: m.minutes })}
           </div>
-          <Markdown source={bn ? m.body_md_bn : m.body_md_en} />
+          <div className="finance-card rise p-5 sm:p-8">
+            <Markdown source={bn ? m.body_md_bn : m.body_md_en} />
+          </div>
 
-          <div className="space-y-2 border-t pt-4">
+          <div className="space-y-2.5">
             {finished ? (
-              <p className="text-primary flex items-center gap-2 font-medium" role="status">
-                <CheckCircle2 className="size-5" aria-hidden />
+              <p
+                className="surface-lime pop flex items-center gap-3 rounded-3xl p-4 text-[15px] font-bold"
+                role="status"
+              >
+                <span className="bg-brand-ink text-lime grid size-10 place-items-center rounded-full">
+                  <CircleCheck className="size-5" aria-hidden />
+                </span>
                 {t("learn.completed")}
               </p>
             ) : (
               <Button
-                className="min-h-11 w-full"
-                disabled={complete.isPending || !online}
-                onClick={() => complete.mutate(m.slug)}
+                size="lg"
+                className="w-full"
+                loading={complete.isPending}
+                disabled={!online}
+                onClick={() => complete.mutate(m.slug, { onSuccess: () => haptic("success") })}
               >
+                <CircleCheck aria-hidden />
                 {t("learn.mark_done")}
               </Button>
             )}
@@ -73,13 +84,24 @@ export function ModuleView({ slug }: { slug: string }) {
             {next && (
               <Link
                 href={`/learn/${next.slug}`}
-                className={cn(buttonVariants({ variant: "outline" }), "min-h-11 w-full")}
+                transitionTypes={NAV_FORWARD}
+                className="finance-card group flex items-center gap-3 p-4"
               >
-                {t("learn.next")}
+                <span className="min-w-0 flex-1">
+                  <span className="text-muted-foreground block text-xs font-bold tracking-wide uppercase">
+                    {t("learn.next")}
+                  </span>
+                  <span className="mt-0.5 block truncate text-[15px] font-bold">
+                    {bn ? next.title_bn : next.title_en}
+                  </span>
+                </span>
+                <span className="bg-secondary text-primary grid size-10 shrink-0 place-items-center rounded-full transition-transform group-hover:translate-x-0.5">
+                  <ArrowRight className="size-[18px]" aria-hidden />
+                </span>
               </Link>
             )}
           </div>
-          <p className="text-muted-foreground text-xs">{t("learn.disclaimer")}</p>
+          <p className="text-muted-foreground px-1 text-xs">{t("learn.disclaimer")}</p>
         </article>
       )}
     </>

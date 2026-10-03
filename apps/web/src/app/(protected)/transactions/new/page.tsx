@@ -8,7 +8,7 @@ export default function NewTransactionPage() {
   const { t } = useTranslation();
   return (
     <>
-      <PageHeader title={t("transactions.add")} />
+      <PageHeader title={t("transactions.add")} back="/" />
       <TransactionForm />
     </>
   );

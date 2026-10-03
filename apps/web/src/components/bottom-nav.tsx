@@ -1,12 +1,15 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { BookOpen, Home, MessageCircle, PiggyBank, Target } from "lucide-react";
+import { NAV_TAB } from "@/components/page-transition";
+import { haptic } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 
-const ITEMS = [
+export const NAV_ITEMS = [
   { href: "/", key: "home", icon: Home },
   { href: "/budgets", key: "budgets", icon: PiggyBank },
   { href: "/goals", key: "goals", icon: Target },
@@ -14,42 +17,90 @@ const ITEMS = [
   { href: "/learn", key: "learn", icon: BookOpen },
 ] as const;
 
+export function isActivePath(pathname: string, href: string) {
+  return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
+}
+
+const TYPING =
+  "input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=button]):not([type=submit]), textarea, select, [contenteditable=true]";
+
+/** Marks <html data-keyboard> while a text field has focus, so CSS can move the tab bar out of the way. */
+function useKeyboardFlag() {
+  useEffect(() => {
+    const root = document.documentElement;
+    const onIn = (e: FocusEvent) => {
+      if (e.target instanceof Element && e.target.matches(TYPING)) root.dataset.keyboard = "";
+    };
+    const onOut = () => {
+      // focus may be moving straight to another field
+      requestAnimationFrame(() => {
+        if (!document.activeElement?.matches(TYPING)) delete root.dataset.keyboard;
+      });
+    };
+    document.addEventListener("focusin", onIn);
+    document.addEventListener("focusout", onOut);
+    return () => {
+      document.removeEventListener("focusin", onIn);
+      document.removeEventListener("focusout", onOut);
+      delete root.dataset.keyboard;
+    };
+  }, []);
+}
+
+/**
+ * Floating dark tab bar for phones and tablets (the sidebar takes over on desktop).
+ * A lime capsule slides to the active tab; every tab keeps a visible label.
+ */
 export function BottomNav() {
   const pathname = usePathname();
   const { t } = useTranslation();
+  const index = NAV_ITEMS.findIndex(({ href }) => isActivePath(pathname, href));
+  useKeyboardFlag();
 
   return (
-    // Floating pill, inset from the edges; the safe-area inset lifts it above the home indicator.
-    <nav className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-20 px-3 sm:px-4">
-      <ul className="glass mx-auto flex max-w-xl rounded-[1.6rem] px-1.5">
-        {ITEMS.map(({ href, key, icon: Icon }) => {
-          const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
-          return (
-            <li key={href} className="flex-1">
-              <Link
-                href={href}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "group flex min-h-[4.25rem] flex-col items-center justify-center gap-1 text-[11px] transition-colors",
-                  active
-                    ? "text-brand-ink font-bold"
-                    : "text-muted-foreground hover:text-foreground font-medium",
-                )}
-              >
-                <span
+    <nav
+      aria-label={t("nav.label")}
+      style={{ viewTransitionName: "tab-bar" }}
+      className="tab-bar fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+var(--nav-gap))] z-40 px-3 transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] lg:hidden"
+    >
+      <div className="relative mx-auto max-w-md rounded-[1.75rem] bg-[image:var(--gradient-teal)] p-1.5 shadow-[var(--shadow-float)] ring-1 ring-white/10">
+        <span
+          aria-hidden
+          className={cn(
+            "bg-lime absolute top-1.5 bottom-1.5 left-1.5 w-[calc((100%-0.75rem)/5)] rounded-[1.35rem] shadow-[0_6px_16px_-6px_rgba(195,234,140,.7)] transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]",
+            index < 0 && "opacity-0",
+          )}
+          style={{ transform: `translateX(${Math.max(index, 0) * 100}%)` }}
+        />
+        <ul className="relative flex">
+          {NAV_ITEMS.map(({ href, key, icon: Icon }, i) => {
+            const active = i === index;
+            return (
+              <li key={href} className="flex-1">
+                <Link
+                  href={href}
+                  transitionTypes={NAV_TAB}
+                  aria-current={active ? "page" : undefined}
+                  onClick={() => !active && haptic("light")}
                   className={cn(
-                    "flex h-8 w-12 items-center justify-center rounded-xl transition-colors",
-                    active ? "bg-brand-ink text-white" : "group-hover:bg-muted",
+                    "flex h-[3.625rem] flex-col items-center justify-center gap-1 rounded-[1.35rem] text-[11px] leading-none font-semibold transition-[color,transform] duration-300 active:scale-90 active:duration-100",
+                    active ? "text-brand-ink" : "text-on-dark-muted hover:text-on-dark",
                   )}
                 >
-                  <Icon className="size-5" strokeWidth={active ? 2.25 : 1.75} aria-hidden />
-                </span>
-                {t(`nav.${key}`)}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+                  <Icon
+                    // re-keyed on activation so the icon gives one small pop when its tab is chosen
+                    key={active ? "on" : "off"}
+                    className={cn("size-[21px]", active && "pop")}
+                    strokeWidth={active ? 2.3 : 1.8}
+                    aria-hidden
+                  />
+                  <span className="max-w-full truncate px-1">{t(`nav.${key}`)}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
     </nav>
   );
 }

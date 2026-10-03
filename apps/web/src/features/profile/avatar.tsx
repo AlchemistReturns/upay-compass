@@ -18,7 +18,7 @@ export function formatPhone(phone: string | null | undefined): string {
   return m ? `+880 ${m[1]}-${m[2]}` : phone ? `+${digits}` : "";
 }
 
-/** Navy circle with the user's initials, or a person icon when no name is set. Decorative. */
+/** Teal circle with the user's initials, or a person icon when no name is set. Decorative. */
 export function Avatar({
   name,
   className,
@@ -31,7 +31,7 @@ export function Avatar({
     <span
       aria-hidden
       className={cn(
-        "bg-brand-ink grid size-9 shrink-0 place-items-center rounded-full text-[13px] font-bold text-white ring-2 ring-white/80",
+        "grid size-9 shrink-0 place-items-center rounded-full bg-[image:var(--gradient-teal)] text-[13px] font-bold text-lime ring-2 ring-white/80",
         className,
       )}
     >

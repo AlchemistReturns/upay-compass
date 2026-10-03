@@ -1,12 +1,69 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { CategoryIcon } from "@/components/compass";
 import { formatShortDate, formatSignedMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useCategories } from "@/features/categories/use-categories";
 import type { TransactionRow } from "./types";
+import { NAV_FORWARD } from "@/components/page-transition";
+
+/** "2026-10-03" for a timestamp, in Bangladesh time; used to group rows by day. */
+export function dhakaDay(iso: string) {
+  return new Date(new Date(iso).getTime() + 6 * 3_600_000).toISOString().slice(0, 10);
+}
+
+function Row({ tx, inset }: { tx: TransactionRow; inset: boolean }) {
+  const { t, i18n } = useTranslation();
+  const { data: categories } = useCategories();
+  const lang = i18n.language;
+  const cat = categories?.find((c) => c.id === tx.category_id);
+  const incoming = tx.direction === "in";
+
+  return (
+    <Link
+      href={`/transactions/${tx.id}`}
+      transitionTypes={NAV_FORWARD}
+      className={cn(
+        "group flex min-h-[4.25rem] items-center gap-3.5 py-3 transition-colors hover:bg-[#f6faf4] active:bg-muted",
+        inset ? "rounded-2xl px-2.5" : "px-4",
+      )}
+    >
+      <CategoryIcon categoryKey={cat?.key ?? (incoming ? "income" : "other")} />
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-[15px] font-semibold">
+          {tx.counterparty || t(`channel.${tx.channel}`)}
+        </div>
+        <div className="text-muted-foreground mt-0.5 flex min-w-0 items-center gap-x-1.5 text-[12.5px]">
+          <span className="truncate">
+            {cat ? (lang === "bn" ? cat.name_bn : cat.name_en) : t(`channel.${tx.channel}`)}
+          </span>
+          <span aria-hidden>·</span>
+          <span className="shrink-0">{formatShortDate(tx.occurred_at, lang)}</span>
+        </div>
+        {tx.needs_review && (
+          <span className="bg-warning-soft text-warning-ink mt-1 inline-flex h-5 items-center rounded-full px-2 text-[11px] font-semibold">
+            {t("transactions.check_category")}
+          </span>
+        )}
+      </div>
+      <div
+        className={cn(
+          "num shrink-0 text-[15px] font-bold",
+          incoming ? "text-positive" : "text-foreground",
+        )}
+      >
+        {formatSignedMoney(incoming ? tx.amount : -tx.amount, lang)}
+      </div>
+      <ChevronRight
+        className="text-muted-foreground/50 -mr-1 hidden size-4 shrink-0 transition-transform group-hover:translate-x-0.5 sm:block"
+        aria-hidden
+      />
+    </Link>
+  );
+}
 
 /** `framed` draws its own card; pass false when the list already sits inside one. */
 export function TransactionList({
@@ -16,66 +73,18 @@ export function TransactionList({
   rows: TransactionRow[];
   framed?: boolean;
 }) {
-  const { t, i18n } = useTranslation();
-  const { data: categories } = useCategories();
-  const lang = i18n.language;
-  const nameById = new Map(
-    (categories ?? []).map((c) => [c.id, lang === "bn" ? c.name_bn : c.name_en]),
-  );
-
   return (
-    <ul className={cn("divide-y", framed ? "finance-card overflow-hidden" : "-mx-2")}>
-      {rows.map((tx) => {
-        const incoming = tx.direction === "in";
-        const Icon = incoming ? ArrowDownLeft : ArrowUpRight;
-        return (
-          <li key={tx.id}>
-            <Link
-              href={`/transactions/${tx.id}`}
-              className={cn(
-                "hover:bg-muted/60 flex min-h-16 items-center gap-3 py-3 transition-colors",
-                framed ? "px-4" : "rounded-xl px-2",
-              )}
-            >
-              <span
-                className={cn(
-                  "icon-chip",
-                  incoming ? "bg-positive-soft text-positive" : "bg-muted text-muted-foreground",
-                )}
-              >
-                <Icon className="size-[18px]" aria-hidden />
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-medium">
-                  {tx.counterparty || t(`channel.${tx.channel}`)}
-                </div>
-                <div className="text-muted-foreground flex flex-wrap items-center gap-x-1.5 text-xs">
-                  <span>{formatShortDate(tx.occurred_at, lang)}</span>
-                  {tx.category_id && (
-                    <>
-                      <span aria-hidden>·</span>
-                      <span>{nameById.get(tx.category_id)}</span>
-                    </>
-                  )}
-                  {tx.needs_review && (
-                    <span className="bg-reward-soft text-reward-ink rounded-md px-1.5 py-0.5 font-medium">
-                      {t("transactions.check_category")}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div
-                className={cn(
-                  "text-sm font-semibold tabular-nums",
-                  incoming ? "text-positive" : "text-foreground",
-                )}
-              >
-                {formatSignedMoney(incoming ? tx.amount : -tx.amount, lang)}
-              </div>
-            </Link>
-          </li>
-        );
-      })}
+    <ul
+      className={cn(
+        "divide-y divide-[rgba(13,75,76,.07)]",
+        framed ? "finance-card overflow-hidden" : "-mx-2.5",
+      )}
+    >
+      {rows.map((tx) => (
+        <li key={tx.id}>
+          <Row tx={tx} inset={!framed} />
+        </li>
+      ))}
     </ul>
   );
 }

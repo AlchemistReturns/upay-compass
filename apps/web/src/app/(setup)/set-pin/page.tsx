@@ -10,13 +10,18 @@ export default function SetPinPage() {
   const { t } = useTranslation();
   return (
     <Guard own="needs-pin">
-      <main className="mx-auto w-full max-w-md flex-1 px-4 pb-8">
+      <main className="mx-auto w-full max-w-md flex-1 px-4 pb-10">
         <PageHeader title={t("pin.title")} />
-        <div className="finance-card p-6 sm:p-8">
-          <span className="from-brand-deep to-primary mb-5 grid size-12 place-items-center rounded-2xl bg-gradient-to-br text-white shadow-[var(--shadow-raised)]">
-            <ShieldCheck className="size-6" aria-hidden />
-          </span>
-          <SetPinForm />
+        <div className="finance-card rise overflow-hidden">
+          <div className="balance-panel flex items-center gap-4 rounded-none p-6 shadow-none">
+            <span className="bg-lime text-brand-ink grid size-14 shrink-0 place-items-center rounded-[1.25rem]">
+              <ShieldCheck className="size-7" aria-hidden />
+            </span>
+            <p className="text-on-dark-muted text-sm leading-6">{t("login.privacy_line")}</p>
+          </div>
+          <div className="p-6 sm:p-8">
+            <SetPinForm />
+          </div>
         </div>
       </main>
     </Guard>

@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { CheckCircle2, ChevronRight } from "lucide-react";
+import { ArrowRight, CircleCheck, ChevronRight, Clock, Flame } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useOnline } from "@/features/pwa/use-online";
 import { PageHeader } from "@/components/page-header";
+import { LoadingCards, Pill, Ring, SectionHeader } from "@/components/compass";
 import { BadgeShelf } from "@/features/gamification/badge-shelf";
 import { useGamification } from "@/features/gamification/use-gamification";
-import { ProgressRing } from "./progress-ring";
+import { cn } from "@/lib/utils";
 import { useCompletedModules, useModules } from "./use-learn";
+import { NAV_FORWARD } from "@/components/page-transition";
 
 export function LearnView() {
   const { t, i18n } = useTranslation();
@@ -20,69 +22,148 @@ export function LearnView() {
   const total = modules.data?.length ?? 0;
   const done = modules.data?.filter((m) => completed.data?.has(m.id)).length ?? 0;
   const days = streak.data?.streak_days ?? 0;
+  const next = modules.data?.find((m) => !completed.data?.has(m.id));
+  const pct = total > 0 ? (done / total) * 100 : 0;
 
   return (
     <>
-      <PageHeader title={t("learn.title")} />
-      <div className="space-y-5 pb-4">
-        <div className="finance-card flex items-center gap-4 p-5">
-          <ProgressRing
-            done={done}
-            total={total}
-            label={t("learn.progress_label", { done, total })}
-          />
-          <div>
-            <div className="text-base font-semibold">{t("learn.progress_title")}</div>
-            <div className="text-muted-foreground text-sm">
-              {days > 0 ? t("gamification.streak", { count: days }) : t("learn.progress_hint")}
+      <PageHeader title={t("learn.title")} subtitle={t("learn.disclaimer")} />
+      <div className="space-y-7 pb-4">
+        <div className="grid gap-3 lg:grid-cols-2">
+          <section className="balance-panel rise flex items-center gap-5 p-5 sm:p-6">
+            <Ring value={pct} size={92} stroke={9} track="rgba(255,255,255,.1)" color="var(--lime)">
+              <span
+                role="img"
+                aria-label={t("learn.progress_label", { done, total })}
+                className="num text-xl font-extrabold"
+              >
+                {done}/{total}
+              </span>
+            </Ring>
+            <div className="min-w-0">
+              <div className="text-lg font-extrabold tracking-tight">
+                {t("learn.progress_title")}
+              </div>
+              <div className="text-on-dark-muted mt-0.5 text-sm">
+                {t("learn.progress_label", { done, total })}
+              </div>
+              {days > 0 ? (
+                <Pill tone="reward" className="mt-3">
+                  <Flame fill="currentColor" aria-hidden />
+                  {t("gamification.streak", { count: days })}
+                </Pill>
+              ) : (
+                <p className="text-on-dark-muted mt-2 text-[13px]">{t("learn.progress_hint")}</p>
+              )}
             </div>
-          </div>
+          </section>
+
+          {next && (
+            <Link
+              href={`/learn/${next.slug}`}
+              transitionTypes={NAV_FORWARD}
+              className="surface-lime group rise flex flex-col justify-between gap-4 rounded-[2rem] p-5 shadow-[0_16px_34px_-20px_rgba(79,158,58,.9)] transition-transform active:scale-[0.985] sm:p-6"
+              style={{ "--i": 1 } as React.CSSProperties}
+            >
+              <div>
+                <p className="text-brand-ink/70 text-xs font-bold tracking-wide uppercase">
+                  {t("learn.up_next")}
+                </p>
+                <p className="mt-1.5 text-lg leading-snug font-extrabold">
+                  {bn ? next.title_bn : next.title_en}
+                </p>
+                <p className="text-brand-ink/75 mt-1 line-clamp-2 text-sm">
+                  {bn ? next.summary_bn : next.summary_en}
+                </p>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-brand-ink/75 flex items-center gap-1.5 text-xs font-semibold">
+                  <Clock className="size-3.5" aria-hidden />
+                  {t("learn.minutes", { count: next.minutes })}
+                </span>
+                <span className="bg-brand-ink text-lime flex h-10 items-center gap-1.5 rounded-full pr-3 pl-4 text-[13px] font-bold">
+                  {t("learn.start")}
+                  <ArrowRight
+                    className="size-4 transition-transform group-hover:translate-x-0.5"
+                    aria-hidden
+                  />
+                </span>
+              </div>
+            </Link>
+          )}
         </div>
 
         {modules.isPending && (
-          <p className="text-muted-foreground" role="status">
-            {online ? t("common.loading") : t("pwa.offline_no_data")}
-          </p>
+          <div>
+            <p className="sr-only" role="status">
+              {online ? t("common.loading") : t("pwa.offline_no_data")}
+            </p>
+            {online ? (
+              <LoadingCards rows={4} />
+            ) : (
+              <p className="text-muted-foreground">{t("pwa.offline_no_data")}</p>
+            )}
+          </div>
         )}
         {modules.isError && <p>{t("common.error")}</p>}
 
-        <ul className="grid gap-3 lg:grid-cols-2">
-          {modules.data?.map((m) => {
-            const finished = completed.data?.has(m.id) ?? false;
-            return (
-              <li key={m.id}>
-                <Link
-                  href={`/learn/${m.slug}`}
-                  className="finance-card flex h-full min-h-16 items-center gap-3 p-4"
-                >
-                  <span
-                    className={
-                      finished
-                        ? "icon-chip bg-positive-soft text-positive"
-                        : "icon-chip text-sm font-semibold tabular-nums"
-                    }
+        {modules.data && modules.data.length > 0 && (
+          <section aria-labelledby="modules-heading">
+            <SectionHeader
+              id="modules-heading"
+              title={t("learn.progress_title")}
+              className="sr-only"
+            />
+            <ul className="grid gap-2.5 lg:grid-cols-2">
+              {modules.data.map((m, i) => {
+                const finished = completed.data?.has(m.id) ?? false;
+                return (
+                  <li
+                    key={m.id}
+                    className="rise"
+                    style={{ "--i": Math.min(i + 2, 8) } as React.CSSProperties}
                   >
-                    {finished ? <CheckCircle2 className="size-5" aria-hidden /> : m.position}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block font-medium">{bn ? m.title_bn : m.title_en}</span>
-                    <span className="text-muted-foreground block text-sm">
-                      {bn ? m.summary_bn : m.summary_en}
-                    </span>
-                    <span className="text-muted-foreground block text-xs">
-                      {t("learn.minutes", { count: m.minutes })}
-                      {finished ? ` · ${t("learn.done")}` : ""}
-                    </span>
-                  </span>
-                  <ChevronRight className="text-muted-foreground size-5 shrink-0" aria-hidden />
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+                    <Link
+                      href={`/learn/${m.slug}`}
+                      transitionTypes={NAV_FORWARD}
+                      className="finance-card flex h-full min-h-20 items-center gap-3.5 p-4"
+                    >
+                      <span
+                        className={cn(
+                          "num grid size-12 shrink-0 place-items-center rounded-2xl text-base font-extrabold",
+                          finished ? "bg-positive-soft text-positive" : "bg-secondary text-primary",
+                        )}
+                      >
+                        {finished ? <CircleCheck className="size-6" aria-hidden /> : m.position}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[15px] leading-snug font-bold">
+                          {bn ? m.title_bn : m.title_en}
+                        </span>
+                        <span className="text-muted-foreground mt-0.5 line-clamp-2 block text-[13px] leading-5">
+                          {bn ? m.summary_bn : m.summary_en}
+                        </span>
+                        <span className="text-muted-foreground mt-1.5 flex items-center gap-1.5 text-xs font-medium">
+                          <Clock className="size-3" aria-hidden />
+                          {t("learn.minutes", { count: m.minutes })}
+                          {finished && (
+                            <span className="text-positive font-semibold">· {t("learn.done")}</span>
+                          )}
+                        </span>
+                      </span>
+                      <ChevronRight
+                        className="text-muted-foreground/60 size-5 shrink-0"
+                        aria-hidden
+                      />
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
 
         <BadgeShelf />
-        <p className="text-muted-foreground text-xs">{t("learn.disclaimer")}</p>
       </div>
     </>
   );

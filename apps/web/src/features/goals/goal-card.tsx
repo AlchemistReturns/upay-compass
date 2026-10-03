@@ -1,13 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, CheckCircle2, Target, Trash2 } from "lucide-react";
+import { ChevronDown, CircleCheck, Plus, Target, Trash2, TriangleAlert, Undo2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { OfflineNote } from "@/features/pwa/offline-note";
 import { useOnline } from "@/features/pwa/use-online";
 import { projectGoal } from "@compass/shared";
+import { Pill, Ring } from "@/components/compass";
+import { MoneyInput } from "@/components/money-input";
+import { Sheet } from "@/components/sheet";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useConfirm } from "@/components/confirm";
+import { toast } from "@/components/toaster";
 import { Label } from "@/components/ui/label";
 import { formatMoney, formatMonthYear, formatShortDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -19,23 +23,126 @@ import {
   type GoalContribution,
 } from "./use-goals";
 
+const QUICK_AMOUNTS = [100, 500, 1000] as const;
+
+function AddMoneyForm({
+  goal,
+  onDone,
+}: {
+  goal: Goal;
+  /** called with the new contribution's id and amount once it is saved */
+  onDone: (added?: { id: string; amount: number }) => void;
+}) {
+  const { t, i18n } = useTranslation();
+  const online = useOnline();
+  const contribute = useContribute();
+  const [amount, setAmount] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const lang = i18n.language;
+  const remaining = Math.max(goal.target_amount - goal.saved_amount, 0);
+
+  async function add(e: React.FormEvent) {
+    e.preventDefault();
+    const value = Number(amount);
+    if (!(value > 0)) return setError(t("goals.invalid_amount"));
+    setError(null);
+    try {
+      const id = await contribute.mutateAsync({ goalId: goal.id, amount: value });
+      onDone({ id, amount: value });
+    } catch {
+      setError(t("common.error"));
+    }
+  }
+
+  return (
+    <form onSubmit={add} className="space-y-4" noValidate>
+      <div className="space-y-2">
+        <Label htmlFor={`amt-${goal.id}`}>{t("goals.amount")}</Label>
+        <MoneyInput id={`amt-${goal.id}`} value={amount} onChange={setAmount} decimal size="lg" />
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {QUICK_AMOUNTS.filter((a) => remaining === 0 || a < remaining).map((a) => (
+          <button
+            key={a}
+            type="button"
+            onClick={() => setAmount(String(a))}
+            className="bg-secondary text-secondary-foreground hover:bg-lime-soft num h-11 rounded-full px-4 text-[13px] font-bold transition-colors active:scale-95"
+          >
+            {formatMoney(a, lang)}
+          </button>
+        ))}
+        {remaining > 0 && (
+          <button
+            type="button"
+            onClick={() => setAmount(String(Math.round(remaining)))}
+            className="bg-lime-soft text-brand-ink hover:bg-lime num h-11 rounded-full px-4 text-[13px] font-bold transition-colors active:scale-95"
+          >
+            {formatMoney(remaining, lang)}
+          </button>
+        )}
+      </div>
+      {error && (
+        <p role="alert" className="text-destructive text-sm font-medium">
+          {error}
+        </p>
+      )}
+      <OfflineNote />
+      <Button
+        type="submit"
+        className="w-full"
+        loading={contribute.isPending}
+        disabled={!online || !(Number(amount) > 0)}
+      >
+        {t("goals.add")}
+      </Button>
+      <p className="text-muted-foreground px-1 text-xs leading-5">{t("goals.simulated")}</p>
+    </form>
+  );
+}
+
 export function GoalCard({
   goal,
   contributions,
+  index = 0,
 }: {
   goal: Goal;
   contributions: GoalContribution[];
+  index?: number;
 }) {
   const { t, i18n } = useTranslation();
   const online = useOnline();
   const lang = i18n.language;
-  const contribute = useContribute();
   const undo = useUndoContribution();
   const remove = useDeleteGoal();
+  const confirm = useConfirm();
   const [adding, setAdding] = useState(false);
-  const [amount, setAmount] = useState("");
+  const [opens, setOpens] = useState(0);
   const [showHistory, setShowHistory] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  function undoContribution(id: string) {
+    undo.mutateAsync(id).then(
+      () => toast.success(t("goals.toast_undone")),
+      () => toast.error(t("common.error")),
+    );
+  }
+
+  function onAdded(added?: { id: string; amount: number }) {
+    setAdding(false);
+    if (!added) return;
+    toast.success(
+      t("goals.toast_added", { amount: formatMoney(added.amount, lang), title: goal.title }),
+      { undo: { label: t("goals.undo"), onClick: () => undoContribution(added.id) } },
+    );
+  }
+
+  async function onDelete() {
+    const ok = await confirm({ title: t("goals.confirm_delete"), confirmLabel: t("goals.delete") });
+    if (!ok) return;
+    remove.mutate(goal.id, {
+      onSuccess: () => toast.success(t("goals.toast_deleted")),
+      onError: () => toast.error(t("common.error")),
+    });
+  }
 
   const done = goal.status === "completed";
   const pct = Math.min((goal.saved_amount / goal.target_amount) * 100, 100);
@@ -46,204 +153,200 @@ export function GoalCard({
     contributions,
   });
 
-  async function add(e: React.FormEvent) {
-    e.preventDefault();
-    const value = Number(amount);
-    if (!(value > 0)) return setError(t("goals.invalid_amount"));
-    setError(null);
-    try {
-      await contribute.mutateAsync({ goalId: goal.id, amount: value });
-      setAmount("");
-      setAdding(false);
-    } catch {
-      setError(t("common.error"));
-    }
-  }
-
   return (
-    <section className="finance-card p-4 sm:p-5">
-      <div className="flex items-center gap-3">
-        <span
-          className={cn("icon-chip size-11 rounded-2xl", done && "bg-positive-soft text-positive")}
+    <section
+      className="finance-card rise min-w-0 p-4 sm:p-5"
+      style={{ "--i": index + 1 } as React.CSSProperties}
+    >
+      <div className="flex items-center gap-4">
+        <Ring
+          value={pct}
+          size={72}
+          stroke={7}
+          color={done ? "var(--status-good)" : "var(--leaf)"}
+          track="var(--mint)"
         >
-          <Target className="size-5" aria-hidden />
-        </span>
+          {done ? (
+            <CircleCheck className="text-positive size-6" aria-hidden />
+          ) : (
+            <span className="num text-[15px] font-extrabold">{Math.round(pct)}%</span>
+          )}
+        </Ring>
         <div className="min-w-0 flex-1">
-          <h2 className="section-title truncate">{goal.title}</h2>
-          <div className="text-sm tabular-nums">
-            <span className="font-semibold">{formatMoney(goal.saved_amount, lang)}</span>
-            <span className="text-muted-foreground">
-              {" "}
+          <div className="flex items-center gap-2">
+            <h2 className="truncate text-[17px] font-bold">{goal.title}</h2>
+            {done && <Pill tone="good">{t("goals.status_completed")}</Pill>}
+          </div>
+          <div className="mt-1 flex items-baseline gap-1.5">
+            <span className="num text-xl leading-none font-extrabold">
+              {formatMoney(goal.saved_amount, lang)}
+            </span>
+            <span className="text-muted-foreground num text-sm font-medium">
               / {formatMoney(goal.target_amount, lang)}
             </span>
           </div>
-        </div>
-        <span
-          className={cn("text-lg font-bold tabular-nums", done ? "text-positive" : "text-primary")}
-          aria-hidden
-        >
-          {Math.round(pct)}%
-        </span>
-      </div>
-
-      <div
-        className="bg-muted mt-3.5 h-2.5 rounded-full"
-        role="progressbar"
-        aria-label={goal.title}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={Math.round(pct)}
-      >
-        <div
-          className="h-full rounded-full transition-[width] duration-500"
-          style={{
-            width: `${Math.max(pct, 1.5)}%`,
-            background: done ? "var(--status-good)" : "var(--chart-bar)",
-          }}
-        />
-      </div>
-
-      <div className="mt-2.5 text-xs leading-5">
-        {done ? (
-          <span className="flex items-center gap-1.5">
-            <CheckCircle2
-              className="size-3.5"
-              style={{ color: "var(--status-good)" }}
-              aria-hidden
-            />
-            {t("goals.status_completed")}
-          </span>
-        ) : projection.status === "no_contributions" ? (
-          <span className="text-muted-foreground">{t("goals.status_none")}</span>
-        ) : (
-          <div className="space-y-0.5">
-            <div className="flex items-start gap-1.5">
-              {projection.status === "behind" ? (
-                <AlertTriangle
-                  className="mt-0.5 size-3.5 shrink-0"
-                  style={{ color: "var(--status-warning)" }}
-                  aria-hidden
-                />
-              ) : (
-                <CheckCircle2
-                  className="mt-0.5 size-3.5 shrink-0"
-                  style={{ color: "var(--status-good)" }}
-                  aria-hidden
-                />
-              )}
-              <span>
-                {t("goals.pace", { amount: formatMoney(projection.avgMonthly, lang) })}
-                {" · "}
-                {t(
-                  projection.status === "behind" ? "goals.status_behind" : "goals.status_on_track",
-                  {
-                    date: projection.projectedDate
-                      ? formatMonthYear(projection.projectedDate, lang)
-                      : "-",
-                  },
-                )}
-              </span>
-            </div>
-            {projection.status === "behind" && goal.target_date && projection.requiredMonthly && (
-              <div className="text-muted-foreground pl-5">
-                {t("goals.need_monthly", {
-                  amount: formatMoney(projection.requiredMonthly, lang),
-                  date: formatShortDate(goal.target_date, lang),
-                })}
-              </div>
-            )}
-          </div>
-        )}
-        {goal.target_date && !done && projection.status === "no_contributions" && (
-          <div className="text-muted-foreground">
-            {t("goals.target_date", { date: formatShortDate(goal.target_date, lang) })}
-            {projection.requiredMonthly
-              ? ` · ${t("goals.need_monthly_short", { amount: formatMoney(projection.requiredMonthly, lang) })}`
-              : ""}
-          </div>
-        )}
-      </div>
-
-      {adding ? (
-        <form onSubmit={add} className="mt-3 space-y-2" noValidate>
-          <Label htmlFor={`amt-${goal.id}`}>{t("goals.amount")}</Label>
-          <Input
-            id={`amt-${goal.id}`}
-            inputMode="decimal"
-            autoFocus
-            value={amount}
-            onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ""))}
+          {/* screen readers get the progress as a value; the ring is decorative */}
+          <span
+            className="sr-only"
+            role="progressbar"
+            aria-label={goal.title}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(pct)}
           />
-          {error && (
-            <p role="alert" className="text-destructive text-sm">
-              {error}
-            </p>
+        </div>
+      </div>
+
+      {!done && (
+        <div className="bg-muted/70 mt-4 rounded-2xl px-3.5 py-3 text-[13px] leading-5">
+          {projection.status === "no_contributions" ? (
+            <div className="text-muted-foreground">
+              {t("goals.status_none")}
+              {goal.target_date && (
+                <div>
+                  {t("goals.target_date", { date: formatShortDate(goal.target_date, lang) })}
+                  {projection.requiredMonthly
+                    ? ` · ${t("goals.need_monthly_short", { amount: formatMoney(projection.requiredMonthly, lang) })}`
+                    : ""}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-0.5">
+              <div className="flex items-start gap-2">
+                {projection.status === "behind" ? (
+                  <TriangleAlert
+                    className="mt-0.5 size-4 shrink-0"
+                    style={{ color: "var(--status-warning)" }}
+                    aria-hidden
+                  />
+                ) : (
+                  <CircleCheck
+                    className="mt-0.5 size-4 shrink-0"
+                    style={{ color: "var(--status-good)" }}
+                    aria-hidden
+                  />
+                )}
+                <span className="font-medium">
+                  {t("goals.pace", { amount: formatMoney(projection.avgMonthly, lang) })}
+                  {" · "}
+                  {t(
+                    projection.status === "behind"
+                      ? "goals.status_behind"
+                      : "goals.status_on_track",
+                    {
+                      date: projection.projectedDate
+                        ? formatMonthYear(projection.projectedDate, lang)
+                        : "-",
+                    },
+                  )}
+                </span>
+              </div>
+              {projection.status === "behind" && goal.target_date && projection.requiredMonthly && (
+                <div className="text-muted-foreground pl-6">
+                  {t("goals.need_monthly", {
+                    amount: formatMoney(projection.requiredMonthly, lang),
+                    date: formatShortDate(goal.target_date, lang),
+                  })}
+                </div>
+              )}
+            </div>
           )}
-          <OfflineNote />
-          <div className="flex gap-2">
-            <Button type="button" variant="outline" onClick={() => setAdding(false)}>
-              {t("common.cancel")}
-            </Button>
-            <Button type="submit" className="flex-1" disabled={contribute.isPending || !online}>
-              {t("goals.add")}
-            </Button>
-          </div>
-          <p className="text-muted-foreground text-xs">{t("goals.simulated")}</p>
-        </form>
-      ) : (
-        <div className="mt-4 flex gap-2">
-          {!done && (
-            <Button className="flex-1" onClick={() => setAdding(true)}>
-              {t("goals.add_money")}
-            </Button>
-          )}
-          <Button
-            variant="outline"
-            className={cn(done && "flex-1")}
-            aria-expanded={showHistory}
-            onClick={() => setShowHistory((v) => !v)}
-          >
-            {t("goals.history")} ({contributions.length})
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-muted-foreground hover:text-destructive shrink-0"
-            aria-label={t("goals.delete")}
-            title={t("goals.delete")}
-            disabled={remove.isPending || !online}
-            onClick={() => window.confirm(t("goals.confirm_delete")) && remove.mutate(goal.id)}
-          >
-            <Trash2 className="size-4" aria-hidden />
-          </Button>
         </div>
       )}
 
-      {showHistory && (
-        <ul className="bg-muted/50 mt-3 divide-y overflow-hidden rounded-2xl text-sm">
-          {contributions.length === 0 && (
-            <li className="text-muted-foreground p-3">{t("goals.no_history")}</li>
-          )}
-          {contributions.map((c) => (
-            <li key={c.id} className="flex items-center gap-2 px-3 py-2">
-              <div className="min-w-0 flex-1">
-                <div className="tabular-nums">+{formatMoney(c.amount, lang)}</div>
-                <div className="text-muted-foreground text-xs">
-                  {formatShortDate(c.created_at, lang)} · {t(`goals.source_${c.source}`)}
+      <div className="mt-4 flex gap-2">
+        {!done && (
+          <Button
+            className="min-w-0 flex-1"
+            onClick={() => {
+              setOpens((n) => n + 1);
+              setAdding(true);
+            }}
+          >
+            <Plus strokeWidth={2.5} aria-hidden />
+            <span className="truncate">{t("goals.add_money")}</span>
+          </Button>
+        )}
+        <Button
+          variant="secondary"
+          className={cn("px-4", done && "flex-1")}
+          aria-expanded={showHistory}
+          onClick={() => setShowHistory((v) => !v)}
+        >
+          <span className="max-[400px]:sr-only">{t("goals.history")}</span>
+          <span className="bg-card num grid h-5 min-w-5 place-items-center rounded-full px-1 text-[11px]">
+            {contributions.length}
+          </span>
+          <ChevronDown
+            className={cn(
+              "-ml-0.5 size-4 transition-transform duration-300",
+              showHistory && "rotate-180",
+            )}
+            aria-hidden
+          />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon-lg"
+          className="text-muted-foreground hover:text-destructive hover:bg-negative-soft shrink-0"
+          aria-label={t("goals.delete")}
+          title={t("goals.delete")}
+          disabled={remove.isPending || !online}
+          onClick={() => void onDelete()}
+        >
+          <Trash2 className="size-[18px]" aria-hidden />
+        </Button>
+      </div>
+
+      {/* grid-rows 0fr → 1fr animates the history open to its natural height */}
+      <div
+        className={cn(
+          "grid transition-[grid-template-rows,opacity] duration-400 ease-[cubic-bezier(0.32,0.72,0,1)]",
+          showHistory ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
+        )}
+        inert={!showHistory}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <ul className="bg-muted/60 mt-3 divide-y divide-[rgba(13,75,76,.07)] overflow-hidden rounded-2xl text-sm">
+            {contributions.length === 0 && (
+              <li className="text-muted-foreground flex items-center gap-2 p-3.5">
+                <Target className="size-4" aria-hidden />
+                {t("goals.no_history")}
+              </li>
+            )}
+            {contributions.map((c) => (
+              <li key={c.id} className="flex items-center gap-2 py-2 pr-1.5 pl-3.5">
+                <div className="min-w-0 flex-1">
+                  <div className="num text-positive font-bold">+{formatMoney(c.amount, lang)}</div>
+                  <div className="text-muted-foreground text-xs">
+                    {formatShortDate(c.created_at, lang)} · {t(`goals.source_${c.source}`)}
+                  </div>
                 </div>
-              </div>
-              <Button
-                size="sm"
-                variant="ghost"
-                disabled={undo.isPending || !online}
-                onClick={() => undo.mutate(c.id)}
-              >
-                {t("goals.undo")}
-              </Button>
-            </li>
-          ))}
-        </ul>
-      )}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  loading={undo.isPending && undo.variables === c.id}
+                  disabled={undo.isPending || !online}
+                  onClick={() => undoContribution(c.id)}
+                >
+                  <Undo2 aria-hidden />
+                  {t("goals.undo")}
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      <Sheet
+        open={adding}
+        onOpenChange={setAdding}
+        title={t("goals.add_money")}
+        description={goal.title}
+      >
+        <AddMoneyForm key={opens} goal={goal} onDone={onAdded} />
+      </Sheet>
     </section>
   );
 }

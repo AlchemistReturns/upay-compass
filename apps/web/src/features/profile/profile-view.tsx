@@ -2,13 +2,16 @@
 
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Check, LogOut, ShieldCheck } from "lucide-react";
+import { Check, Languages, LogOut, Phone, ShieldCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import { INCOME_TYPES, incomeSchema, type IncomeType } from "@compass/shared";
 import { PageHeader } from "@/components/page-header";
+import { ErrorState, LoadingCards, Pill } from "@/components/compass";
 import { useSetLanguage } from "@/components/language-toggle";
 import { Button } from "@/components/ui/button";
+import { useConfirm } from "@/components/confirm";
+import { toast } from "@/components/toaster";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -52,11 +55,9 @@ function DetailsForm({ profile }: { profile: Profile }) {
     profile.monthly_income === null ? "" : String(profile.monthly_income),
   );
   const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    setSaved(false);
     const parsed = detailsSchema.safeParse({
       full_name: name,
       income_type: incomeType || undefined,
@@ -70,15 +71,20 @@ function DetailsForm({ profile }: { profile: Profile }) {
         income_type: parsed.data.income_type,
         monthly_income: parsed.data.monthly_income,
       });
-      setSaved(true);
+      toast.success(t("profile.saved"));
     } catch {
       setError(t("common.error"));
     }
   }
 
   return (
-    <form onSubmit={submit} className="finance-card space-y-4 p-5 sm:p-6" noValidate>
-      <h2 className="section-title">{t("profile.details_title")}</h2>
+    <form
+      onSubmit={submit}
+      className="finance-card rise space-y-4 p-5 sm:p-6"
+      style={{ "--i": 1 } as React.CSSProperties}
+      noValidate
+    >
+      <h2 className="text-[17px] font-bold">{t("profile.details_title")}</h2>
       <div className="space-y-2">
         <Label htmlFor="profile-name">{t("profile.name")}</Label>
         <Input
@@ -89,7 +95,7 @@ function DetailsForm({ profile }: { profile: Profile }) {
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
-        <p className="text-muted-foreground text-xs">{t("profile.name_hint")}</p>
+        <p className="text-muted-foreground px-1 text-xs">{t("profile.name_hint")}</p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
@@ -125,18 +131,9 @@ function DetailsForm({ profile }: { profile: Profile }) {
         </p>
       )}
       <div className="flex flex-wrap items-center gap-3">
-        <Button type="submit" disabled={update.isPending || !online}>
-          {update.isPending ? t("common.saving") : t("profile.save")}
+        <Button type="submit" loading={update.isPending} disabled={!online}>
+          {t("profile.save")}
         </Button>
-        {saved && (
-          <span
-            role="status"
-            className="text-positive flex items-center gap-1.5 text-sm font-medium"
-          >
-            <Check className="size-4" aria-hidden />
-            {t("profile.saved")}
-          </span>
-        )}
       </div>
       <OfflineNote />
     </form>
@@ -150,61 +147,74 @@ export function ProfileView() {
   const profile = useProfile(userId);
   const setLanguage = useSetLanguage();
   const stopSharing = useStopCoachSharing();
+  const confirm = useConfirm();
+
+  async function stopCoachSharing() {
+    const ok = await confirm({
+      title: t("profile.coach_stop"),
+      description: t("profile.coach_stop_confirm"),
+      confirmLabel: t("profile.coach_stop"),
+    });
+    if (!ok) return;
+    stopSharing.mutate(undefined, {
+      onSuccess: () => toast.success(t("profile.toast_sharing_off")),
+    });
+  }
   const p = profile.data;
   const name = p?.full_name?.trim() || null;
 
   return (
     <>
-      <PageHeader title={t("profile.title")} />
+      <PageHeader title={t("profile.title")} back="/" />
 
-      {profile.isPending && <p className="text-muted-foreground">{t("common.loading")}</p>}
-      {profile.isError && (
-        <div>
-          <p className="mb-2">{t("common.error")}</p>
-          <Button onClick={() => void profile.refetch()}>{t("common.retry")}</Button>
-        </div>
-      )}
+      {profile.isPending && <LoadingCards hero rows={2} />}
+      {profile.isError && <ErrorState onRetry={() => void profile.refetch()} />}
 
       {p && (
         <div className="mx-auto max-w-2xl space-y-4 pb-4">
-          <section className="balance-panel flex items-center gap-4 p-5 sm:p-6">
-            <Avatar name={name} className="relative z-[1] size-16 text-xl ring-white/30" />
-            <div className="relative z-[1] min-w-0">
-              <div className="truncate text-xl font-bold">
-                {name ?? <span className="text-white/75">{t("profile.no_name")}</span>}
+          <section className="balance-panel rise flex items-center gap-4 p-5 sm:p-6">
+            <Avatar
+              name={name}
+              className="bg-lime text-brand-ink size-[4.5rem] bg-none text-2xl ring-4 ring-white/15"
+            />
+            <div className="min-w-0">
+              <div className="truncate text-xl font-extrabold tracking-tight">
+                {name ?? <span className="text-on-dark-muted">{t("profile.no_name")}</span>}
               </div>
-              <div className="text-sm text-white/80 tabular-nums">{formatPhone(p.phone)}</div>
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {p.income_type && (
-                  <span className="rounded-full bg-white/12 px-2.5 py-1 text-xs font-medium ring-1 ring-white/20">
-                    {t(`onboarding.${p.income_type}`)}
-                  </span>
-                )}
-                {p.role === "admin" && (
-                  <span className="rounded-full bg-white/12 px-2.5 py-1 text-xs font-medium ring-1 ring-white/20">
-                    {t("profile.admin_badge")}
-                  </span>
-                )}
+              <div className="text-on-dark-muted num text-sm">{formatPhone(p.phone)}</div>
+              <div className="mt-2.5 flex flex-wrap gap-1.5">
+                {p.income_type && <Pill tone="dark">{t(`onboarding.${p.income_type}`)}</Pill>}
+                {p.role === "admin" && <Pill tone="lime">{t("profile.admin_badge")}</Pill>}
               </div>
             </div>
           </section>
 
           <DetailsForm key={p.id} profile={p} />
 
-          <section className="finance-card space-y-3 p-5 sm:p-6">
-            <h2 className="section-title">{t("profile.phone")}</h2>
-            <p className="font-semibold tabular-nums">{formatPhone(p.phone)}</p>
-            <p className="text-muted-foreground text-xs">{t("profile.phone_locked")}</p>
+          <section className="finance-card flex items-center gap-3.5 p-5 sm:p-6">
+            <span className="icon-chip">
+              <Phone className="size-[18px]" aria-hidden />
+            </span>
+            <div className="min-w-0">
+              <h2 className="text-muted-foreground text-[13px] font-semibold">
+                {t("profile.phone")}
+              </h2>
+              <p className="num text-[15px] font-bold">{formatPhone(p.phone)}</p>
+              <p className="text-muted-foreground mt-0.5 text-xs leading-4">
+                {t("profile.phone_locked")}
+              </p>
+            </div>
           </section>
 
           <section className="finance-card space-y-3 p-5 sm:p-6" aria-labelledby="profile-lang">
-            <h2 id="profile-lang" className="section-title">
+            <h2 id="profile-lang" className="flex items-center gap-2 text-[17px] font-bold">
+              <Languages className="text-primary size-[18px]" aria-hidden />
               {t("language.label")}
             </h2>
             <div
               role="radiogroup"
               aria-labelledby="profile-lang"
-              className="grid grid-cols-2 gap-2"
+              className="grid grid-cols-2 gap-2 rounded-full bg-[#e3ece4] p-1"
             >
               {(["bn", "en"] as const).map((lng) => {
                 const active = i18n.language === lng;
@@ -217,10 +227,10 @@ export function ProfileView() {
                     lang={lng}
                     onClick={() => setLanguage(lng)}
                     className={cn(
-                      "flex min-h-12 items-center justify-between rounded-xl border px-4 text-sm transition-colors",
+                      "flex min-h-11 items-center justify-center gap-1.5 rounded-full px-4 text-sm font-semibold transition-[background-color,box-shadow,color]",
                       active
-                        ? "border-primary bg-secondary font-semibold"
-                        : "bg-card hover:bg-muted/60",
+                        ? "bg-card text-foreground shadow-[0_4px_12px_-4px_rgba(6,47,49,.3)]"
+                        : "text-muted-foreground hover:text-foreground",
                     )}
                   >
                     {t(`language.${lng}`)}
@@ -232,7 +242,7 @@ export function ProfileView() {
           </section>
 
           <section className="finance-card space-y-3 p-5 sm:p-6">
-            <h2 className="section-title flex items-center gap-2">
+            <h2 className="flex items-center gap-2 text-[17px] font-bold">
               <ShieldCheck className="text-primary size-[18px]" aria-hidden />
               {t("profile.coach_title")}
             </h2>
@@ -245,11 +255,10 @@ export function ProfileView() {
             </p>
             {p.coach_consent_at && (
               <Button
-                variant="outline"
-                disabled={stopSharing.isPending || !online}
-                onClick={() =>
-                  window.confirm(t("profile.coach_stop_confirm")) && stopSharing.mutate()
-                }
+                variant="secondary"
+                loading={stopSharing.isPending}
+                disabled={!online}
+                onClick={() => void stopCoachSharing()}
               >
                 {t("profile.coach_stop")}
               </Button>
@@ -261,11 +270,7 @@ export function ProfileView() {
             )}
           </section>
 
-          <Button
-            variant="destructive"
-            className="h-12 w-full gap-2"
-            onClick={() => void signOut()}
-          >
+          <Button variant="destructive" className="w-full" onClick={() => void signOut()}>
             <LogOut className="size-4" aria-hidden />
             {t("common.logout")}
           </Button>

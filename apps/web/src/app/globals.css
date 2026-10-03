@@ -41,12 +41,20 @@
   --color-card: var(--card);
   --color-brand-ink: var(--brand-ink);
   --color-brand-deep: var(--brand-deep);
+  --color-lime: var(--lime);
+  --color-lime-soft: var(--lime-soft);
+  --color-leaf: var(--leaf);
+  --color-mint: var(--mint);
+  --color-on-dark: var(--on-dark);
+  --color-on-dark-muted: var(--on-dark-muted);
   --color-reward: var(--reward);
   --color-reward-soft: var(--reward-soft);
   --color-reward-ink: var(--reward-ink);
   --color-positive: var(--positive);
   --color-positive-soft: var(--positive-soft);
   --color-negative-soft: var(--negative-soft);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-ink: var(--warning-ink);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -54,119 +62,132 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --ease-out-soft: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
+/*
+ * Compass palette: a calm mint field, deep teal for weight and trust, lime for the one thing
+ * that should catch the eye. Text colors are checked against both the page and white cards.
+ */
 :root {
-  --background: #f4f7fb;
-  --foreground: #0f1f33;
+  --background: #f1f6ee;
+  --foreground: #0a2b2d;
   --card: #ffffff;
-  --card-foreground: #0f1f33;
+  --card-foreground: #0a2b2d;
   --popover: #ffffff;
-  --popover-foreground: #0f1f33;
-  --primary: #1666c0;
-  --primary-foreground: #ffffff;
-  --secondary: #e9f1fb;
-  --secondary-foreground: #124a86;
-  --muted: #eef2f7;
-  /* 5.3:1 on the page background, 5.7:1 on cards */
-  --muted-foreground: #556479;
-  --accent: #e9f1fb;
-  --accent-foreground: #124a86;
-  --destructive: #c8343f;
-  --border: #e2e9f2;
-  --input: #d3deeb;
-  --ring: #6fa3df;
-  /* Compass brand: deep navy for depth, amber reserved for rewards (streaks, badges) */
-  --brand-ink: #0b2a4f;
-  --brand-deep: #0f3d73;
-  --reward: #f59e0b;
-  --reward-soft: #fff4dc;
-  --reward-ink: #8a4b00;
-  --positive: #0b7a43;
-  --positive-soft: #e3f5ea;
-  --negative-soft: #fdecec;
-  --shadow-card: 0 1px 2px rgba(15, 31, 51, 0.04), 0 6px 24px rgba(15, 31, 51, 0.05);
-  --shadow-raised: 0 18px 40px rgba(15, 61, 115, 0.22);
-  /* Glass surfaces. Fills stay at least 62% white so text keeps its contrast over the color field. */
-  --glass-fill: rgba(255, 255, 255, 0.66);
-  --glass-fill-strong: rgba(255, 255, 255, 0.82);
-  --glass-fill-float: rgba(255, 255, 255, 0.72);
-  --glass-edge: linear-gradient(
-    140deg,
-    rgba(255, 255, 255, 0.95) 0%,
-    rgba(255, 255, 255, 0.4) 42%,
-    rgba(140, 172, 214, 0.45) 100%
-  );
-  --glass-edge-strong: linear-gradient(
-    140deg,
-    rgba(255, 255, 255, 1) 0%,
-    rgba(255, 255, 255, 0.55) 42%,
-    rgba(110, 150, 205, 0.6) 100%
-  );
-  --shadow-glass:
-    inset 0 1px 0 rgba(255, 255, 255, 0.75), 0 1px 2px rgba(15, 31, 51, 0.03),
-    0 8px 30px rgba(15, 31, 51, 0.06);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --popover-foreground: #0a2b2d;
+  --primary: #0d4b4c;
+  --primary-foreground: #f3fbee;
+  --secondary: #e5f1e7;
+  --secondary-foreground: #0d4b4c;
+  --muted: #edf3ea;
+  /* 5.2:1 on the page, 5.6:1 on cards */
+  --muted-foreground: #566d6c;
+  --accent: #e5f1e7;
+  --accent-foreground: #0d4b4c;
+  --destructive: #c2412b;
+  --border: #dde8df;
+  --input: #d2e0d6;
+  --ring: #6fb84f;
+
+  --brand-ink: #062f31;
+  --brand-deep: #0d4b4c;
+  --lime: #c3ea8c;
+  --lime-soft: #ecf8da;
+  --leaf: #79bf57;
+  --mint: #e5f1e7;
+  --on-dark: #f1f8ec;
+  /* 7:1 on the teal panels */
+  --on-dark-muted: #a8c7c1;
+
+  /* amber stays reserved for rewards: streaks and badges */
+  --reward: #f0a531;
+  --reward-soft: #fff3dc;
+  --reward-ink: #844800;
+  --positive: #1f7a3c;
+  --positive-soft: #e2f3e1;
+  --negative-soft: #fbeae5;
+  --warning-soft: #fff4dd;
+  --warning-ink: #8a5300;
+
+  --gradient-teal:
+    radial-gradient(120% 90% at 100% 0%, rgba(195, 234, 140, 0.16) 0%, transparent 46%),
+    linear-gradient(155deg, #10595a 0%, #0a3f41 52%, #062f31 100%);
+  --gradient-lime: linear-gradient(135deg, #dcf5b4 0%, #bde684 100%);
+
+  --shadow-card: 0 1px 2px rgba(6, 47, 49, 0.04), 0 10px 28px -14px rgba(6, 47, 49, 0.14);
+  --shadow-card-hover: 0 1px 2px rgba(6, 47, 49, 0.05), 0 18px 36px -16px rgba(6, 47, 49, 0.22);
+  --shadow-raised: 0 28px 50px -26px rgba(6, 47, 49, 0.6), 0 2px 6px rgba(6, 47, 49, 0.12);
+  --shadow-float: 0 18px 40px -12px rgba(6, 47, 49, 0.45), 0 2px 8px rgba(6, 47, 49, 0.12);
+
+  --chart-1: #0d4b4c;
+  --chart-2: #79bf57;
+  --chart-3: #c3ea8c;
+  --chart-4: #566d6c;
+  --chart-5: #f0a531;
   --radius: 0.875rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: #ffffff;
+  --sidebar-foreground: #0a2b2d;
+  --sidebar-primary: #0d4b4c;
+  --sidebar-primary-foreground: #f3fbee;
+  --sidebar-accent: #e5f1e7;
+  --sidebar-accent-foreground: #0d4b4c;
+  --sidebar-border: #dde8df;
+  --sidebar-ring: #6fb84f;
+
+  /* layout */
+  --sidebar-w: 16rem;
+  --nav-h: 4.25rem;
+  --nav-gap: 0.75rem;
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+/* Charts: teal for spending, leaf green for income (3.1:1 on white, and a clear lightness gap from teal). */
+:root {
+  --chart-income: #4f9e3a;
+  --chart-expense: #0d4b4c;
+  --chart-bar: #0d4b4c;
+  --chart-grid: #e4ece5;
+  --chart-axis: #7a8d8b;
+  --chart-cursor: rgba(13, 75, 76, 0.06);
+}
+
+/* Status colors always ship with an icon and a label, never color alone. */
+:root {
+  --status-good: #2c8f45;
+  --status-warning: #e19a17;
+  --status-critical: #cc4a30;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    @apply font-sans;
+    -webkit-tap-highlight-color: transparent;
+    text-rendering: optimizeLegibility;
+    /* focused fields and jump targets never land under the sticky header */
+    scroll-padding-top: 5.5rem;
+    scroll-padding-bottom: 7rem;
+  }
+  /* messages that appear in response to an action ease in instead of popping */
+  [role="alert"],
+  [role="status"]:not([aria-hidden]) {
+    animation: alert-in 0.28s var(--ease-out-soft) both;
+  }
+  button,
+  a,
+  [role="button"] {
+    touch-action: manipulation;
+  }
   body {
     @apply bg-background text-foreground;
     /* never scroll sideways on a phone; clip (unlike hidden) keeps position: sticky working */
     overflow-x: clip;
+    font-feature-settings: "cv11", "ss01";
   }
-  /* Soft color field behind everything, so the glass surfaces have something to show through.
-     A fixed layer (not background-attachment: fixed) so scrolling does not repaint it. */
+  /* Soft atmosphere behind everything. A fixed layer, so scrolling does not repaint it. */
   body::before {
     content: "";
     position: fixed;
@@ -174,18 +195,22 @@
     z-index: -1;
     pointer-events: none;
     background:
-      radial-gradient(38rem 30rem at 6% -8%, rgba(22, 102, 192, 0.16), transparent 65%),
-      radial-gradient(34rem 28rem at 104% 16%, rgba(56, 189, 248, 0.13), transparent 65%),
-      radial-gradient(40rem 30rem at 28% 108%, rgba(245, 158, 11, 0.07), transparent 65%),
+      radial-gradient(42rem 30rem at 0% -10%, rgba(195, 234, 140, 0.42), transparent 62%),
+      radial-gradient(36rem 28rem at 100% 0%, rgba(178, 222, 206, 0.45), transparent 62%),
       var(--background);
-  }
-  html {
-    @apply font-sans;
   }
   h1,
   h2,
   h3 {
-    letter-spacing: -0.01em;
+    letter-spacing: -0.015em;
+  }
+  ::selection {
+    background: var(--lime);
+    color: var(--brand-ink);
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
 }
 
@@ -194,142 +219,374 @@
  * (rounded-*, bg-*, p-*) still win.
  */
 @layer components {
-  /*
-   * Glass card: translucent white fill plus a 1px gradient edge (bright top-left, cool bottom-right),
-   * drawn with the padding-box / border-box background trick so it follows the corner radius.
-   * No blur on cards (cheap on low-end phones); the blur is kept for floating layers (.glass).
-   */
+  /* The everyday card: solid white, hairline edge, soft teal-tinted shadow. */
   .finance-card {
-    border: 1px solid transparent;
-    border-radius: 1.375rem;
-    background:
-      linear-gradient(var(--glass-fill), var(--glass-fill)) padding-box,
-      var(--glass-edge) border-box;
-    box-shadow: var(--shadow-glass);
+    border: 1px solid rgba(13, 75, 76, 0.07);
+    border-radius: 1.5rem;
+    background: var(--card);
+    box-shadow: var(--shadow-card);
   }
   a.finance-card,
   button.finance-card {
     transition:
-      background 0.15s ease,
-      box-shadow 0.15s ease,
-      transform 0.15s ease;
+      box-shadow 0.25s var(--ease-out-soft),
+      transform 0.25s var(--ease-out-soft),
+      background-color 0.2s ease;
   }
-  a.finance-card:hover,
-  button.finance-card:hover {
-    background:
-      linear-gradient(var(--glass-fill-strong), var(--glass-fill-strong)) padding-box,
-      var(--glass-edge-strong) border-box;
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.9),
-      0 12px 34px rgba(15, 31, 51, 0.1);
-  }
-
-  /* Floating glass: header toolbar, bottom nav, chat composer. Frosted with a blur. */
-  .glass {
-    border: 1px solid transparent;
-    background:
-      linear-gradient(var(--glass-fill-float), var(--glass-fill-float)) padding-box,
-      var(--glass-edge) border-box;
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    backdrop-filter: blur(20px) saturate(180%);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.85),
-      0 12px 36px rgba(15, 31, 51, 0.12);
+  @media (hover: hover) {
+    a.finance-card:hover,
+    button.finance-card:hover:not(:disabled) {
+      box-shadow: var(--shadow-card-hover);
+      transform: translateY(-1px);
+    }
   }
   a.finance-card:active,
-  button.finance-card:active {
-    transform: translateY(1px);
+  button.finance-card:active:not(:disabled) {
+    transform: scale(0.985);
+    transition-duration: 0.08s;
   }
 
-  /* small rounded square that holds an icon */
+  /* Floating frosted layers: header bar, tab bar, chat composer, menus. */
+  .glass {
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.78);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    backdrop-filter: blur(24px) saturate(180%);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.8) inset,
+      0 16px 40px -18px rgba(6, 47, 49, 0.35);
+  }
+
+  /* Small rounded square that holds an icon. */
   .icon-chip {
     display: grid;
     place-items: center;
     flex-shrink: 0;
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 0.75rem;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 0.95rem;
     background: var(--secondary);
     color: var(--primary);
   }
 
   .section-title {
-    font-size: 0.95rem;
-    font-weight: 600;
+    font-size: 1.0625rem;
+    line-height: 1.4;
+    font-weight: 700;
+    letter-spacing: -0.01em;
     color: var(--foreground);
   }
 
+  /* Deep teal hero surface with a lime glow and a dotted texture in the corner. */
   .balance-panel {
     position: relative;
+    isolation: isolate;
     overflow: hidden;
-    color: white;
-    border-radius: 1.75rem;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    background: var(--brand-ink);
+    color: var(--on-dark);
+    border-radius: 2rem;
+    background: var(--gradient-teal);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12),
       var(--shadow-raised);
   }
   .balance-panel::after {
     content: "";
     position: absolute;
-    width: 18rem;
-    height: 18rem;
-    right: -6rem;
-    top: -10rem;
+    z-index: -1;
+    width: 15rem;
+    height: 15rem;
+    right: -4.5rem;
+    top: -5.5rem;
     border-radius: 50%;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow:
-      0 0 0 2.5rem rgba(255, 255, 255, 0.03),
-      0 0 0 5rem rgba(255, 255, 255, 0.02);
+    background-image: radial-gradient(rgba(195, 234, 140, 0.32) 1.2px, transparent 1.3px);
+    background-size: 12px 12px;
+    -webkit-mask-image: radial-gradient(closest-side, #000 40%, transparent 100%);
+    mask-image: radial-gradient(closest-side, #000 40%, transparent 100%);
     pointer-events: none;
   }
 
-  .auth-layout {
-    background: transparent;
+  /* Lime surface: the one bright card on a screen. */
+  .surface-lime {
+    background: var(--gradient-lime);
+    color: var(--brand-ink);
   }
+
   .auth-showcase {
     position: relative;
+    isolation: isolate;
     overflow: hidden;
-    background:
-      radial-gradient(36rem 20rem at 100% 0%, rgba(255, 255, 255, 0.12), transparent 60%),
-      linear-gradient(150deg, var(--brand-ink) 0%, var(--brand-deep) 50%, var(--primary) 100%);
+    color: var(--on-dark);
+    background: var(--gradient-teal);
   }
-  .auth-showcase::before,
   .auth-showcase::after {
     content: "";
     position: absolute;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 9999px;
+    z-index: -1;
+    inset: -20% -30% auto auto;
+    width: 26rem;
+    height: 26rem;
+    border-radius: 50%;
+    background-image: radial-gradient(rgba(195, 234, 140, 0.3) 1.3px, transparent 1.4px);
+    background-size: 14px 14px;
+    -webkit-mask-image: radial-gradient(closest-side, #000 30%, transparent 100%);
+    mask-image: radial-gradient(closest-side, #000 30%, transparent 100%);
     pointer-events: none;
   }
-  .auth-showcase::before {
-    width: 25rem;
-    height: 25rem;
-    right: -9rem;
-    top: -9rem;
+
+  /* Tinted callout for computed explanations and simulated-data notes. */
+  .callout {
+    display: flex;
+    gap: 0.625rem;
+    border-radius: 1.125rem;
+    background: var(--secondary);
+    color: var(--secondary-foreground);
+    padding: 0.75rem 0.875rem;
+    font-size: 0.8125rem;
+    line-height: 1.45;
   }
-  .auth-showcase::after {
-    width: 17rem;
-    height: 17rem;
-    right: -5rem;
-    top: -5rem;
+
+  /* Progress track and fill, shared by every bar in the app. */
+  .track {
+    position: relative;
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: var(--muted);
+    overflow: hidden;
+  }
+  .track > .fill {
+    height: 100%;
+    border-radius: 9999px;
+    transform-origin: left center;
+    animation: grow-x 0.9s var(--ease-out-soft) backwards;
+    transition: width 0.6s var(--ease-out-soft);
+  }
+
+  /* Hide a scrollbar but keep scrolling. */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
   }
 }
 
-/* Chart palette (validated: blue/orange categorical pair, blue single-series bars; light mode only for now). */
-:root {
-  --chart-income: #2a78d6;
-  --chart-expense: #eb6834;
-  --chart-bar: #2a78d6;
-  --chart-grid: #e1e0d9;
-  --chart-axis: #898781;
-  --chart-cursor: rgba(11, 11, 11, 0.05);
+@utility num {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
 }
 
-/* Status colors are fixed. They always ship with an icon and a label, never color alone. */
-:root {
-  --status-good: #0ca30c;
-  --status-warning: #fab219;
-  --status-critical: #d03b3b;
+/* Entrance: content rises into place, staggered by the --i custom property. */
+@utility rise {
+  animation: rise 0.55s var(--ease-out-soft) both;
+  animation-delay: calc(var(--i, 0) * 55ms);
+}
+@utility fade-in {
+  animation: fade-in 0.4s ease both;
+}
+@utility pop {
+  animation: pop 0.35s var(--ease-out-soft) both;
+}
+@utility pressable {
+  transition: transform 0.18s var(--ease-out-soft);
+  &:active:not(:disabled) {
+    transform: scale(0.96);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+}
+@keyframes alert-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+@keyframes sheen {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -50% 0;
+  }
+}
+@keyframes grow-x {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes shake {
+  20%,
+  60% {
+    transform: translateX(-6px);
+  }
+  40%,
+  80% {
+    transform: translateX(6px);
+  }
+}
+@keyframes ring-draw {
+  from {
+    stroke-dashoffset: var(--ring-full);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/*
+ * Route transitions (see components/page-transition.tsx). The root snapshot does not animate, so
+ * the tab bar, sidebar and page background stay perfectly still; only the page content moves.
+ */
+::view-transition {
+  pointer-events: none;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+/* the header toolbar is an anchor: it swaps instantly instead of sliding with the page */
+::view-transition-group(page-toolbar) {
+  animation: none;
+  z-index: 50;
+}
+::view-transition-old(page-toolbar) {
+  display: none;
+}
+::view-transition-new(page-toolbar) {
+  animation: none;
+}
+/* the tab bar and sidebar sit above everything and never move */
+::view-transition-group(tab-bar),
+::view-transition-group(app-sidebar) {
+  animation: none;
+  z-index: 60;
+}
+::view-transition-group(toasts) {
+  animation: none;
+  z-index: 70;
+}
+::view-transition-old(toasts) {
+  display: none;
+}
+::view-transition-new(toasts) {
+  animation: none;
+}
+::view-transition-old(tab-bar),
+::view-transition-old(app-sidebar) {
+  display: none;
+}
+::view-transition-new(tab-bar),
+::view-transition-new(app-sidebar) {
+  animation: none;
+}
+::view-transition-old(.nav-tab) {
+  animation: 140ms ease-out both vt-fade-out;
+}
+::view-transition-new(.nav-tab) {
+  animation: 240ms ease-out 60ms both vt-fade-in;
+}
+::view-transition-old(.nav-forward) {
+  animation:
+    180ms ease-in both vt-fade-out,
+    380ms var(--ease-sheet) both vt-to-left;
+}
+::view-transition-new(.nav-forward) {
+  animation:
+    240ms ease-out 80ms both vt-fade-in,
+    420ms var(--ease-sheet) both vt-from-right;
+}
+::view-transition-old(.nav-back) {
+  animation:
+    180ms ease-in both vt-fade-out,
+    380ms var(--ease-sheet) both vt-to-right;
+}
+::view-transition-new(.nav-back) {
+  animation:
+    240ms ease-out 80ms both vt-fade-in,
+    420ms var(--ease-sheet) both vt-from-left;
+}
+@keyframes vt-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes vt-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes vt-fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes vt-to-left {
+  to {
+    transform: translateX(-48px);
+  }
+}
+@keyframes vt-to-right {
+  to {
+    transform: translateX(48px);
+  }
+}
+@keyframes vt-from-right {
+  from {
+    transform: translateX(48px);
+  }
+}
+@keyframes vt-from-left {
+  from {
+    transform: translateX(-48px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+}
+
+/* While typing on a phone the keyboard owns the bottom of the screen: tuck the tab bar away. */
+@media (pointer: coarse) {
+  html[data-keyboard] .tab-bar {
+    transform: translateY(calc(100% + 2rem));
+    opacity: 0;
+    pointer-events: none;
+  }
+  html[data-keyboard] .composer-dock {
+    bottom: calc(env(safe-area-inset-bottom) + 0.25rem);
+  }
+}
+.composer-dock {
+  transition: bottom 0.3s var(--ease-sheet);
 }

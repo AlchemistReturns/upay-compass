@@ -8,7 +8,12 @@
     "budgets": "Budgets",
     "goals": "Goals",
     "coach": "Coach",
-    "learn": "Learn"
+    "learn": "Learn",
+    "label": "Main navigation",
+    "insights": "Insights",
+    "activity": "Activity",
+    "edu_title": "Educational guidance",
+    "edu_body": "Compass explains your own numbers. It is not investment, loan or insurance advice."
   },
   "language": {
     "label": "Language",
@@ -35,7 +40,12 @@
   "home": {
     "title": "Home",
     "categories": "Spending categories",
-    "essential": "Essential"
+    "essential": "Essential",
+    "greeting_morning": "Good morning",
+    "greeting_afternoon": "Good afternoon",
+    "greeting_evening": "Good evening",
+    "subtitle": "Here is your money at a glance.",
+    "at_glance": "At a glance"
   },
   "budgets": {
     "title": "Budgets",
@@ -55,7 +65,15 @@
     "status_warning": "Near the limit",
     "status_over": "Over budget",
     "left": "{{amount}} left",
-    "over_by": "{{amount}} over"
+    "over_by": "{{amount}} over",
+    "used": "{{pct}}% used",
+    "spent_of": "spent of {{amount}}",
+    "left_total": "{{amount}} left across your budgets this month.",
+    "over_total": "{{amount}} over across your budgets this month.",
+    "count_one": "{{count}} budget",
+    "count_other": "{{count}} budgets",
+    "toast_saved": "Budget saved",
+    "toast_deleted": "Budget deleted"
   },
   "goals": {
     "title": "Goals",
@@ -94,7 +112,15 @@
     "roundup_total_other": "Set aside by round-ups: {{amount}} from {{count}} payments",
     "saved_across": "Saved across goals",
     "of_target": "{{pct}}% of {{amount}}",
-    "summary_counts": "{{active}} active · {{completed}} completed"
+    "summary_counts": "{{active}} active · {{completed}} completed",
+    "roundup_example": "For example, a ৳87 payment rounds to ৳90 and ৳3 goes to your goal.",
+    "progress": "Progress",
+    "toast_created": "Goal created",
+    "toast_added": "{{amount}} added to {{title}}",
+    "toast_deleted": "Goal deleted",
+    "toast_undone": "Contribution undone",
+    "toast_roundup_on": "Round-ups are on",
+    "toast_roundup_off": "Round-ups are off"
   },
   "coach": {
     "title": "Coach",
@@ -125,7 +151,8 @@
     "consent_decline": "Not now",
     "context_line": "Uses your last 30 days of totals. Never your name, phone or merchants.",
     "suggest_prev": "Previous suggestions",
-    "suggest_next": "More suggestions"
+    "suggest_next": "More suggestions",
+    "toast_cleared": "Chat cleared"
   },
   "learn": {
     "title": "Learn",
@@ -140,7 +167,9 @@
     "completed": "You finished this module",
     "next": "Next module",
     "not_found": "We could not find that module.",
-    "disclaimer": "General education only, not financial advice."
+    "disclaimer": "General education only, not financial advice.",
+    "up_next": "Up next",
+    "start": "Start reading"
   },
   "login": {
     "title": "Sign in",
@@ -231,7 +260,8 @@
     "ask_coach": "Ask your coach",
     "this_month": "This month",
     "in_amount": "{{amount}} in",
-    "out_amount": "{{amount}} out"
+    "out_amount": "{{amount}} out",
+    "spent_share": "You have spent {{pct}}% of this month’s income."
   },
   "transactions": {
     "recent": "Recent transactions",
@@ -257,7 +287,19 @@
     "delete": "Delete",
     "confirm_delete": "Delete this transaction?",
     "check_category": "Check category",
-    "add_short": "Add"
+    "add_short": "Add",
+    "search": "Search by name or note",
+    "filter_all": "All",
+    "filter_in": "Money in",
+    "filter_out": "Money out",
+    "no_match": "Nothing matches your search.",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "count_one": "{{count}} transaction",
+    "count_other": "{{count}} transactions",
+    "amount_hint": "How much?",
+    "toast_saved": "Transaction saved",
+    "toast_deleted": "Transaction deleted"
   },
   "channel": {
     "send_money": "Send money",
@@ -277,7 +319,8 @@
     "reset_confirm": "Delete all your data in this account and start the demo again?",
     "resetting": "Resetting… this can take a few seconds.",
     "reset_done": "Done. Your demo account is fresh.",
-    "simulated_badge": "Simulated"
+    "simulated_badge": "Simulated",
+    "reset": "Start over"
   },
   "score": {
     "title": "Financial health",
@@ -315,7 +358,8 @@
     "action_fix_budget_other": "{{count}} budgets are over their limits. {{category}} is {{amount}} over.",
     "action_build_buffer": "Your wallet covers {{months}} months of essentials. Reaching {{target}} months needs about {{amount}} more.",
     "action_smooth_income": "Your income varies by {{pct}}% between 30-day periods. Setting some aside in better weeks smooths the lean ones.",
-    "how": "The score blends four parts: savings rate (30%), budget adherence (25%), emergency buffer (25%) and income stability (20%), from your last 90 days. It is calculated by code from your own numbers, and it is for learning, not financial advice."
+    "how": "The score blends four parts: savings rate (30%), budget adherence (25%), emergency buffer (25%) and income stability (20%), from your last 90 days. It is calculated by code from your own numbers, and it is for learning, not financial advice.",
+    "out_of": "out of 100"
   },
   "nudges": {
     "title": "Alerts",
@@ -339,7 +383,8 @@
     "bill_due_body": "About {{amount}} on {{date}}.",
     "forecast_risk_title": "Your balance may run low",
     "forecast_risk_low": "Around {{day}} it could fall to {{amount}}, below your safety buffer of {{buffer}}.",
-    "forecast_risk_negative": "Around {{day}} it could go below zero, down to {{amount}}. Your safety buffer is {{buffer}}."
+    "forecast_risk_negative": "Around {{day}} it could go below zero, down to {{amount}}. Your safety buffer is {{buffer}}.",
+    "toast_all_read": "You're all caught up"
   },
   "forecast": {
     "title": "Cashflow forecast",
@@ -371,7 +416,10 @@
     "next": "next {{date}}",
     "estimated_note": "~ means the amount varies, so we plan with a cautious estimate (lower for income, higher for payments).",
     "backtest": "Tested on your own recent history, this forecast was {{pct}}% closer to what really happened than a simple repeat-last-month guess (average error {{mae}} against {{naive}}).",
-    "how": "A forecast is an estimate, not a promise. It is calculated by code from your own numbers and is for learning, not financial advice."
+    "how": "A forecast is an estimate, not a promise. It is calculated by code from your own numbers and is for learning, not financial advice.",
+    "today": "Today",
+    "lowest": "Lowest point",
+    "in_30": "In 30 days"
   },
   "gamification": {
     "streak_one": "{{count}}-day streak",
@@ -453,6 +501,7 @@
     "coach_on": "On since {{date}}. The coach sees totals only, never your name, phone or merchants.",
     "coach_off": "Off. You can turn it on from the Coach screen.",
     "coach_stop": "Stop sharing",
-    "coach_stop_confirm": "Stop sharing your numbers with the coach? The coach will not answer until you allow it again. Your chat history stays until you clear it."
+    "coach_stop_confirm": "Stop sharing your numbers with the coach? The coach will not answer until you allow it again. Your chat history stays until you clear it.",
+    "toast_sharing_off": "Coach sharing turned off"
   }
 }

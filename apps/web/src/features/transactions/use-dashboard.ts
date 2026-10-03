@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { getPeriodRange, type Period } from "@compass/shared";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/features/auth/auth-provider";
@@ -28,6 +28,8 @@ export function useDashboard(period: Period) {
   const summary = useQuery({
     queryKey: ["dashboard", userId, "summary", period],
     enabled,
+    // keep the last period on screen while the next one loads, so numbers never flash to 0
+    placeholderData: keepPreviousData,
     queryFn: () => fetchSummary(range),
   });
 
@@ -43,6 +45,7 @@ export function useDashboard(period: Period) {
   const byCategory = useQuery({
     queryKey: ["dashboard", userId, "by-category", period],
     enabled,
+    placeholderData: keepPreviousData,
     queryFn: async (): Promise<CategorySpend[]> => {
       const { data, error } = await supabase.rpc("spend_by_category", {
         p_from: range.from,

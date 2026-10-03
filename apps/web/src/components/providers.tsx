@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { I18nextProvider } from "react-i18next";
+import { ConfirmProvider } from "@/components/confirm";
+import { Toaster } from "@/components/toaster";
 import { AuthProvider } from "@/features/auth/auth-provider";
 import { LockProvider } from "@/features/auth/lock-provider";
 import { PwaShell } from "@/features/pwa/pwa-shell";
@@ -57,8 +59,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <I18nextProvider i18n={i18n}>
         <AuthProvider>
           <LockProvider>
-            <PwaShell />
-            {children}
+            <Toaster>
+              <ConfirmProvider>
+                <PwaShell />
+                {children}
+              </ConfirmProvider>
+            </Toaster>
           </LockProvider>
         </AuthProvider>
       </I18nextProvider>

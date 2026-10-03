@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
+import { BrandMark, ErrorState } from "@/components/compass";
 import { LANGUAGE_STORAGE_KEY } from "@/i18n";
 import { LockScreen } from "./pin-forms";
 import { useAuthStatus, type AuthStatus } from "./use-auth-status";
@@ -61,18 +61,18 @@ export function Guard({
 
   if (status === "error") {
     return (
-      <div className="mx-auto w-full max-w-md px-4 py-8">
-        <p className="mb-2">{t("common.error")}</p>
-        <Button onClick={retry}>{t("common.retry")}</Button>
+      <div className="mx-auto w-full max-w-md px-4 py-16">
+        <ErrorState onRetry={retry} />
       </div>
     );
   }
 
   if (status !== own && !(optimistic && status === "loading")) {
     return (
-      <p className="text-muted-foreground p-8 text-center" role="status">
-        {t("common.loading")}
-      </p>
+      <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8" role="status">
+        <BrandMark className="size-14 animate-pulse" />
+        <span className="sr-only">{t("common.loading")}</span>
+      </div>
     );
   }
 

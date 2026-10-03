@@ -1,14 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { OfflineNote } from "@/features/pwa/offline-note";
 import { useOnline } from "@/features/pwa/use-online";
 import { z } from "zod";
+import { CategoryIcon } from "@/components/compass";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useConfirm } from "@/components/confirm";
+import { toast } from "@/components/toaster";
 import { Label } from "@/components/ui/label";
-import { NativeSelect } from "@/components/ui/native-select";
+import { MoneyInput } from "@/components/money-input";
+import { cn } from "@/lib/utils";
+import { haptic } from "@/lib/haptics";
 import { useCategories } from "@/features/categories/use-categories";
 import { useDeleteBudget, useSaveBudget, type BudgetProgress } from "./use-budgets";
 
@@ -33,6 +38,7 @@ export function BudgetForm({
   const { data: categories } = useCategories();
   const save = useSaveBudget();
   const remove = useDeleteBudget();
+  const confirm = useConfirm();
 
   // Budgets are for spending, so income and savings are not offered.
   const options = (categories ?? []).filter(
@@ -63,6 +69,7 @@ export function BudgetForm({
     if (!parsed.success) return setError(t("budgets.invalid"));
     try {
       await save.mutateAsync(parsed.data);
+      toast.success(t("budgets.toast_saved"));
       onDone();
     } catch {
       setError(t("common.error"));
@@ -70,9 +77,15 @@ export function BudgetForm({
   }
 
   async function onDelete() {
-    if (!existing || !window.confirm(t("budgets.confirm_delete"))) return;
+    if (!existing) return;
+    const ok = await confirm({
+      title: t("budgets.confirm_delete"),
+      confirmLabel: t("budgets.delete"),
+    });
+    if (!ok) return;
     try {
       await remove.mutateAsync(existing.budget_id);
+      toast.success(t("budgets.toast_deleted"));
       onDone();
     } catch {
       setError(t("common.error"));
@@ -80,33 +93,51 @@ export function BudgetForm({
   }
 
   return (
-    <form onSubmit={submit} className="finance-card space-y-4 p-4 sm:p-5" noValidate>
-      <h2 className="section-title">{existing ? t("budgets.edit") : t("budgets.add")}</h2>
-
-      <div className="space-y-2">
-        <Label htmlFor="budget-category">{t("budgets.category")}</Label>
-        <NativeSelect
-          id="budget-category"
-          value={categoryId}
-          disabled={Boolean(existing)}
-          onChange={(e) => setCategoryId(Number(e.target.value))}
+    <form onSubmit={submit} className="space-y-5" noValidate>
+      <fieldset className="space-y-2.5">
+        <legend className="text-foreground/85 mb-2.5 px-1 text-[13px] font-semibold">
+          {t("budgets.category")}
+        </legend>
+        <div
+          role="radiogroup"
+          aria-label={t("budgets.category")}
+          className="grid grid-cols-3 gap-2"
         >
-          {options.map((c) => (
-            <option key={c.id} value={c.id}>
-              {name(c)}
-            </option>
-          ))}
-        </NativeSelect>
-      </div>
+          {options.map((c) => {
+            const selected = categoryId === c.id;
+            return (
+              <button
+                key={c.id}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                disabled={Boolean(existing)}
+                onClick={() => {
+                  haptic("light");
+                  setCategoryId(c.id);
+                }}
+                className={cn(
+                  "flex min-h-[5.25rem] flex-col items-center justify-center gap-1.5 rounded-2xl border px-1.5 py-2.5 text-center text-[12px] leading-tight font-semibold transition-[border-color,background-color,box-shadow,transform] active:scale-95 disabled:cursor-default",
+                  selected
+                    ? "border-primary bg-secondary shadow-[0_0_0_3px_rgba(195,234,140,.7)]"
+                    : "bg-card border-[rgba(13,75,76,.1)] hover:border-primary/30",
+                )}
+              >
+                <CategoryIcon
+                  categoryKey={c.key}
+                  className="size-9 rounded-xl"
+                  iconClassName="size-4"
+                />
+                <span className="line-clamp-2">{name(c)}</span>
+              </button>
+            );
+          })}
+        </div>
+      </fieldset>
 
       <div className="space-y-2">
         <Label htmlFor="budget-limit">{t("budgets.limit")}</Label>
-        <Input
-          id="budget-limit"
-          inputMode="numeric"
-          value={limit}
-          onChange={(e) => setLimit(e.target.value.replace(/\D/g, ""))}
-        />
+        <MoneyInput id="budget-limit" value={limit} onChange={setLimit} />
       </div>
 
       <div className="space-y-2">
@@ -119,34 +150,41 @@ export function BudgetForm({
           step={5}
           value={threshold}
           onChange={(e) => setThreshold(Number(e.target.value))}
-          className="accent-primary h-11 w-full"
+          className="accent-primary h-11 w-full cursor-pointer"
         />
-        <p className="text-muted-foreground text-xs">{t("budgets.threshold_hint")}</p>
+        <p className="text-muted-foreground px-1 text-xs">{t("budgets.threshold_hint")}</p>
       </div>
 
       {error && (
-        <p role="alert" className="text-destructive text-sm">
+        <p role="alert" className="text-destructive text-sm font-medium">
           {error}
         </p>
       )}
+      <OfflineNote />
 
-      <div className="flex gap-2">
-        <OfflineNote />
-        <Button type="button" variant="outline" disabled={busy} onClick={onDone}>
+      <div className="flex gap-2 pt-1">
+        <Button type="button" variant="secondary" disabled={busy} onClick={onDone}>
           {t("common.cancel")}
         </Button>
-        <Button type="submit" className="flex-1" disabled={busy || !online || options.length === 0}>
-          {busy ? t("common.saving") : t("budgets.save")}
+        <Button
+          type="submit"
+          className="flex-1"
+          loading={save.isPending}
+          disabled={busy || !online || options.length === 0}
+        >
+          {t("budgets.save")}
         </Button>
       </div>
       {existing && (
         <Button
           type="button"
-          variant="ghost"
+          variant="destructive"
           className="w-full"
+          loading={remove.isPending}
           disabled={busy || !online}
-          onClick={onDelete}
+          onClick={() => void onDelete()}
         >
+          <Trash2 aria-hidden />
           {t("budgets.delete")}
         </Button>
       )}

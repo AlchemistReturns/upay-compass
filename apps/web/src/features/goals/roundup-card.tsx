@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { Coins } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useOnline } from "@/features/pwa/use-online";
+import { Switch } from "@/components/switch";
 import { Label } from "@/components/ui/label";
+import { toast } from "@/components/toaster";
 import { NativeSelect } from "@/components/ui/native-select";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -42,7 +44,11 @@ export function RoundupCard({
   async function apply(next: boolean, target: string | null) {
     setError(null);
     try {
+      const wasEnabled = enabled;
       await setRoundup.mutateAsync({ enabled: next, goalId: target });
+      if (next !== wasEnabled) {
+        toast.success(t(next ? "goals.toast_roundup_on" : "goals.toast_roundup_off"));
+      }
     } catch {
       setError(t("common.error"));
     }
@@ -51,59 +57,58 @@ export function RoundupCard({
   return (
     <section
       className={cn(
-        "finance-card p-4 sm:p-5",
-        // amber while it is on: round-ups are a reward-style habit
-        enabled && "border-[#f6dca3]! [background:var(--reward-soft)]!",
+        "rise overflow-hidden rounded-[1.75rem] p-4 transition-[background,box-shadow] duration-500 sm:p-5",
+        enabled ? "surface-lime shadow-[0_16px_34px_-20px_rgba(79,158,58,.9)]" : "finance-card",
       )}
+      style={{ "--i": 3 } as React.CSSProperties}
     >
-      <div className="flex items-start gap-3">
-        <span className={cn("icon-chip size-11 rounded-2xl", enabled && "bg-reward text-white")}>
-          <RefreshCw className="size-5" aria-hidden />
+      <div className="flex items-start gap-3.5">
+        <span
+          className={cn(
+            "grid size-12 shrink-0 place-items-center rounded-2xl transition-colors duration-500",
+            enabled ? "text-lime bg-[image:var(--gradient-teal)]" : "bg-secondary text-primary",
+          )}
+        >
+          <Coins className="size-[22px]" aria-hidden />
         </span>
-        <div className="min-w-0 flex-1">
-          <h2 className="section-title">{t("goals.roundup_title")}</h2>
+        <div className="min-w-0 flex-1 pt-0.5">
+          <h2 className="text-[17px] font-bold">{t("goals.roundup_title")}</h2>
           {rounded.length > 0 ? (
-            <p className={cn("mt-0.5 text-sm font-medium", enabled && "text-reward-ink")}>
+            <p className="num mt-0.5 text-sm font-semibold">
               {t("goals.roundup_total", {
                 amount: formatMoney(total, lang),
                 count: rounded.length,
               })}
             </p>
           ) : (
-            <p className="text-muted-foreground mt-0.5 text-sm">{t("goals.roundup_body")}</p>
+            <p
+              className={cn(
+                "mt-0.5 text-sm leading-5",
+                enabled ? "text-brand-ink/75" : "text-muted-foreground",
+              )}
+            >
+              {t("goals.roundup_example")}
+            </p>
           )}
         </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={enabled}
-          aria-label={t("goals.roundup_title")}
+        <Switch
+          checked={enabled}
+          label={t("goals.roundup_title")}
           disabled={!online || setRoundup.isPending || (active.length === 0 && !enabled)}
-          onClick={() => void apply(!enabled, enabled ? null : selected || null)}
-          className="relative h-11 w-14 shrink-0 disabled:opacity-50"
-        >
-          <span
-            className={`absolute inset-x-0 top-1.5 h-8 rounded-full transition-colors ${
-              enabled ? "bg-reward-ink" : "bg-muted-foreground/30"
-            }`}
-          />
-          <span
-            className={`bg-background absolute top-2.5 size-6 rounded-full shadow transition-all ${
-              enabled ? "left-7" : "left-1"
-            }`}
-          />
-        </button>
+          onChange={(next) => void apply(next, next ? selected || null : null)}
+        />
       </div>
 
       {active.length === 0 ? (
-        <p className="text-muted-foreground mt-3 text-sm">{t("goals.roundup_need_goal")}</p>
+        <p className="text-muted-foreground mt-4 text-sm">{t("goals.roundup_need_goal")}</p>
       ) : (
-        <div className="mt-3 space-y-2">
+        <div className="mt-4 space-y-2">
           <Label htmlFor="roundup-goal">{t("goals.roundup_goal")}</Label>
           <NativeSelect
             id="roundup-goal"
             value={selected}
             disabled={!online || setRoundup.isPending}
+            className={cn(enabled && "border-brand-ink/10 bg-white/70")}
             onChange={(e) => {
               setChoice(e.target.value);
               if (enabled) void apply(true, e.target.value);
@@ -118,15 +123,19 @@ export function RoundupCard({
         </div>
       )}
 
-      {rounded.length > 0 && (
-        <p className="text-muted-foreground mt-3 text-xs leading-5">{t("goals.roundup_body")}</p>
-      )}
+      <p
+        className={cn(
+          "mt-3 px-1 text-xs leading-5",
+          enabled ? "text-brand-ink/70" : "text-muted-foreground",
+        )}
+      >
+        {t("goals.roundup_body")} {t("goals.simulated")}
+      </p>
       {error && (
         <p role="alert" className="text-destructive mt-2 text-sm">
           {error}
         </p>
       )}
-      <p className="text-muted-foreground mt-2 text-xs">{t("goals.simulated")}</p>
     </section>
   );
 }

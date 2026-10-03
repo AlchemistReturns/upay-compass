@@ -103,11 +103,13 @@ export function useContribute() {
   const invalidate = useInvalidateGoals();
   return useMutation({
     mutationFn: async (input: { goalId: string; amount: number }) => {
-      const { error } = await supabase.rpc("contribute_to_goal", {
+      const { data, error } = await supabase.rpc("contribute_to_goal", {
         p_goal_id: input.goalId,
         p_amount: input.amount,
       });
       if (error) throw error;
+      // the new contribution's id, so the caller can offer an undo
+      return data as string;
     },
     onSuccess: invalidate,
   });

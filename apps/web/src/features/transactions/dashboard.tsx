@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowDownLeft,
+  ArrowRight,
   ArrowUpRight,
-  ChevronRight,
   LineChart,
   type LucideIcon,
   Plus,
@@ -17,7 +17,13 @@ import {
 import { useTranslation } from "react-i18next";
 import type { Period } from "@compass/shared";
 import { PageHeader } from "@/components/page-header";
-import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  AnimatedNumber,
+  ErrorState,
+  LoadingCards,
+  Pill,
+  SectionHeader,
+} from "@/components/compass";
 import { cn } from "@/lib/utils";
 import { formatMoney, formatSignedMoney } from "@/lib/format";
 import { useAuth } from "@/features/auth/auth-provider";
@@ -36,44 +42,39 @@ import { useDashboard } from "./use-dashboard";
 import { useTransactionList, useTransactionsRealtime } from "./use-transactions";
 import dynamic from "next/dynamic";
 import { Skeleton } from "@/components/skeleton";
+import { NAV_FORWARD } from "@/components/page-transition";
 
 // Recharts is large; load it after the first paint instead of with the page.
 const WeeklyChart = dynamic(() => import("./weekly-chart").then((m) => m.WeeklyChart), {
   ssr: false,
-  loading: () => <Skeleton className="h-56" />,
+  loading: () => <Skeleton className="h-72 rounded-3xl" />,
 });
 
-function Tile({
-  label,
-  value,
-  icon: Icon,
-  tone,
-}: {
-  label: string;
-  value: string;
-  icon: LucideIcon;
-  tone: "in" | "out" | "net";
-}) {
-  return (
-    <div className="finance-card flex items-center gap-3 p-4 sm:block sm:p-5">
-      <span
-        className={cn(
-          "icon-chip sm:mb-3",
-          tone === "in" && "bg-positive-soft text-positive",
-          tone === "out" && "bg-negative-soft text-destructive",
-        )}
-      >
-        <Icon className="size-[18px]" aria-hidden />
-      </span>
-      <div className="min-w-0">
-        <div className="text-muted-foreground text-xs font-medium">{label}</div>
-        <div className="text-lg font-semibold tabular-nums sm:mt-0.5 sm:text-xl">{value}</div>
-      </div>
-    </div>
+/** Greeting for the hour in Bangladesh, plus today's date for the eyebrow. Client-only. */
+function useGreeting() {
+  const { t, i18n } = useTranslation();
+  const [now, setNow] = useState<Date | null>(null);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- the clock is read after mount
+  useEffect(() => setNow(new Date()), []);
+  if (!now) return { greeting: t("home.title"), date: undefined };
+  const hour = Number(
+    new Intl.DateTimeFormat("en-GB", {
+      hour: "numeric",
+      hour12: false,
+      timeZone: "Asia/Dhaka",
+    }).format(now),
   );
+  const key = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+  const date = new Intl.DateTimeFormat(i18n.language === "bn" ? "bn-BD" : "en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    timeZone: "Asia/Dhaka",
+  }).format(now);
+  return { greeting: t(`home.greeting_${key}`), date };
 }
 
-/** Shortcut under the balance: icon tile, label below. `primary` is the solid white main action. */
+/** Round shortcut on the balance panel. `primary` is the lime main action. */
 function QuickAction({
   href,
   label,
@@ -88,20 +89,114 @@ function QuickAction({
   return (
     <Link
       href={href}
-      className="group flex min-h-11 flex-col items-center gap-1.5 rounded-2xl text-center text-xs font-medium text-white/90 hover:text-white"
+      // adding and the forecast go deeper; goals and budgets are tabs
+      transitionTypes={
+        href === "/transactions/new" || href === "/forecast" ? NAV_FORWARD : undefined
+      }
+      className="group text-on-dark/90 flex min-w-0 flex-col items-center gap-2 text-center text-[12px] font-semibold hover:text-white"
     >
       <span
         className={cn(
-          "grid size-13 place-items-center rounded-[1.1rem] transition-colors",
+          "grid size-[3.25rem] place-items-center rounded-full transition-[background-color,transform] duration-200 group-active:scale-90",
           primary
-            ? "text-brand-ink bg-white group-hover:bg-white/90"
-            : "bg-white/12 ring-1 ring-white/20 group-hover:bg-white/20",
+            ? "bg-lime text-brand-ink shadow-[0_10px_22px_-10px_rgba(195,234,140,.9)] group-hover:bg-[#cff09e]"
+            : "bg-white/10 ring-1 ring-white/15 group-hover:bg-white/18",
         )}
       >
-        <Icon className="size-5" strokeWidth={primary ? 2.5 : 2} aria-hidden />
+        <Icon className="size-[21px]" strokeWidth={primary ? 2.5 : 2} aria-hidden />
       </span>
-      <span className="line-clamp-1">{label}</span>
+      <span className="w-full truncate">{label}</span>
     </Link>
+  );
+}
+
+function BalancePanel({
+  balance,
+  income,
+  expense,
+  simulated,
+}: {
+  balance: number | undefined;
+  income: number | undefined;
+  expense: number | undefined;
+  simulated: boolean;
+}) {
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language;
+  const spentPct =
+    income && income > 0 && expense !== undefined
+      ? Math.min(Math.round((expense / income) * 100), 100)
+      : null;
+
+  return (
+    <section
+      aria-label={t("dashboard.balance")}
+      className="balance-panel rise flex flex-col p-5 sm:p-7"
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-on-dark-muted flex items-center gap-2 text-[13px] font-semibold">
+          <Wallet className="text-lime size-4" aria-hidden />
+          {t("dashboard.balance")}
+        </div>
+        {simulated && <Pill tone="dark">{t("demo.simulated_badge")}</Pill>}
+      </div>
+
+      <div className="mt-2 text-[2.75rem] leading-none font-extrabold tracking-[-0.035em] sm:text-[3.25rem]">
+        {balance === undefined ? (
+          <span className="inline-block h-11 w-48 animate-pulse rounded-xl bg-white/10 align-middle" />
+        ) : (
+          <AnimatedNumber value={balance} format={(n) => formatMoney(n, lang)} />
+        )}
+      </div>
+
+      {income !== undefined && expense !== undefined && (
+        <div className="mt-5 lg:mb-6">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px]">
+            <span className="text-on-dark-muted">{t("dashboard.this_month")}</span>
+            <span className="flex items-center gap-1 font-semibold">
+              <ArrowDownLeft className="text-lime size-3.5" aria-hidden />
+              <span className="num">
+                {t("dashboard.in_amount", { amount: formatMoney(income, lang) })}
+              </span>
+            </span>
+            <span className="flex items-center gap-1 font-semibold">
+              <ArrowUpRight className="text-on-dark-muted size-3.5" aria-hidden />
+              <span className="num">
+                {t("dashboard.out_amount", { amount: formatMoney(expense, lang) })}
+              </span>
+            </span>
+          </div>
+          {spentPct !== null && (
+            <div className="mt-3">
+              <div className="h-2 overflow-hidden rounded-full bg-white/12" aria-hidden>
+                <div
+                  className="h-full origin-left rounded-full bg-[linear-gradient(90deg,#a8d878,#c3ea8c)] [animation:grow-x_1s_var(--ease-out-soft)_.2s_both]"
+                  style={{ width: `${Math.max(spentPct, 2)}%` }}
+                />
+              </div>
+              <p className="text-on-dark-muted mt-2 text-[12px]">
+                {t("dashboard.spent_share", { pct: spentPct })}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      <nav
+        aria-label={t("dashboard.quick_actions")}
+        className="mt-6 grid grid-cols-4 gap-2 border-t border-white/10 pt-5 sm:max-w-md lg:mt-auto"
+      >
+        <QuickAction
+          href="/transactions/new"
+          label={t("transactions.add_short")}
+          icon={Plus}
+          primary
+        />
+        <QuickAction href="/forecast" label={t("dashboard.qa_forecast")} icon={LineChart} />
+        <QuickAction href="/goals" label={t("nav.goals")} icon={Target} />
+        <QuickAction href="/budgets" label={t("nav.budgets")} icon={Wallet} />
+      </nav>
+    </section>
   );
 }
 
@@ -111,21 +206,94 @@ function AskCoach() {
   return (
     <Link
       href="/coach"
-      className="finance-card flex items-center gap-3 rounded-[1.4rem] p-2.5 pl-3.5"
+      className="surface-lime group rise relative flex items-center gap-3.5 overflow-hidden rounded-[1.75rem] p-4 pr-3.5 shadow-[0_14px_30px_-18px_rgba(79,158,58,.8)] transition-transform duration-200 active:scale-[0.985]"
+      style={{ "--i": 1 } as React.CSSProperties}
     >
-      <span className="icon-chip">
-        <Sparkles className="size-5" aria-hidden />
+      <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[image:var(--gradient-teal)] text-lime shadow-[0_8px_18px_-10px_rgba(6,47,49,.8)]">
+        <Sparkles className="size-[22px]" aria-hidden />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-sm font-semibold">{t("dashboard.ask_coach")}</span>
-        <span className="text-muted-foreground block truncate text-xs">
+        <span className="block text-[15px] font-bold">{t("dashboard.ask_coach")}</span>
+        <span className="text-brand-ink/70 block truncate text-[13px]">
           “{t("coach.suggest_can_afford")}”
         </span>
       </span>
-      <span className="bg-brand-ink grid size-11 shrink-0 place-items-center rounded-2xl text-white">
-        <ChevronRight className="size-5" aria-hidden />
+      <span className="bg-brand-ink text-lime grid size-11 shrink-0 place-items-center rounded-full transition-transform duration-200 group-hover:translate-x-0.5">
+        <ArrowRight className="size-5" aria-hidden />
       </span>
     </Link>
+  );
+}
+
+function Totals({
+  income,
+  expense,
+  lang,
+  stale,
+}: {
+  income: number;
+  expense: number;
+  lang: string;
+  /** the next period is still loading; the old figures stay, slightly dimmed */
+  stale: boolean;
+}) {
+  const { t } = useTranslation();
+  const net = income - expense;
+  const cells: {
+    label: string;
+    value: number;
+    format: (n: number) => string;
+    icon: LucideIcon;
+    tone: string;
+  }[] = [
+    {
+      label: t("dashboard.income"),
+      value: income,
+      format: (n) => formatMoney(n, lang),
+      icon: ArrowDownLeft,
+      tone: "bg-positive-soft text-positive",
+    },
+    {
+      label: t("dashboard.expense"),
+      value: expense,
+      format: (n) => formatMoney(n, lang),
+      icon: ArrowUpRight,
+      tone: "bg-negative-soft text-destructive",
+    },
+    {
+      label: t("dashboard.net"),
+      value: net,
+      format: (n) => formatSignedMoney(Math.round(n), lang),
+      icon: Scale,
+      tone: "bg-secondary text-primary",
+    },
+  ];
+  return (
+    <div
+      aria-busy={stale || undefined}
+      className={cn(
+        "finance-card grid grid-cols-3 divide-x divide-[rgba(13,75,76,.07)] py-4 transition-opacity duration-300",
+        stale && "opacity-60",
+      )}
+    >
+      {cells.map(({ label, value, format, icon: Icon, tone }) => (
+        <div key={label} className="min-w-0 px-3 sm:px-5">
+          <div className="flex items-center gap-1.5">
+            <span className={cn("grid size-6 shrink-0 place-items-center rounded-full", tone)}>
+              <Icon className="size-3.5" strokeWidth={2.4} aria-hidden />
+            </span>
+            <span className="text-muted-foreground truncate text-[12px] font-semibold">
+              {label}
+            </span>
+          </div>
+          <AnimatedNumber
+            value={value}
+            format={format}
+            className="mt-2 block truncate text-[15px] font-bold sm:text-xl"
+          />
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -137,25 +305,25 @@ export function Dashboard() {
   const { summary, month, byCategory, trend, balance } = useDashboard(period);
   const recent = useTransactionList(8);
   const lang = i18n.language;
+  const { greeting, date } = useGreeting();
 
   useTransactionsRealtime();
   useAutoNudges(recent.isSuccess && recent.data.length > 0);
 
   const noTransactions = recent.isSuccess && recent.data.length === 0;
   const hasSimulated = recent.data?.some((r) => r.is_simulated) ?? false;
-  const net = (summary.data?.income ?? 0) - (summary.data?.expense ?? 0);
+  const firstName = profile.data?.full_name?.trim().split(/\s+/)[0];
 
   return (
     <>
-      <PageHeader title={t("home.title")} />
+      <PageHeader
+        eyebrow={date}
+        title={firstName ? `${greeting}, ${firstName}` : greeting}
+        subtitle={noTransactions ? undefined : t("home.subtitle")}
+      />
 
-      {recent.isPending && <p className="text-muted-foreground">{t("common.loading")}</p>}
-      {recent.isError && (
-        <div>
-          <p className="mb-2">{t("common.error")}</p>
-          <Button onClick={() => void recent.refetch()}>{t("common.retry")}</Button>
-        </div>
-      )}
+      {recent.isPending && <LoadingCards hero rows={3} />}
+      {recent.isError && <ErrorState onRetry={() => void recent.refetch()} />}
 
       {noTransactions && (
         <div className="space-y-5 pb-4">
@@ -165,121 +333,87 @@ export function Dashboard() {
       )}
 
       {recent.isSuccess && !noTransactions && (
-        <div className="space-y-5 pb-4 sm:space-y-6">
-          <section aria-label={t("dashboard.balance")} className="balance-panel p-5 sm:p-7">
-            <div className="relative z-[1]">
-              <div className="flex items-start justify-between gap-3">
-                <div className="text-sm font-medium text-white/80">{t("dashboard.balance")}</div>
-                {hasSimulated && (
-                  <span className="rounded-full bg-white/12 px-2.5 py-1 text-[11px] font-medium text-white/90 ring-1 ring-white/20">
-                    {t("demo.simulated_badge")}
-                  </span>
-                )}
+        <div className="space-y-7 pb-4 sm:space-y-9">
+          <div className="space-y-3.5">
+            <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-3.5 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:items-stretch">
+              <BalancePanel
+                balance={balance.data}
+                income={month.data?.income}
+                expense={month.data?.expense}
+                simulated={hasSimulated}
+              />
+              <div className="space-y-3.5">
+                <AskCoach />
+                <InstallPrompt />
+                {/* phones: its own titled section under the panel; desktop: a column beside it */}
+                <section aria-labelledby="glance-heading" className="pt-3.5 lg:pt-0">
+                  <SectionHeader
+                    id="glance-heading"
+                    title={t("home.at_glance")}
+                    className="lg:sr-only"
+                  />
+                  <div
+                    className="rise grid gap-3 sm:grid-cols-2 lg:grid-cols-1"
+                    style={{ "--i": 2 } as React.CSSProperties}
+                  >
+                    <HealthCard />
+                    <ForecastCard />
+                    <StreakChip />
+                  </div>
+                </section>
               </div>
-              <div className="mt-1.5 text-[2.5rem] leading-tight font-bold tracking-tight tabular-nums sm:text-5xl">
-                {balance.data === undefined ? "…" : formatMoney(balance.data, lang)}
-              </div>
-              {month.data && (
-                <p className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[13px] text-white/80">
-                  <span>{t("dashboard.this_month")}:</span>
-                  <span className="font-semibold text-[#9be7b8] tabular-nums">
-                    {t("dashboard.in_amount", {
-                      amount: formatSignedMoney(month.data.income, lang),
-                    })}
-                  </span>
-                  <span aria-hidden>·</span>
-                  <span className="tabular-nums">
-                    {t("dashboard.out_amount", { amount: formatMoney(month.data.expense, lang) })}
-                  </span>
-                </p>
-              )}
-              <nav
-                aria-label={t("dashboard.quick_actions")}
-                className="mt-6 grid max-w-md grid-cols-4 gap-2"
-              >
-                <QuickAction
-                  href="/transactions/new"
-                  label={t("transactions.add_short")}
-                  icon={Plus}
-                  primary
-                />
-                <QuickAction href="/forecast" label={t("dashboard.qa_forecast")} icon={LineChart} />
-                <QuickAction href="/goals" label={t("nav.goals")} icon={Target} />
-                <QuickAction href="/budgets" label={t("nav.budgets")} icon={Wallet} />
-              </nav>
             </div>
-          </section>
-          {hasSimulated && (
-            <p className="text-muted-foreground -mt-2 px-1 text-xs">{t("common.simulated_note")}</p>
-          )}
-
-          <AskCoach />
-
-          <InstallPrompt />
-
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            <ForecastCard />
-            <HealthCard />
-            <StreakChip />
+            {hasSimulated && (
+              <p className="text-muted-foreground px-1 text-xs">{t("common.simulated_note")}</p>
+            )}
           </div>
 
-          <section aria-labelledby="period-heading" className="space-y-3">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <h2 id="period-heading" className="section-title px-1">
-                {t("dashboard.overview")}
-              </h2>
+          <section
+            aria-labelledby="period-heading"
+            className="rise"
+            style={{ "--i": 3 } as React.CSSProperties}
+          >
+            <SectionHeader
+              id="period-heading"
+              title={t("dashboard.overview")}
+              className="items-center"
+            />
+            <div className="space-y-3">
               <PeriodTabs value={period} onChange={setPeriod} />
-            </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <Tile
-                label={t("dashboard.income")}
-                value={formatMoney(summary.data?.income ?? 0, lang)}
-                icon={ArrowDownLeft}
-                tone="in"
+              <Totals
+                income={summary.data?.income ?? 0}
+                expense={summary.data?.expense ?? 0}
+                lang={lang}
+                stale={summary.isPlaceholderData}
               />
-              <Tile
-                label={t("dashboard.expense")}
-                value={formatMoney(summary.data?.expense ?? 0, lang)}
-                icon={ArrowUpRight}
-                tone="out"
-              />
-              <Tile
-                label={t("dashboard.net")}
-                value={formatSignedMoney(net, lang)}
-                icon={Scale}
-                tone="net"
-              />
-            </div>
-          </section>
-
-          <div className="grid items-start gap-4 lg:grid-cols-2">
-            {trend.data && <WeeklyChart data={trend.data} />}
-            <CategoryBars data={byCategory.data ?? []} />
-          </div>
-
-          <section className="finance-card p-4 sm:p-5">
-            <div className="mb-1 flex items-center justify-between gap-2">
-              <h2 className="section-title">{t("transactions.recent")}</h2>
-              <div className="flex items-center gap-1">
-                <Link
-                  href="/transactions/new"
+              <div className="grid items-start gap-3 lg:grid-cols-2">
+                {trend.data ? (
+                  <WeeklyChart data={trend.data} />
+                ) : (
+                  <Skeleton className="h-72 rounded-3xl" />
+                )}
+                <div
                   className={cn(
-                    buttonVariants({ variant: "outline", size: "sm" }),
-                    "gap-1 max-sm:hidden",
+                    "transition-opacity duration-300",
+                    byCategory.isPlaceholderData && "opacity-60",
                   )}
                 >
-                  <Plus className="size-4" aria-hidden />
-                  {t("transactions.add_short")}
-                </Link>
-                <Link
-                  href="/transactions"
-                  className="text-primary hover:bg-secondary min-h-11 content-center rounded-xl px-3 text-sm font-medium"
-                >
-                  {t("transactions.see_all")}
-                </Link>
+                  <CategoryBars data={byCategory.data ?? []} />
+                </div>
               </div>
             </div>
-            <TransactionList rows={recent.data} framed={false} />
+          </section>
+
+          <section aria-labelledby="recent-heading">
+            <SectionHeader
+              id="recent-heading"
+              title={t("transactions.recent")}
+              href="/transactions"
+              linkLabel={t("transactions.see_all")}
+            />
+            <div className="finance-card p-2.5 sm:p-3">
+              <TransactionList rows={recent.data} framed={false} />
+            </div>
           </section>
 
           <DemoTools />

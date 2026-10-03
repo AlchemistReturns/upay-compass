@@ -251,7 +251,10 @@ export function ScoreView() {
           icon={Info}
           body={t("score.no_data")}
           action={
-            <Link href="/" className="text-primary text-sm font-semibold">
+            <Link
+              href="/"
+              className="text-primary inline-flex min-h-11 items-center text-sm font-semibold"
+            >
               {t("nav.home")}
             </Link>
           }

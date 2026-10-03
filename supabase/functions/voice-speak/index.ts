@@ -2,6 +2,7 @@ import { z } from "zod";
 import { VOICE_SPEAK_MAX_CHARS, prepareSpeech } from "@compass/shared";
 import { authenticate, corsHeaders, json } from "../_shared/http.ts";
 import { auditVoice, guardVoice } from "../_shared/voice.ts";
+import { reasonFromError, startCall } from "../_shared/monitor.ts";
 
 const DEFAULT_MODEL = "tts-1";
 const TIMEOUT_MS = 30_000;
@@ -51,6 +52,8 @@ Deno.serve(async (req) => {
   ).join(" ");
   if (!input) return json({ error: "not_found" }, 404);
 
+  const call = startCall("voice-speak", body.data.language);
+  call.model(Deno.env.get("OPENAI_TTS_MODEL") || DEFAULT_MODEL);
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
@@ -71,11 +74,15 @@ Deno.serve(async (req) => {
       language: body.data.language,
       ok: res.ok,
     });
+    if (!res.ok) call.reason(`http_${res.status}`);
+    call.end(res.ok ? "ok" : "error");
     if (!res.ok) return json({ error: "speech_failed" }, 502);
     return new Response(res.body, {
       headers: { ...corsHeaders, "Content-Type": "audio/mpeg", "Cache-Control": "no-store" },
     });
-  } catch {
+  } catch (e) {
+    call.reason(reasonFromError(e));
+    call.end("error");
     await auditVoice(client, user.id, "voice_speak", {
       chars: input.length,
       language: body.data.language,

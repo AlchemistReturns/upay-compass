@@ -9,6 +9,7 @@ import {
   type ReadinessResult,
   type RiskFlag,
 } from "@compass/shared";
+import { reasonFromError, type CallMeter } from "./monitor.ts";
 
 const DEFAULT_MODEL = "gpt-5-mini";
 const TIMEOUT_MS = 45_000;
@@ -18,43 +19,54 @@ const TIMEOUT_MS = 45_000;
  * Structured output with the module schema; the token cap follows the word limits so the model
  * cannot ramble. Returns null on any failure (no key, network, HTTP error, empty reply).
  */
-export const openAiLearnClient: LearnModelClient = async ({ messages, language }) => {
-  const apiKey = Deno.env.get("OPENAI_API_KEY");
-  if (!apiKey) return null;
-  const model =
-    Deno.env.get("OPENAI_LEARN_MODEL") || Deno.env.get("OPENAI_COACH_MODEL") || DEFAULT_MODEL;
-  const reasoning = /^(gpt-5|o\d)/.test(model);
-  const cap = learnMaxCompletionTokens(language, reasoning);
+export const makeOpenAiLearnClient =
+  (meter?: CallMeter): LearnModelClient =>
+  async ({ messages, language }) => {
+    const apiKey = Deno.env.get("OPENAI_API_KEY");
+    if (!apiKey) {
+      meter?.reason("no_api_key");
+      return null;
+    }
+    const model =
+      Deno.env.get("OPENAI_LEARN_MODEL") || Deno.env.get("OPENAI_COACH_MODEL") || DEFAULT_MODEL;
+    meter?.model(model);
+    const reasoning = /^(gpt-5|o\d)/.test(model);
+    const cap = learnMaxCompletionTokens(language, reasoning);
 
-  const request = (withEffort: boolean) => {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-    return fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      signal: controller.signal,
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model,
-        messages,
-        response_format: { type: "json_schema", json_schema: GENERATED_MODULE_JSON_SCHEMA },
-        ...(reasoning
-          ? { max_completion_tokens: cap, ...(withEffort ? { reasoning_effort: "minimal" } : {}) }
-          : { max_tokens: cap, temperature: 0.4 }),
-      }),
-    }).finally(() => clearTimeout(timer));
+    const request = (withEffort: boolean) => {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+      return fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        signal: controller.signal,
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model,
+          messages,
+          response_format: { type: "json_schema", json_schema: GENERATED_MODULE_JSON_SCHEMA },
+          ...(reasoning
+            ? { max_completion_tokens: cap, ...(withEffort ? { reasoning_effort: "minimal" } : {}) }
+            : { max_tokens: cap, temperature: 0.4 }),
+        }),
+      }).finally(() => clearTimeout(timer));
+    };
+
+    try {
+      let res = await request(true);
+      if (res.status === 400 && reasoning) res = await request(false); // some models reject the effort
+      if (!res.ok) {
+        meter?.reason(`http_${res.status}`);
+        return null;
+      }
+      const payload = await res.json();
+      meter?.usage(payload?.usage);
+      const content = payload?.choices?.[0]?.message?.content;
+      return typeof content === "string" && content.trim() ? content : null;
+    } catch (e) {
+      meter?.reason(reasonFromError(e));
+      return null;
+    }
   };
-
-  try {
-    let res = await request(true);
-    if (res.status === 400 && reasoning) res = await request(false); // some models reject the effort
-    if (!res.ok) return null;
-    const payload = await res.json();
-    const content = payload?.choices?.[0]?.message?.content;
-    return typeof content === "string" && content.trim() ? content : null;
-  } catch {
-    return null;
-  }
-};
 
 type Row = Record<string, unknown>;
 

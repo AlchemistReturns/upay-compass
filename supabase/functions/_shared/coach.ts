@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { CallMeter } from "./monitor.ts";
 import {
   addDays,
   dayDiff,
@@ -185,11 +186,13 @@ export async function streamChat(
   messages: ChatMessage[],
   onDelta: (text: string) => void,
   signal: AbortSignal,
+  meter?: CallMeter,
 ): Promise<string> {
   const apiKey = Deno.env.get("OPENAI_API_KEY");
   if (!apiKey) throw new Error("no_api_key");
   const model = Deno.env.get("OPENAI_COACH_MODEL") || "gpt-5-mini";
   const reasoning = /^(gpt-5|o\d)/.test(model);
+  meter?.model(model);
 
   const request = (withEffort: boolean) =>
     fetch("https://api.openai.com/v1/chat/completions", {
@@ -200,6 +203,7 @@ export async function streamChat(
         model,
         messages,
         stream: true,
+        stream_options: { include_usage: true },
         ...(reasoning
           ? { max_completion_tokens: 1500, ...(withEffort ? { reasoning_effort: "low" } : {}) }
           : { max_tokens: 700, temperature: 0.3 }),
@@ -225,7 +229,9 @@ export async function streamChat(
       const data = line.slice(5).trim();
       if (!data || data === "[DONE]") continue;
       try {
-        const delta = JSON.parse(data)?.choices?.[0]?.delta?.content;
+        const chunk = JSON.parse(data);
+        if (chunk?.usage) meter?.usage(chunk.usage);
+        const delta = chunk?.choices?.[0]?.delta?.content;
         if (typeof delta === "string" && delta) {
           full += delta;
           onDelta(delta);

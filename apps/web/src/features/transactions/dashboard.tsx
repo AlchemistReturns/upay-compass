@@ -9,12 +9,9 @@ import {
   ChevronRight,
   LineChart,
   type LucideIcon,
-  Moon,
   Plus,
   Scale,
   Sparkles,
-  Sun,
-  Sunrise,
   Target,
   Wallet,
 } from "lucide-react";
@@ -64,7 +61,7 @@ function useGreeting() {
   const [now, setNow] = useState<Date | null>(null);
   // eslint-disable-next-line react-hooks/set-state-in-effect -- the clock is read after mount
   useEffect(() => setNow(new Date()), []);
-  if (!now) return { greeting: t("home.title"), date: undefined, key: null };
+  if (!now) return { greeting: t("home.title"), date: undefined };
   const hour = Number(
     new Intl.DateTimeFormat("en-GB", {
       hour: "numeric",
@@ -79,7 +76,7 @@ function useGreeting() {
     month: "long",
     timeZone: "Asia/Dhaka",
   }).format(now);
-  return { greeting: t(`home.greeting_${key}`), date, key };
+  return { greeting: t(`home.greeting_${key}`), date };
 }
 
 /** Round shortcut on the balance panel. `primary` is the lime main action. */
@@ -378,7 +375,7 @@ export function Dashboard() {
   const { summary, month, byCategory, trend, balance } = useDashboard(period);
   const recent = useTransactionList(8);
   const lang = i18n.language;
-  const { greeting, date, key: dayPart } = useGreeting();
+  const { greeting, date } = useGreeting();
 
   useTransactionsRealtime();
   useAutoNudges(recent.isSuccess && recent.data.length > 0);
@@ -391,15 +388,6 @@ export function Dashboard() {
     <>
       <PageHeader
         eyebrow={date}
-        eyebrowIcon={
-          dayPart === "morning" ? (
-            <Sunrise aria-hidden />
-          ) : dayPart === "afternoon" ? (
-            <Sun aria-hidden />
-          ) : dayPart === "evening" ? (
-            <Moon aria-hidden />
-          ) : undefined
-        }
         lead={firstName ? `${greeting},` : undefined}
         title={firstName ?? greeting}
         subtitle={noTransactions ? undefined : t("home.subtitle")}

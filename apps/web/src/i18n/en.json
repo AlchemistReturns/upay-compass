@@ -336,7 +336,8 @@
     "amount_hint": "How much?",
     "toast_saved": "Transaction saved",
     "toast_deleted": "Transaction deleted",
-    "unknown_merchant": "Unknown merchant"
+    "unknown_merchant": "Unknown merchant",
+    "repeat_recent": "Repeat a recent one"
   },
   "channel": {
     "send_money": "Send money",

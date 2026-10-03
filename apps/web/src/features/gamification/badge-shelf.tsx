@@ -14,19 +14,29 @@ export function BadgeShelf() {
 
   return (
     <section aria-labelledby="badge-shelf">
-      <h2 id="badge-shelf" className="mb-2 font-medium">
+      <h2 id="badge-shelf" className="section-title mb-3">
         {t("gamification.shelf")}
       </h2>
-      <ul className="grid grid-cols-2 gap-2">
+      <ul className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {BADGES.map(({ id }) => {
           const Icon = badgeIcon(id);
           const has = earned.has(id);
           return (
-            <li key={id} className={cn("flex gap-2 rounded-xl border p-3", !has && "bg-muted/40")}>
+            <li
+              key={id}
+              className={cn(
+                "flex gap-3 rounded-2xl border p-3.5",
+                has
+                  ? "border-reward/40 bg-reward-soft/60 shadow-[0_6px_18px_rgba(245,158,11,.12)]"
+                  : "bg-muted/40 border-dashed",
+              )}
+            >
               <span
                 className={cn(
-                  "flex size-9 shrink-0 items-center justify-center rounded-full",
-                  has ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
+                  "flex size-10 shrink-0 items-center justify-center rounded-xl",
+                  has
+                    ? "bg-gradient-to-br from-amber-400 to-amber-500 text-white shadow-sm"
+                    : "bg-muted text-muted-foreground",
                 )}
               >
                 {has ? (

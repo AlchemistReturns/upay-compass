@@ -8,7 +8,7 @@ export function ProgressRing({
   total: number;
   label: string;
 }) {
-  const size = 56;
+  const size = 64;
   const stroke = 6;
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;

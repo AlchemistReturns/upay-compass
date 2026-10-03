@@ -188,7 +188,7 @@ export function ScoreView() {
       )}
 
       {snapshots.isSuccess && !latest && triedOnce && !refreshing && (
-        <section className="rounded-xl border p-4">
+        <section className="finance-card p-4 sm:p-5">
           <p className="mb-3 text-sm">{t("score.no_data")}</p>
           <Link href="/" className="text-primary text-sm">
             {t("nav.home")}
@@ -198,7 +198,7 @@ export function ScoreView() {
 
       {latest && result && (
         <div className="space-y-4 pb-4">
-          <section className="rounded-xl border p-4">
+          <section className="finance-card p-4 sm:p-5">
             <Gauge score={latest.score} />
             {previous && delta !== 0 && (
               <p className="mt-3 flex items-center justify-center gap-1 text-sm">
@@ -239,7 +239,7 @@ export function ScoreView() {
             </div>
           </section>
 
-          <section className="rounded-xl border p-4">
+          <section className="finance-card p-4 sm:p-5">
             <h2 className="mb-3 font-medium">{t("score.breakdown")}</h2>
             <ul className="space-y-4">
               {COMPONENT_KEYS.map((k) => {
@@ -279,7 +279,7 @@ export function ScoreView() {
             </ul>
           </section>
 
-          <section className="rounded-xl border p-4">
+          <section className="finance-card p-4 sm:p-5">
             <h2 className="mb-2 font-medium">{t("score.moved")}</h2>
             {!previous ? (
               <p className="text-muted-foreground text-sm">{t("score.moved_first")}</p>
@@ -307,7 +307,7 @@ export function ScoreView() {
             )}
           </section>
 
-          <section className="rounded-xl border p-4">
+          <section className="finance-card p-4 sm:p-5">
             <h2 className="mb-2 font-medium">{t("score.actions")}</h2>
             {result.actions.length === 0 ? (
               <p className="text-muted-foreground text-sm">{t("score.actions_none")}</p>

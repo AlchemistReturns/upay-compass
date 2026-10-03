@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { BellOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -41,9 +42,14 @@ export function NudgesView() {
             </Button>
           )}
           {nudges.data.length === 0 ? (
-            <p className="text-muted-foreground text-sm">{t("nudges.empty")}</p>
+            <div className="finance-card flex flex-col items-center gap-3 px-6 py-10 text-center">
+              <span className="icon-chip size-12">
+                <BellOff className="size-5" aria-hidden />
+              </span>
+              <p className="text-muted-foreground text-sm">{t("nudges.empty")}</p>
+            </div>
           ) : (
-            <ul className="divide-y rounded-xl border">
+            <ul className="finance-card divide-y overflow-hidden">
               {nudges.data.map((n) => {
                 const { title, body, href } = text(n);
                 return (
@@ -51,13 +57,16 @@ export function NudgesView() {
                     <Link
                       href={href}
                       onClick={() => !n.read && markRead.mutate([n.id])}
-                      className="flex min-h-14 items-start gap-3 px-3 py-3"
+                      className={cn(
+                        "hover:bg-muted/60 flex min-h-16 items-start gap-3 px-4 py-3.5 transition-colors",
+                        !n.read && "bg-secondary/50",
+                      )}
                     >
                       <span
                         aria-hidden
                         className={cn(
-                          "mt-1.5 size-2 shrink-0 rounded-full",
-                          n.read ? "bg-transparent" : "bg-primary",
+                          "mt-1.5 size-2.5 shrink-0 rounded-full",
+                          n.read ? "bg-border" : "bg-primary ring-secondary ring-4",
                         )}
                       />
                       <div className="min-w-0 flex-1">

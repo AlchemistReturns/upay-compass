@@ -3,7 +3,9 @@ import { Guard } from "@/features/auth/guard";
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
     <Guard own="signed-out" optimistic>
-      <main className="mx-auto w-full max-w-md flex-1 px-4">{children}</main>
+      <main className="auth-layout mx-auto flex w-full flex-1 items-center px-3 py-3 sm:px-8 sm:py-8">
+        <div className="mx-auto w-full max-w-5xl">{children}</div>
+      </main>
     </Guard>
   );
 }

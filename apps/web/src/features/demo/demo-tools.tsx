@@ -43,11 +43,11 @@ export function DemoTools() {
 
   return (
     <section
-      className="space-y-3 rounded-xl border border-dashed p-4"
+      className="space-y-3 rounded-2xl border border-dashed border-input bg-card/60 p-4 sm:p-5"
       aria-label={t("demo.tools_title")}
     >
       <div>
-        <h2 className="font-medium">{t("demo.tools_title")}</h2>
+        <h2 className="section-title">{t("demo.tools_title")}</h2>
         <p className="text-muted-foreground text-xs">{t("demo.tools_hint")}</p>
       </div>
       <div className="grid grid-cols-3 gap-2">

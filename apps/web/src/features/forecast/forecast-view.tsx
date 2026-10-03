@@ -125,7 +125,7 @@ export function ForecastView() {
 
       {latest && d && (
         <div className="space-y-4 pb-4">
-          <section className="rounded-xl border p-4">
+          <section className="finance-card p-4 sm:p-5">
             <ForecastStatus snapshot={latest} />
             {!d.insufficient && d.confidence === "low" && (
               <p className="bg-muted mt-3 flex gap-2 rounded-lg p-2 text-xs" role="note">
@@ -145,7 +145,7 @@ export function ForecastView() {
             <>
               <ForecastChart snapshot={latest} />
 
-              <section className="rounded-xl border p-4">
+              <section className="finance-card p-4 sm:p-5">
                 <h2 className="mb-2 font-medium">{t("forecast.expect_title")}</h2>
                 <p className="text-muted-foreground mb-3 text-xs">
                   {t("forecast.expect_hint", {

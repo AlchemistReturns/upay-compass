@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Check } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { INCOME_TYPES, firstGoalSchema, incomeSchema, type IncomeType } from "@compass/shared";
 import { supabase } from "@/lib/supabase";
@@ -29,11 +30,22 @@ function Choice({
       onClick={onClick}
       aria-pressed={selected}
       className={cn(
-        "min-h-12 w-full rounded-lg border px-4 text-left",
-        selected ? "border-primary bg-primary/10 font-medium" : "border-input",
+        "flex min-h-13 w-full items-center justify-between gap-3 rounded-xl border px-4 text-left transition-colors",
+        selected
+          ? "border-primary bg-secondary ring-secondary font-semibold ring-2"
+          : "border-input bg-card hover:bg-muted/60",
       )}
     >
       {children}
+      <span
+        aria-hidden
+        className={cn(
+          "grid size-5 shrink-0 place-items-center rounded-full border",
+          selected ? "border-primary bg-primary text-white" : "border-input",
+        )}
+      >
+        {selected && <Check className="size-3.5" strokeWidth={3} />}
+      </span>
     </button>
   );
 }
@@ -113,17 +125,28 @@ export function OnboardingWizard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="finance-card space-y-6 p-6 sm:p-8">
       <div>
-        <h1 className="text-xl font-semibold">{t("onboarding.title")}</h1>
-        <p className="text-muted-foreground text-sm">
+        <div className="mb-4 flex gap-1.5" aria-hidden>
+          {Array.from({ length: TOTAL_STEPS }, (_, i) => (
+            <span
+              key={i}
+              className={cn(
+                "h-1.5 flex-1 rounded-full transition-colors",
+                i < step ? "bg-primary" : "bg-muted",
+              )}
+            />
+          ))}
+        </div>
+        <p className="text-primary text-xs font-semibold">
           {t("onboarding.step", { current: step, total: TOTAL_STEPS })}
         </p>
+        <h1 className="mt-1 text-2xl font-semibold">{t("onboarding.title")}</h1>
       </div>
 
       {step === 1 && (
         <section className="space-y-3">
-          <h2 className="font-medium">{t("onboarding.language_title")}</h2>
+          <h2 className="section-title">{t("onboarding.language_title")}</h2>
           <Choice selected={language === "bn"} onClick={() => chooseLanguage("bn")}>
             {t("language.bn")}
           </Choice>
@@ -138,7 +161,7 @@ export function OnboardingWizard() {
 
       {step === 2 && (
         <section className="space-y-3">
-          <h2 className="font-medium">{t("onboarding.income_title")}</h2>
+          <h2 className="section-title">{t("onboarding.income_title")}</h2>
           <p className="text-muted-foreground text-sm">{t("onboarding.income_type")}</p>
           {INCOME_TYPES.map((type) => (
             <Choice key={type} selected={incomeType === type} onClick={() => setIncomeType(type)}>
@@ -172,7 +195,7 @@ export function OnboardingWizard() {
 
       {step === 3 && (
         <section className="space-y-3">
-          <h2 className="font-medium">{t("onboarding.goal_title")}</h2>
+          <h2 className="section-title">{t("onboarding.goal_title")}</h2>
           <p className="text-muted-foreground text-sm">{t("onboarding.goal_optional")}</p>
           <div className="space-y-2">
             <Label htmlFor="goal-title">{t("onboarding.goal_name")}</Label>

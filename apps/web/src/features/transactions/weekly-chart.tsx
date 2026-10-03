@@ -27,7 +27,7 @@ function WeekTooltip({
 }: TooltipProps & { lang: string; t: (k: string) => string }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-background rounded-lg border p-2 text-xs shadow-md">
+    <div className="bg-card rounded-xl border p-2.5 text-xs shadow-lg">
       <div className="mb-1 font-medium">{label}</div>
       {payload.map((p) => (
         <div key={p.dataKey} className="flex items-center gap-2">
@@ -47,16 +47,16 @@ export function WeeklyChart({ data }: { data: WeekPoint[] }) {
   const rows = data.map((w) => ({ ...w, label: formatShortDate(w.week_start, lang) }));
 
   return (
-    <section className="rounded-xl border p-4">
+    <section className="finance-card p-4 sm:p-5">
       <div className="mb-3 flex items-start justify-between gap-2">
         <div>
-          <h2 className="font-medium">{t("dashboard.weekly_title")}</h2>
+          <h2 className="section-title">{t("dashboard.weekly_title")}</h2>
           <p className="text-muted-foreground text-xs">{t("dashboard.weekly_hint")}</p>
         </div>
         <button
           type="button"
           onClick={() => setAsTable((v) => !v)}
-          className="text-muted-foreground min-h-11 min-w-11 text-xs underline"
+          className="text-primary hover:bg-secondary min-h-11 min-w-11 shrink-0 rounded-full px-3 text-xs font-medium transition-colors"
         >
           {asTable ? t("dashboard.show_chart") : t("dashboard.show_table")}
         </button>

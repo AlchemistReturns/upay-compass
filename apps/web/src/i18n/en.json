@@ -13,7 +13,9 @@
   "language": {
     "label": "Language",
     "en": "English",
-    "bn": "বাংলা"
+    "bn": "বাংলা",
+    "short_en": "EN",
+    "short_bn": "বাং"
   },
   "common": {
     "loading": "Loading…",
@@ -89,10 +91,15 @@
     "roundup_goal": "Save round-ups into",
     "roundup_need_goal": "Create a goal first to use round-ups.",
     "roundup_total_one": "Set aside by round-ups: {{amount}} from {{count}} payment",
-    "roundup_total_other": "Set aside by round-ups: {{amount}} from {{count}} payments"
+    "roundup_total_other": "Set aside by round-ups: {{amount}} from {{count}} payments",
+    "saved_across": "Saved across goals",
+    "of_target": "{{pct}}% of {{amount}}",
+    "summary_counts": "{{active}} active · {{completed}} completed"
   },
   "coach": {
     "title": "Coach",
+    "assistant_tagline": "Personal finance, made clearer",
+    "try_prompt": "Try asking",
     "intro": "Ask me about your spending, savings and goals. I explain your own numbers in plain words. Try one of the questions below.",
     "typing": "The coach is typing",
     "send": "Send",
@@ -115,7 +122,10 @@
     "consent_item_never": "It never sees your phone number, your name, who you paid, or your list of transactions.",
     "consent_how": "Answers come from an AI model (OpenAI). The app calculates every number; the coach only explains them. It gives educational guidance only: no investment, loan or insurance advice. You can delete the conversation at any time.",
     "consent_accept": "I agree",
-    "consent_decline": "Not now"
+    "consent_decline": "Not now",
+    "context_line": "Uses your last 30 days of totals. Never your name, phone or merchants.",
+    "suggest_prev": "Previous suggestions",
+    "suggest_next": "More suggestions"
   },
   "learn": {
     "title": "Learn",
@@ -147,7 +157,17 @@
     "invalid_otp": "Enter the 6-digit code.",
     "otp_failed": "That code is wrong or expired.",
     "send_failed": "Could not send the code. Please try again.",
-    "demo_note": "Demo mode: simulated data and test numbers only. No real SMS or money."
+    "demo_note": "Demo mode: simulated data and test numbers only. No real SMS or money.",
+    "welcome": "Welcome to Compass",
+    "hero_tag": "A clearer view of your money",
+    "hero_title": "Make every taka feel a little more certain.",
+    "hero_body": "See where your money goes, set goals that feel possible, and build steady habits at your own pace.",
+    "benefit_spend": "A simple picture of your spending",
+    "benefit_goals": "Goals that keep you moving forward",
+    "benefit_coach": "Guidance grounded in your own numbers",
+    "privacy_line": "Your money stays yours. This demo never moves real money.",
+    "continue_note": "By continuing, you agree to use the demo with test numbers only.",
+    "preview_label": "Your savings, in view"
   },
   "pin": {
     "title": "Set an app PIN",
@@ -204,7 +224,14 @@
     "category_title": "Where it went",
     "category_hint": "Spending by category in the selected period",
     "no_spending": "No spending in this period.",
-    "uncategorized": "Uncategorized"
+    "uncategorized": "Uncategorized",
+    "overview": "Overview",
+    "quick_actions": "Quick actions",
+    "qa_forecast": "Forecast",
+    "ask_coach": "Ask your coach",
+    "this_month": "This month",
+    "in_amount": "{{amount}} in",
+    "out_amount": "{{amount}} out"
   },
   "transactions": {
     "recent": "Recent transactions",
@@ -249,7 +276,8 @@
     "tools_hint": "Start over with a clean account: this deletes your data here and loads a fresh simulated history.",
     "reset_confirm": "Delete all your data in this account and start the demo again?",
     "resetting": "Resetting… this can take a few seconds.",
-    "reset_done": "Done. Your demo account is fresh."
+    "reset_done": "Done. Your demo account is fresh.",
+    "simulated_badge": "Simulated"
   },
   "score": {
     "title": "Financial health",
@@ -404,5 +432,27 @@
     "seeding": "Creating… about 30 seconds",
     "seeded_one": "Done: {{count}} demo person.",
     "seeded_other": "Done: {{count}} demo people."
+  },
+  "profile": {
+    "menu": "Account menu",
+    "title": "Profile",
+    "no_name": "Add your name",
+    "open": "Profile & settings",
+    "badges": "Badges & learning",
+    "admin_badge": "Admin",
+    "per_month": "{{amount}} a month",
+    "details_title": "Your details",
+    "name": "Name",
+    "name_hint": "Optional. Only you see it.",
+    "phone": "Phone number",
+    "phone_locked": "This is your login number. It cannot be changed here.",
+    "save": "Save changes",
+    "saved": "Saved",
+    "invalid": "Use a name of up to 60 letters, choose an income type and enter an income of 0 or more.",
+    "coach_title": "Coach data sharing",
+    "coach_on": "On since {{date}}. The coach sees totals only, never your name, phone or merchants.",
+    "coach_off": "Off. You can turn it on from the Coach screen.",
+    "coach_stop": "Stop sharing",
+    "coach_stop_confirm": "Stop sharing your numbers with the coach? The coach will not answer until you allow it again. Your chat history stays until you clear it."
   }
 }

@@ -6,7 +6,9 @@ export default function ProtectedLayout({ children }: LayoutProps<"/">) {
   return (
     <Guard own="ready">
       <GamificationProvider>
-        <main className="mx-auto w-full max-w-md flex-1 px-4 pb-20">{children}</main>
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-32 sm:px-6 lg:px-8">
+          {children}
+        </main>
         <BottomNav />
       </GamificationProvider>
     </Guard>

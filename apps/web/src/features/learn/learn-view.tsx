@@ -25,14 +25,14 @@ export function LearnView() {
     <>
       <PageHeader title={t("learn.title")} />
       <div className="space-y-5 pb-4">
-        <div className="flex items-center gap-3 rounded-xl border p-3">
+        <div className="finance-card flex items-center gap-4 p-5">
           <ProgressRing
             done={done}
             total={total}
             label={t("learn.progress_label", { done, total })}
           />
           <div>
-            <div className="font-medium">{t("learn.progress_title")}</div>
+            <div className="text-base font-semibold">{t("learn.progress_title")}</div>
             <div className="text-muted-foreground text-sm">
               {days > 0 ? t("gamification.streak", { count: days }) : t("learn.progress_hint")}
             </div>
@@ -46,20 +46,20 @@ export function LearnView() {
         )}
         {modules.isError && <p>{t("common.error")}</p>}
 
-        <ul className="space-y-2">
+        <ul className="grid gap-3 lg:grid-cols-2">
           {modules.data?.map((m) => {
             const finished = completed.data?.has(m.id) ?? false;
             return (
               <li key={m.id}>
                 <Link
                   href={`/learn/${m.slug}`}
-                  className="flex min-h-16 items-center gap-3 rounded-xl border p-3"
+                  className="finance-card flex h-full min-h-16 items-center gap-3 p-4"
                 >
                   <span
                     className={
                       finished
-                        ? "bg-primary text-primary-foreground flex size-9 shrink-0 items-center justify-center rounded-full"
-                        : "bg-muted text-muted-foreground flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold"
+                        ? "icon-chip bg-positive-soft text-positive"
+                        : "icon-chip text-sm font-semibold tabular-nums"
                     }
                   >
                     {finished ? <CheckCircle2 className="size-5" aria-hidden /> : m.position}

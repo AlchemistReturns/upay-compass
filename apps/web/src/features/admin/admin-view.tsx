@@ -21,8 +21,8 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-xl border p-4">
-      <h2 className="font-medium">{title}</h2>
+    <section className="finance-card p-4 sm:p-5">
+      <h2 className="section-title">{title}</h2>
       {hint && <p className="text-muted-foreground mb-3 text-xs">{hint}</p>}
       <div className={hint ? "" : "mt-3"}>{children}</div>
     </section>

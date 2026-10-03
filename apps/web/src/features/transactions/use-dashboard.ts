@@ -5,6 +5,20 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/features/auth/auth-provider";
 import type { CategorySpend, DashboardSummary, WeekPoint } from "./types";
 
+async function fetchSummary(range: { from: string; to: string }): Promise<DashboardSummary> {
+  const { data, error } = await supabase.rpc("dashboard_summary", {
+    p_from: range.from,
+    p_to: range.to,
+  });
+  if (error) throw error;
+  const row = data?.[0];
+  return {
+    income: Number(row?.income ?? 0),
+    expense: Number(row?.expense ?? 0),
+    tx_count: Number(row?.tx_count ?? 0),
+  };
+}
+
 /** All dashboard queries share the ["dashboard", userId, ...] prefix so realtime can refresh them at once. */
 export function useDashboard(period: Period) {
   const { userId } = useAuth();
@@ -14,19 +28,16 @@ export function useDashboard(period: Period) {
   const summary = useQuery({
     queryKey: ["dashboard", userId, "summary", period],
     enabled,
-    queryFn: async (): Promise<DashboardSummary> => {
-      const { data, error } = await supabase.rpc("dashboard_summary", {
-        p_from: range.from,
-        p_to: range.to,
-      });
-      if (error) throw error;
-      const row = data?.[0];
-      return {
-        income: Number(row?.income ?? 0),
-        expense: Number(row?.expense ?? 0),
-        tx_count: Number(row?.tx_count ?? 0),
-      };
-    },
+    queryFn: () => fetchSummary(range),
+  });
+
+  // The balance card always shows this month, whatever period the tabs below are on.
+  // Same key as the "month" tab, so the two share one cached result.
+  const monthRange = useMemo(() => getPeriodRange("month"), []);
+  const month = useQuery({
+    queryKey: ["dashboard", userId, "summary", "month"],
+    enabled,
+    queryFn: () => fetchSummary(monthRange),
   });
 
   const byCategory = useQuery({
@@ -70,5 +81,5 @@ export function useDashboard(period: Period) {
     },
   });
 
-  return { summary, byCategory, trend, balance };
+  return { summary, month, byCategory, trend, balance };
 }

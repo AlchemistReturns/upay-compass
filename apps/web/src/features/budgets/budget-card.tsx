@@ -30,7 +30,7 @@ export function BudgetCard({ budget, onClick }: { budget: BudgetProgress; onClic
     <button
       type="button"
       onClick={onClick}
-      className="w-full rounded-xl border p-4 text-left"
+      className="finance-card w-full p-4 text-left"
       aria-label={`${name}: ${t(`budgets.status_${status}`)}`}
     >
       <div className="flex items-baseline justify-between gap-2">

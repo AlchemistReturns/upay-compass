@@ -9,7 +9,7 @@
  *    client-rendered shells, so the HTML is the same for every user.
  *  - Anything else: straight to the network.
  */
-const VERSION = "v1";
+const VERSION = "v2";
 const PAGES = `compass-pages-${VERSION}`;
 const ASSETS = `compass-assets-${VERSION}`;
 const ROUTES = [
@@ -22,6 +22,7 @@ const ROUTES = [
   "/score",
   "/forecast",
   "/nudges",
+  "/profile",
   // one page per learn module (keep in step with LEARN_SLUGS in packages/shared/src/learn.ts)
   ...[
     "budget-basics",

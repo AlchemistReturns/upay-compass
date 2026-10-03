@@ -62,7 +62,7 @@ export function InstallPrompt() {
 
   return (
     <section
-      className="flex items-center gap-3 rounded-xl border p-3"
+      className="finance-card flex items-center gap-3 p-4"
       aria-label={t("pwa.install_title")}
     >
       <Download className="text-primary size-5 shrink-0" aria-hidden />

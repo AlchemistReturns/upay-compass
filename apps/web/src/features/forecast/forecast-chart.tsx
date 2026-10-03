@@ -28,7 +28,7 @@ function ForecastTooltip({
   const row = payload?.[0]?.payload;
   if (!active || !row) return null;
   return (
-    <div className="bg-background rounded-lg border p-2 text-xs shadow-md">
+    <div className="bg-card rounded-xl border p-2.5 text-xs shadow-lg">
       <div className="font-medium">{row.label}</div>
       <div className="tabular-nums">{formatMoney(row.balance, lang)}</div>
       {row.risk && <div className="mt-0.5 font-medium">{t("forecast.below_buffer")}</div>}
@@ -52,16 +52,16 @@ export function ForecastChart({ snapshot }: { snapshot: ForecastSnapshot }) {
   const hasNegative = rows.some((r) => r.balance < 0);
 
   return (
-    <section className="rounded-xl border p-4">
+    <section className="finance-card p-4 sm:p-5">
       <div className="mb-3 flex items-start justify-between gap-2">
         <div>
-          <h2 className="font-medium">{t("forecast.chart_title")}</h2>
+          <h2 className="section-title">{t("forecast.chart_title")}</h2>
           <p className="text-muted-foreground text-xs">{t("forecast.chart_hint")}</p>
         </div>
         <button
           type="button"
           onClick={() => setAsTable((v) => !v)}
-          className="text-muted-foreground min-h-11 min-w-11 text-xs underline"
+          className="text-primary hover:bg-secondary min-h-11 min-w-11 shrink-0 rounded-full px-3 text-xs font-medium transition-colors"
         >
           {asTable ? t("dashboard.show_chart") : t("dashboard.show_table")}
         </button>

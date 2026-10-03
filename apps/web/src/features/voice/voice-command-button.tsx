@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { Mic } from "lucide-react";
+import { MicIcon } from "./mic-icon";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { VoiceSheet } from "./voice-sheet";
@@ -20,7 +20,7 @@ export function VoiceCommandButton({ className }: { className?: string }) {
         aria-haspopup="dialog"
         onClick={() => setOpen(true)}
       >
-        <Mic className="size-[20px]" strokeWidth={1.9} aria-hidden />
+        <MicIcon className="size-[22px]" />
       </button>
       <VoiceSheet open={open} onOpenChange={setOpen} />
     </>
@@ -42,7 +42,7 @@ export function VoiceTryButton({ className }: { className?: string }) {
         aria-haspopup="dialog"
         onClick={() => setOpen(true)}
       >
-        <Mic className="size-4" strokeWidth={2} aria-hidden />
+        <MicIcon className="size-5" />
         {t("start.try_voice")}
       </button>
       <VoiceSheet open={open} onOpenChange={setOpen} />
@@ -71,7 +71,7 @@ export function VoiceFab() {
         onClick={() => setOpen(true)}
         className="tab-bar bg-lime text-primary fixed right-4 bottom-[calc(env(safe-area-inset-bottom)+var(--nav-gap)+var(--nav-h)+0.75rem)] z-30 grid size-14 place-items-center rounded-full shadow-[var(--shadow-float)] transition-transform active:scale-95 lg:right-8 lg:bottom-8"
       >
-        <Mic className="size-6" strokeWidth={2} aria-hidden />
+        <MicIcon className="size-7" />
       </button>
       <VoiceSheet open={open} onOpenChange={setOpen} />
     </>

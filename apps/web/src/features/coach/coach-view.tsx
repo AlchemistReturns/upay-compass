@@ -9,7 +9,6 @@ import {
   Info,
   MessageCircleQuestion,
   Loader2,
-  Mic,
   ShieldCheck,
   Sparkles,
   Square,
@@ -37,6 +36,7 @@ import { useAuth } from "@/features/auth/auth-provider";
 import { useProfile } from "@/features/profile/use-profile";
 import { ConsentCard } from "./consent-card";
 import { useClearChat, useCoachChat, useCoachHistory, type CoachMessage } from "./use-coach";
+import { MicIcon } from "@/features/voice/mic-icon";
 
 const SUGGESTIONS = ["why_overspend", "can_afford", "improve_score", "money_last"] as const;
 const SUGGESTION_ICON = {
@@ -306,7 +306,7 @@ function CoachInfo({ voice }: { voice: boolean }) {
             {voice && (
               <section>
                 <h3 className="mb-1 flex items-center gap-1.5 text-[13px] font-bold">
-                  <Mic className="text-primary size-4" aria-hidden />
+                  <MicIcon className="text-primary size-4" />
                   {t("coach.info_voice")}
                 </h3>
                 <ul className="text-muted-foreground list-disc space-y-1 pl-4">
@@ -527,7 +527,7 @@ export function CoachView() {
                     ) : stt.state === "processing" ? (
                       <Loader2 className="size-5 animate-spin" aria-hidden />
                     ) : (
-                      <Mic className="size-5" aria-hidden />
+                      <MicIcon className="size-6" />
                     )}
                   </button>
                 )}

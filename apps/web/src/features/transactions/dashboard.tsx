@@ -9,9 +9,12 @@ import {
   ChevronRight,
   LineChart,
   type LucideIcon,
+  Moon,
   Plus,
   Scale,
   Sparkles,
+  Sun,
+  Sunrise,
   Target,
   Wallet,
 } from "lucide-react";
@@ -61,7 +64,7 @@ function useGreeting() {
   const [now, setNow] = useState<Date | null>(null);
   // eslint-disable-next-line react-hooks/set-state-in-effect -- the clock is read after mount
   useEffect(() => setNow(new Date()), []);
-  if (!now) return { greeting: t("home.title"), date: undefined };
+  if (!now) return { greeting: t("home.title"), date: undefined, key: null };
   const hour = Number(
     new Intl.DateTimeFormat("en-GB", {
       hour: "numeric",
@@ -76,7 +79,7 @@ function useGreeting() {
     month: "long",
     timeZone: "Asia/Dhaka",
   }).format(now);
-  return { greeting: t(`home.greeting_${key}`), date };
+  return { greeting: t(`home.greeting_${key}`), date, key };
 }
 
 /** Round shortcut on the balance panel. `primary` is the lime main action. */
@@ -138,17 +141,17 @@ function ScoreStat({
     <Link
       href={href}
       transitionTypes={NAV_FORWARD}
-      className="group flex min-w-0 items-center gap-3 rounded-2xl bg-white/8 p-3 ring-1 ring-white/12 transition-colors hover:bg-white/14"
+      className="group flex min-w-0 items-center gap-2.5 rounded-2xl bg-white/8 p-2.5 ring-1 ring-white/12 transition-colors hover:bg-white/14"
     >
       {/* the arc is decorative; the number and band are written out */}
       <Ring
         value={score ?? 0}
-        size={46}
+        size={42}
         stroke={5}
         track="rgba(255,255,255,.14)"
         color={band ? BAND_COLOR[band] : "transparent"}
       >
-        <span className="num text-[15px] font-extrabold">{score ?? "–"}</span>
+        <span className="num text-[14px] font-extrabold">{score ?? "–"}</span>
       </Ring>
       <div className="min-w-0 flex-1">
         <div className="text-on-dark-muted truncate text-[12px] font-semibold">{label}</div>
@@ -158,7 +161,7 @@ function ScoreStat({
         {note && <div className="text-on-dark-muted truncate text-[11px]">{note}</div>}
       </div>
       <ChevronRight
-        className="ic-forward text-on-dark-muted size-4 shrink-0 group-hover:text-white"
+        className="ic-forward text-on-dark-muted hidden size-4 shrink-0 group-hover:text-white sm:block"
         aria-hidden
       />
     </Link>
@@ -241,7 +244,7 @@ function BalancePanel({
         </div>
       )}
 
-      <div className="mt-5 grid gap-2.5 sm:grid-cols-2">
+      <div className="mt-4 grid grid-cols-2 gap-2">
         <ScoreStat href="/score" label={t("score.title")} score={health.data?.[0]?.score} />
         {/* credit readiness is informational only, and the panel says so */}
         <ScoreStat
@@ -375,7 +378,7 @@ export function Dashboard() {
   const { summary, month, byCategory, trend, balance } = useDashboard(period);
   const recent = useTransactionList(8);
   const lang = i18n.language;
-  const { greeting, date } = useGreeting();
+  const { greeting, date, key: dayPart } = useGreeting();
 
   useTransactionsRealtime();
   useAutoNudges(recent.isSuccess && recent.data.length > 0);
@@ -388,6 +391,15 @@ export function Dashboard() {
     <>
       <PageHeader
         eyebrow={date}
+        eyebrowIcon={
+          dayPart === "morning" ? (
+            <Sunrise aria-hidden />
+          ) : dayPart === "afternoon" ? (
+            <Sun aria-hidden />
+          ) : dayPart === "evening" ? (
+            <Moon aria-hidden />
+          ) : undefined
+        }
         lead={firstName ? `${greeting},` : undefined}
         title={firstName ?? greeting}
         subtitle={noTransactions ? undefined : t("home.subtitle")}

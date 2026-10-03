@@ -284,8 +284,11 @@ export function PageHeader({
 
       <div className="pt-1.5 pb-5 sm:pt-3 sm:pb-7">
         {eyebrow && (
-          <p className="text-muted-foreground fade-in mb-1.5 flex items-center gap-1.5 px-0.5 text-[12.5px] font-semibold tracking-[0.06em] uppercase">
-            {eyebrowIcon}
+          <p
+            style={{ "--d": "0ms" } as React.CSSProperties}
+            className="text-muted-foreground hdr-in mb-1.5 flex items-center gap-1.5 px-0.5 text-[12.5px] font-semibold tracking-[0.06em] uppercase"
+          >
+            {eyebrowIcon && <span className="hdr-icon text-primary">{eyebrowIcon}</span>}
             {eyebrow}
           </p>
         )}
@@ -294,14 +297,27 @@ export function PageHeader({
           <div className="min-w-0">
             <h1 className="text-[1.875rem] leading-[1.12] font-extrabold tracking-[-0.025em] text-balance sm:text-[2.25rem]">
               {lead && (
-                <span className="text-muted-foreground block text-[1.375rem] leading-tight font-semibold tracking-[-0.015em] sm:text-[1.625rem]">
+                <span
+                  style={{ "--d": "80ms" } as React.CSSProperties}
+                  className="hdr-in text-muted-foreground block text-[1.375rem] leading-tight font-semibold tracking-[-0.015em] sm:text-[1.625rem]"
+                >
                   {lead}
                 </span>
               )}
-              {title}
+              <span
+                style={{ "--d": "170ms" } as React.CSSProperties}
+                className={cn("hdr-in block", lead && "hdr-name")}
+              >
+                {title}
+              </span>
             </h1>
             {subtitle && (
-              <p className="text-muted-foreground mt-1.5 text-[15px] leading-snug">{subtitle}</p>
+              <p
+                style={{ "--d": "270ms" } as React.CSSProperties}
+                className="text-muted-foreground hdr-in mt-1.5 text-[15px] leading-snug"
+              >
+                {subtitle}
+              </p>
             )}
           </div>
         </div>

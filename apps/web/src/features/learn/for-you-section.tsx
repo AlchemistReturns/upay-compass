@@ -47,7 +47,10 @@ export function ForYouSection() {
   const modules = state.modules;
   const done = modules.filter((m) => m.completedAt).length;
   return (
-    <section aria-labelledby="foryou-heading">
+    <section
+      aria-labelledby="foryou-heading"
+      className="bg-secondary/70 ring-primary/10 rounded-[2rem] p-3 ring-1 sm:p-4"
+    >
       <SectionHeader
         id="foryou-heading"
         title={t("learn.foryou.title")}
@@ -60,6 +63,9 @@ export function ForYouSection() {
             : undefined
         }
       />
+      <p className="text-muted-foreground -mt-1 mb-3 text-[13px] leading-5">
+        {t("learn.foryou.subtitle")}
+      </p>
       {modules.length === 0 ? (
         <p className="finance-card text-muted-foreground p-4 text-sm leading-6">
           {t("learn.foryou.empty")}

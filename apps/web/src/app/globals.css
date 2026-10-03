@@ -1189,6 +1189,61 @@
   }
 }
 
+/* Page header: the title block arrives in a soft stagger, and the name catches the light once. */
+.hdr-in {
+  animation: hdr-in 0.7s var(--ease-out-soft) var(--d, 0ms) both;
+}
+.hdr-name {
+  background-image: linear-gradient(
+    100deg,
+    var(--foreground) 0%,
+    var(--foreground) 38%,
+    var(--primary) 52%,
+    var(--foreground) 66%,
+    var(--foreground) 100%
+  );
+  background-size: 260% 100%;
+  background-position: 100% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation:
+    hdr-in 0.7s var(--ease-out-soft) var(--d, 0ms) both,
+    name-shine 1.6s var(--ease-out-soft) 0.55s both;
+}
+.hdr-icon {
+  display: inline-grid;
+  animation: hdr-float 5s ease-in-out infinite;
+}
+.hdr-icon svg {
+  width: 1rem;
+  height: 1rem;
+}
+@keyframes hdr-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes name-shine {
+  to {
+    background-position: 0% 0;
+  }
+}
+@keyframes hdr-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-1.5px) rotate(12deg);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

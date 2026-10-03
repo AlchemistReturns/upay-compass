@@ -144,9 +144,12 @@ export function LearnView() {
           <section aria-labelledby="modules-heading">
             <SectionHeader
               id="modules-heading"
-              title={t("learn.progress_title")}
-              className="sr-only"
+              title={t("learn.course_title")}
+              hint={t("learn.course_hint", { count: total })}
             />
+            <p className="text-muted-foreground -mt-1 mb-3 text-[13px] leading-5">
+              {t("learn.course_subtitle")}
+            </p>
             <ul className="grid gap-2.5 lg:grid-cols-2">
               {modules.data.map((m, i) => {
                 const finished = completed.data?.has(m.id) ?? false;

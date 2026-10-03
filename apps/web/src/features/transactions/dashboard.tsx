@@ -138,17 +138,17 @@ function ScoreStat({
     <Link
       href={href}
       transitionTypes={NAV_FORWARD}
-      className="group flex min-w-0 items-center gap-3 rounded-2xl bg-white/8 p-3 ring-1 ring-white/12 transition-colors hover:bg-white/14"
+      className="group flex min-w-0 items-center gap-2.5 rounded-2xl bg-white/8 p-2.5 ring-1 ring-white/12 transition-colors hover:bg-white/14"
     >
       {/* the arc is decorative; the number and band are written out */}
       <Ring
         value={score ?? 0}
-        size={46}
+        size={42}
         stroke={5}
         track="rgba(255,255,255,.14)"
         color={band ? BAND_COLOR[band] : "transparent"}
       >
-        <span className="num text-[15px] font-extrabold">{score ?? "–"}</span>
+        <span className="num text-[14px] font-extrabold">{score ?? "–"}</span>
       </Ring>
       <div className="min-w-0 flex-1">
         <div className="text-on-dark-muted truncate text-[12px] font-semibold">{label}</div>
@@ -158,7 +158,7 @@ function ScoreStat({
         {note && <div className="text-on-dark-muted truncate text-[11px]">{note}</div>}
       </div>
       <ChevronRight
-        className="ic-forward text-on-dark-muted size-4 shrink-0 group-hover:text-white"
+        className="ic-forward text-on-dark-muted hidden size-4 shrink-0 group-hover:text-white sm:block"
         aria-hidden
       />
     </Link>
@@ -241,7 +241,7 @@ function BalancePanel({
         </div>
       )}
 
-      <div className="mt-5 grid gap-2.5 sm:grid-cols-2">
+      <div className="mt-4 grid grid-cols-2 gap-2">
         <ScoreStat href="/score" label={t("score.title")} score={health.data?.[0]?.score} />
         {/* credit readiness is informational only, and the panel says so */}
         <ScoreStat

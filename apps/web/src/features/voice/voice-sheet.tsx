@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Mic, SendHorizontal, Square } from "lucide-react";
+import { Loader2, SendHorizontal, Square } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Sheet } from "@/components/sheet";
 import { toast } from "@/components/toaster";
@@ -16,6 +16,7 @@ import { CommandError, parseCommand, type CommandResult } from "./use-voice-comm
 import { useRunCommand, type RunOutcome } from "./use-run-command";
 import { useVoiceConsent } from "./use-voice-consent";
 import { useVoiceInput } from "./use-voice-input";
+import { MicIcon } from "./mic-icon";
 
 type Ok = Extract<CommandResult, { status: "ok" }>;
 type Step =
@@ -182,7 +183,7 @@ export function VoiceSheet({
                   ) : listening ? (
                     <Square className="size-7" fill="currentColor" aria-hidden />
                   ) : (
-                    <Mic className="size-8" aria-hidden />
+                    <MicIcon className="size-10" />
                   )}
                 </button>
                 <p role="status" className="text-muted-foreground min-h-5 text-center text-sm">

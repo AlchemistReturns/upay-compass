@@ -1,10 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { VOICE_RATE_LIMIT, VOICE_RATE_WINDOW_MINUTES } from "@compass/shared";
 import { json } from "./http.ts";
+import { takeSlot } from "./limits.ts";
 
 /**
  * What every voice function checks before it touches OpenAI: the person agreed to send their voice
- * (`voice_consent_at`), and they are not over the rate limit. Returns a Response to send back when
+ * (`voice_consent_at`), and they are not over the rate limit (a slot is taken before the call). Returns a Response to send back when
  * either check fails, or null to carry on. `client` acts as the caller, so row level security
  * applies: they can only read their own profile and audit rows.
  */
@@ -20,14 +21,8 @@ export async function guardVoice(
     .single();
   if (!profile?.voice_consent_at) return json({ error: "consent_required" }, 403);
 
-  const since = new Date(Date.now() - VOICE_RATE_WINDOW_MINUTES * 60_000).toISOString();
-  const { count } = await client
-    .from("audit_log")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .like("action", "voice_%")
-    .gte("created_at", since);
-  if ((count ?? 0) >= VOICE_RATE_LIMIT) {
+  // one shared limit across the three voice functions, taken before the call
+  if (!(await takeSlot(userId, "voice_slot", VOICE_RATE_LIMIT, VOICE_RATE_WINDOW_MINUTES))) {
     return json({ error: "rate_limited", retry_after_minutes: VOICE_RATE_WINDOW_MINUTES }, 429);
   }
   return null;

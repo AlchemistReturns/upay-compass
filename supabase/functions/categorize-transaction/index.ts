@@ -8,6 +8,11 @@ import {
 } from "@compass/shared";
 import { aiCategorize, type AiItem } from "../_shared/ai-categorize.ts";
 import { authenticate, corsHeaders, json } from "../_shared/http.ts";
+import { takeSlot } from "../_shared/limits.ts";
+
+/** At most this many calls per user in this many minutes (each can reach the model). */
+const RATE_LIMIT = 20;
+const RATE_WINDOW_MINUTES = 10;
 
 const bodySchema = z.object({ transaction_ids: z.array(z.string().uuid()).min(1).max(50) });
 
@@ -22,10 +27,14 @@ Deno.serve(async (req) => {
 
   const auth = await authenticate(req);
   if (auth instanceof Response) return auth;
-  const { client } = auth;
+  const { client, user } = auth;
 
   const body = bodySchema.safeParse(await req.json().catch(() => null));
   if (!body.success) return json({ error: "invalid_body" }, 400);
+
+  if (!(await takeSlot(user.id, "categorize_slot", RATE_LIMIT, RATE_WINDOW_MINUTES))) {
+    return json({ error: "rate_limited", retry_after_minutes: RATE_WINDOW_MINUTES }, 429);
+  }
 
   const [txRes, catRes, ruleRes] = await Promise.all([
     client

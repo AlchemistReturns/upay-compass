@@ -9,8 +9,8 @@ import { useVoiceConsent } from "./use-voice-consent";
 
 export type SpeakFailure = "consent_required" | "rate_limited" | "unavailable" | "failed";
 
-/** Fetches reading-aloud audio from the server (OpenAI text-to-speech). */
-async function fetchSpeech(text: string, lang: SpeechLang): Promise<Blob> {
+/** Fetches reading-aloud audio for a stored coach answer from the server (OpenAI text-to-speech). */
+async function fetchSpeech(messageId: string, lang: SpeechLang): Promise<Blob> {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -21,9 +21,10 @@ async function fetchSpeech(text: string, lang: SpeechLang): Promise<Blob> {
       apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify({ text, language: lang }),
+    body: JSON.stringify({ message_id: messageId, language: lang }),
   });
   if (res.status === 403) throw Object.assign(new Error("consent"), { kind: "consent_required" });
+  if (res.status === 404) throw Object.assign(new Error("gone"), { kind: "failed" });
   if (res.status === 429) throw Object.assign(new Error("rate"), { kind: "rate_limited" });
   if (res.status === 503) throw Object.assign(new Error("off"), { kind: "unavailable" });
   if (!res.ok) throw Object.assign(new Error("failed"), { kind: "failed" });
@@ -73,10 +74,11 @@ export function useSpeak(onProblem: (problem: SpeakFailure) => void) {
       if (!(await consent.ensure())) return;
       setLoadingId(id);
       try {
-        let url = cache.current.get(`${lang}:${text}`);
+        // `id` is the stored message's id, which is what the server reads aloud
+        let url = cache.current.get(`${lang}:${id}`);
         if (!url) {
-          url = URL.createObjectURL(await fetchSpeech(text, lang));
-          cache.current.set(`${lang}:${text}`, url);
+          url = URL.createObjectURL(await fetchSpeech(id, lang));
+          cache.current.set(`${lang}:${id}`, url);
         }
         const el = new Audio(url);
         el.onended = () => setServerId((cur) => (cur === id ? null : cur));

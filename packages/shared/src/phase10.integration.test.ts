@@ -105,7 +105,8 @@ describe.skipIf(!url || !anon)("phase 10: voice commands", () => {
     await a.client.from("profiles").update({ voice_consent_at: null }).eq("id", a.id);
   });
 
-  const call = (u: TestUser, body: unknown) => u.client.functions.invoke("voice-command", { body });
+  const call = (u: TestUser, body: Record<string, unknown>) =>
+    u.client.functions.invoke("voice-command", { body });
   const statusOf = (r: { error: unknown }) => (r.error as { context?: Response }).context?.status;
 
   it("refuses without a token, without consent and with a bad body", async () => {

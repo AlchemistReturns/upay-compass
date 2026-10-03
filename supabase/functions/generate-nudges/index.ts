@@ -1,19 +1,23 @@
 import {
+  RECURRING_LOOKBACK_DAYS,
   addDays,
   dayDiff,
+  detectAnomalies,
   dhakaDay,
   generateNudges,
   projectGoal,
+  type AnomalyTx,
   type NudgeInputs,
 } from "@compass/shared";
 import { adminClient, authenticate, corsHeaders, json } from "../_shared/http.ts";
 import { refreshForecast } from "../_shared/flow.ts";
 
 /**
- * Evaluates the rule-driven nudges for the caller: a category at twice its usual week, a goal behind
- * schedule, a bill due within 3 days, and a forecast dip. Each nudge has a dedupe key, so calling this
- * as often as you like never creates the same alert twice. (Budget alerts are raised by database
- * triggers as spending happens.) No language model is involved.
+ * Evaluates the rule-driven nudges for the caller: an unusual payment (statistical detector, replaces
+ * the old "category at twice its usual week" rule), a goal behind schedule, a bill due within 3 days,
+ * and a forecast dip. Each nudge has a dedupe key, so calling this as often as you like never creates
+ * the same alert twice. (Budget alerts are raised by database triggers as spending happens.) No
+ * language model is involved.
  */
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -25,14 +29,15 @@ Deno.serve(async (req) => {
 
   try {
     const today = dhakaDay(new Date());
-    const since = `${addDays(today, -62)}T00:00:00Z`;
+    // 125 days: the 90-day comparison window plus the look-back the recurring-payment detector needs.
+    const since = `${addDays(today, -(RECURRING_LOOKBACK_DAYS + 5))}T00:00:00Z`;
 
-    const [spend, goals, contribs, snapshot] = await Promise.all([
+    const [txs, goals, contribs, snapshot] = await Promise.all([
       client
         .from("transactions")
-        .select("category_id,amount,occurred_at")
-        .eq("direction", "out")
+        .select("id,amount,direction,channel,counterparty,occurred_at,category_id,categories(key)")
         .gte("occurred_at", since)
+        .order("occurred_at", { ascending: true })
         .limit(5000),
       client
         .from("goals")
@@ -44,28 +49,48 @@ Deno.serve(async (req) => {
         .gte("created_at", new Date(Date.now() - 90 * 86_400_000).toISOString()),
       refreshForecast(client, user.id),
     ]);
-    if (spend.error) throw spend.error;
+    if (txs.error) throw txs.error;
     if (goals.error) throw goals.error;
     if (contribs.error) throw contribs.error;
 
-    // This week (last 7 days) against the average week over the 8 weeks before it.
-    const weekly = new Map<number, { thisWeek: number; prior: number }>();
-    for (const t of spend.data ?? []) {
-      if (t.category_id == null) continue;
-      const age = dayDiff(dhakaDay(t.occurred_at as string), today);
-      const entry = weekly.get(t.category_id as number) ?? { thisWeek: 0, prior: 0 };
-      if (age <= 6) entry.thisWeek += Number(t.amount);
-      else entry.prior += Number(t.amount);
-      weekly.set(t.category_id as number, entry);
-    }
+    // Unusual payments in the last 7 days, compared with this person's own history.
+    const categoryIdByTx = new Map<string, number | null>();
+    const history: AnomalyTx[] = (txs.data ?? []).map((t) => {
+      categoryIdByTx.set(t.id as string, (t.category_id as number | null) ?? null);
+      const cat = t.categories as unknown as { key: string } | null;
+      return {
+        id: t.id as string,
+        direction: t.direction as "in" | "out",
+        channel: t.channel as AnomalyTx["channel"],
+        counterparty: t.counterparty as string,
+        amount: Number(t.amount),
+        occurred_at: t.occurred_at as string,
+        category: cat?.key ?? null,
+      };
+    });
+    const byId = new Map(history.map((t) => [t.id, t]));
+    const unusual = detectAnomalies(history, { candidateFrom: addDays(today, -6) }, new Date()).map(
+      (a) => ({
+        type: "unusual_transaction" as const,
+        data: {
+          transaction_id: a.txId,
+          category_id: categoryIdByTx.get(a.txId) ?? null,
+          counterparty: byId.get(a.txId)?.counterparty ?? "",
+          amount: a.amount,
+          typical: a.typical,
+          z: a.z,
+          rule: a.rule,
+          bucket: a.bucket,
+          observations: a.observations,
+        },
+        dedupe_key: `unusual:${a.txId}`,
+      }),
+    );
 
     const inputs: NudgeInputs = {
       today,
-      categoryWeekly: [...weekly].map(([categoryId, v]) => ({
-        categoryId,
-        thisWeek: Math.round(v.thisWeek),
-        avgPriorWeek: Math.round(v.prior / 8),
-      })),
+      // The flat "category at 2x its usual week" rule is replaced by the unusual-payment detector.
+      categoryWeekly: [],
       goals: (goals.data ?? []).map((g) => ({
         id: g.id as string,
         title: g.title as string,
@@ -84,7 +109,7 @@ Deno.serve(async (req) => {
       forecast: snapshot.forecast,
     };
 
-    const nudges = generateNudges(inputs);
+    const nudges = [...unusual, ...generateNudges(inputs)];
     let created = 0;
     if (nudges.length > 0) {
       const { data, error } = await adminClient()

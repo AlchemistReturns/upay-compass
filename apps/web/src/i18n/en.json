@@ -312,7 +312,8 @@
     "count_other": "{{count}} transactions",
     "amount_hint": "How much?",
     "toast_saved": "Transaction saved",
-    "toast_deleted": "Transaction deleted"
+    "toast_deleted": "Transaction deleted",
+    "unknown_merchant": "Unknown merchant"
   },
   "channel": {
     "send_money": "Send money",
@@ -397,7 +398,10 @@
     "forecast_risk_title": "Your balance may run low",
     "forecast_risk_low": "Around {{day}} it could fall to {{amount}}, below your safety buffer of {{buffer}}.",
     "forecast_risk_negative": "Around {{day}} it could go below zero, down to {{amount}}. Your safety buffer is {{buffer}}.",
-    "toast_all_read": "You're all caught up"
+    "toast_all_read": "You're all caught up",
+    "unusual_title": "Unusual payment: {{category}}",
+    "unusual_body": "You paid {{amount}} at {{name}}. A typical payment there is about {{typical}}.",
+    "unusual_body_new": "First payment to {{name}}: {{amount}} is more than twice a typical {{category}} payment of about {{typical}}."
   },
   "forecast": {
     "title": "Cashflow forecast",
@@ -543,5 +547,25 @@
     "need_budgets": "No budgets set yet, so this counts as a neutral 50.",
     "punctuality_proxy": "Measured against the date we expect each bill from your own pattern, because upay does not give us real due dates. A close estimate, not a real due-date check.",
     "how": "The score blends four parts: income consistency (30%), bill punctuality (30%), savings consistency (25%) and budget adherence (15%). It is calculated by code from your own numbers. It is for learning only: it is not a credit decision, it is not shared with any lender, and it does not affect your upay account."
+  },
+  "explain": {
+    "title": "Why this decision",
+    "how": "Explanations come from fixed rules and simple statistics on your own payments, not from an AI model.",
+    "channel_recharge": "phone recharges",
+    "channel_bill": "bill payments",
+    "channel_send_money": "money sent to a person",
+    "channel_cash_out": "cash withdrawals",
+    "cat_user_rule": "You told us {{merchant}} belongs in {{category}}, so every payment there goes to {{category}}.",
+    "cat_income_direction": "Money you receive is always counted as income.",
+    "cat_channel": "Filed under {{category}} because {{channel}} always go there.",
+    "cat_keyword": "Filed under {{category}} because “{{keyword}}” appears in the merchant name or note.",
+    "cat_channel_default": "No keyword matched, so {{channel}} are filed under {{category}}.",
+    "cat_ai": "No rule matched this payment, so the AI suggested {{category}}. If it is wrong, change it below and the app will remember.",
+    "cat_unmatched": "No rule matched and the AI was not sure, so this is filed under {{category}} for you to check. Change it below and the app will remember.",
+    "cat_rule": "An automatic rule filed this under {{category}}.",
+    "anomaly_title": "Flagged as unusual",
+    "anomaly_merchant": "You paid {{amount}}. Your {{observations}} earlier payments to {{merchant}} are typically about {{typical}}, and this is far above that (score {{z}}; we flag anything above 3.5).",
+    "anomaly_weekday": "You paid {{amount}}. Your {{observations}} earlier {{category}} payments on this day of the week are typically about {{typical}}, and this is far above that (score {{z}}; we flag anything above 3.5).",
+    "anomaly_new": "This is your first payment to {{merchant}}, and {{amount}} is more than twice a typical {{category}} payment of about {{typical}}."
   }
 }

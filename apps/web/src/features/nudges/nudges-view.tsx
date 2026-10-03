@@ -8,6 +8,7 @@ import {
   LineChart,
   OctagonAlert,
   PiggyBank,
+  ScanSearch,
   Target,
   TrendingUp,
   type LucideIcon,
@@ -31,6 +32,7 @@ const TYPE_STYLE: Record<string, { Icon: LucideIcon; tone: string }> = {
     tone: "bg-[#e3f0fb] text-[#1f5f95] dark:bg-[rgba(110,170,230,.15)] dark:text-[#9ccaf4]",
   },
   forecast_risk: { Icon: LineChart, tone: "bg-negative-soft text-destructive" },
+  unusual_transaction: { Icon: ScanSearch, tone: "bg-warning-soft text-warning-ink" },
 };
 const FALLBACK = { Icon: BellOff, tone: "bg-muted text-muted-foreground" };
 
@@ -114,7 +116,7 @@ export function NudgesView() {
                             {body}
                           </div>
                         )}
-                        <div className="text-muted-foreground/80 mt-1.5 text-xs font-medium">
+                        <div className="text-muted-foreground mt-1.5 text-xs font-medium">
                           {formatShortDate(n.created_at, i18n.language)}
                         </div>
                       </div>

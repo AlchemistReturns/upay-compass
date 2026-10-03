@@ -15,7 +15,7 @@ export type HealthInputs = {
   spend: number;
   /** Money out in essential categories over the window. */
   essentialSpend: number;
-  /** Income per 30-day bucket, newest first (up to 3). */
+  /** Income per complete calendar month (Bangladesh time), newest first (up to 3). */
   incomeBuckets: number[];
   /** Current wallet balance. */
   balance: number;
@@ -31,7 +31,7 @@ export const COMPONENT_KEYS = Object.keys(HEALTH_WEIGHTS) as ComponentKey[];
 export const SAVINGS_TARGET_RATE = 0.2;
 /** Three months of essential spending in the wallet earns full marks. */
 export const BUFFER_TARGET_MONTHS = 3;
-/** Income varying by 50% or more between 30-day periods earns zero. */
+/** Income varying by 50% or more between months earns zero. */
 export const STABILITY_ZERO_CV = 0.5;
 /** A budget 50% over its limit earns zero for that budget. */
 export const BUDGET_OVERSHOOT_ZERO = 0.5;
@@ -91,7 +91,8 @@ function savingsComponent(i: HealthInputs): Component {
   };
 }
 
-function budgetComponent(i: HealthInputs): Component {
+/** Budget adherence component; also the 'budget' measure of the readiness scorecard. */
+export function budgetComponent(i: Pick<HealthInputs, "budgets">): Component {
   if (i.budgets.length === 0) return unavailable("budget");
   const scores = i.budgets.map((b) => {
     const ratio = b.spent / b.limit;
@@ -118,7 +119,8 @@ function bufferComponent(i: HealthInputs): Component {
   };
 }
 
-function stabilityComponent(i: HealthInputs): Component {
+/** Income stability component; also the 'income consistency' measure of the readiness scorecard. */
+export function stabilityComponent(i: Pick<HealthInputs, "incomeBuckets">): Component {
   const b = i.incomeBuckets;
   if (b.length < 2) return unavailable("stability");
   const mean = b.reduce((a, c) => a + c, 0) / b.length;

@@ -31,6 +31,8 @@ import { useProfile } from "@/features/profile/use-profile";
 import { ForecastCard } from "@/features/forecast/forecast-card";
 import { StreakChip } from "@/features/gamification/streak-chip";
 import { HealthCard } from "@/features/health/health-card";
+import { ReadinessCard } from "@/features/readiness/readiness-card";
+import { NextModuleCard } from "@/features/learn/next-module-card";
 import { InstallPrompt } from "@/features/pwa/install-prompt";
 import { useAutoNudges } from "@/features/nudges/use-auto-nudges";
 import { DemoTools } from "@/features/demo/demo-tools";
@@ -357,7 +359,9 @@ export function Dashboard() {
                     style={{ "--i": 2 } as React.CSSProperties}
                   >
                     <HealthCard />
+                    <ReadinessCard />
                     <ForecastCard />
+                    <NextModuleCard />
                     <StreakChip />
                   </div>
                 </section>

@@ -22,6 +22,7 @@ const ROUTES = [
   "/score",
   "/forecast",
   "/nudges",
+  "/readiness",
   "/profile",
   // one page per learn module (keep in step with LEARN_SLUGS in packages/shared/src/learn.ts)
   ...[

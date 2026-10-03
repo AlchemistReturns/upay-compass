@@ -41,6 +41,7 @@ import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useCategories } from "@/features/categories/use-categories";
 import { useRealtimeInvalidate } from "@/features/realtime/use-realtime-invalidate";
+import { ScoreMoved } from "./score-moved";
 import { useHealthSnapshots, useRefreshHealth } from "./use-health";
 
 const STALE_AFTER_MS = 6 * 3_600_000;
@@ -250,7 +251,10 @@ export function ScoreView() {
           icon={Info}
           body={t("score.no_data")}
           action={
-            <Link href="/" className="text-primary text-sm font-semibold">
+            <Link
+              href="/"
+              className="text-primary inline-flex min-h-11 items-center text-sm font-semibold"
+            >
               {t("nav.home")}
             </Link>
           }
@@ -361,50 +365,11 @@ export function ScoreView() {
             )}
           </section>
 
-          <section aria-labelledby="moved-heading">
-            <SectionHeader id="moved-heading" title={t("score.moved")} />
-            <div className="finance-card p-4">
-              {!previous ? (
-                <p className="text-muted-foreground text-sm">{t("score.moved_first")}</p>
-              ) : changes.length === 0 ? (
-                <p className="text-muted-foreground text-sm">{t("score.moved_none")}</p>
-              ) : (
-                <ul className="divide-y divide-[rgba(13,75,76,.07)] text-sm">
-                  {changes.map((c) => (
-                    <li
-                      key={c.component}
-                      className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0"
-                    >
-                      <span
-                        className={cn(
-                          "grid size-7 shrink-0 place-items-center rounded-full",
-                          c.points > 0
-                            ? "bg-positive-soft text-positive"
-                            : "bg-negative-soft text-destructive",
-                        )}
-                      >
-                        {c.points > 0 ? (
-                          <ArrowUp className="size-3.5" aria-hidden />
-                        ) : (
-                          <ArrowDown className="size-3.5" aria-hidden />
-                        )}
-                      </span>
-                      <span className="flex-1">
-                        {t(`score.component_${c.component}`)}
-                        <span className="text-muted-foreground num ml-1.5 text-xs">
-                          {c.from} → {c.to}
-                        </span>
-                      </span>
-                      <span className="num font-bold">
-                        {c.points > 0 ? "+" : "−"}
-                        {Math.abs(c.points)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </section>
+          <ScoreMoved
+            hasPrevious={Boolean(previous)}
+            changes={changes}
+            label={(k) => t(`score.component_${k}`)}
+          />
 
           <p className="text-muted-foreground px-1 text-xs leading-5">{t("score.how")}</p>
         </div>

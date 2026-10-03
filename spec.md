@@ -203,6 +203,9 @@ goal_contributions(id uuid pk, goal_id uuid, user_id uuid, amount numeric, sourc
 
 health_scores(id uuid pk, user_id uuid, score int, breakdown jsonb, computed_at)
   -- history of snapshots; readable by the owner, written only by the compute-health-score function (service role)
+readiness_scores(id uuid pk, user_id uuid, score int, breakdown jsonb, computed_at)
+  -- credit readiness (informational only); same pattern as health_scores: owner reads, written only by
+  -- the compute-readiness-score function (service role); history of snapshots
 forecasts(id uuid pk, user_id uuid, horizon_days int, projected_balance jsonb, risk_flags jsonb,
           details jsonb,  -- safety buffer, confidence, recurring items, backtest figures
           computed_at)
@@ -237,7 +240,7 @@ create policy "own rows" on transactions for all
 
 **Column-level grants on `profiles`:** authenticated users may update only `full_name`, `language`, `income_type`, `monthly_income`, `onboarded`. `id`, `phone` and `role` are server-controlled, so users cannot grant themselves admin.
 
-**Realtime-enabled:** `transactions, budgets, goals, goal_contributions, nudges, health_scores, forecasts`.
+**Realtime-enabled:** `transactions, budgets, goals, goal_contributions, nudges, health_scores, forecasts, readiness_scores`.
 
 **RPCs (security invoker, so RLS applies):** `set_transaction_category(id, category_id)`, `dashboard_summary(from, to)`, `spend_by_category(from, to)`, `weekly_trend(weeks)` (weeks start Monday, Bangladesh time), `wallet_balance()`, `budget_progress()`, `health_inputs()`. Security definer (they move money-like state, so they check `auth.uid()` ownership themselves): `contribute_to_goal(goal, amount)`, `undo_goal_contribution(id)`, `set_roundup(enabled, goal)`.
 
@@ -264,6 +267,10 @@ create policy "own rows" on transactions for all
 | F15 | PWA: installable, cached offline read | 5 |
 | F16 | Admin aggregate insights (anonymized) | 6 |
 | F17 | Demo mode: one-click personas and seeded data | 6 |
+| F18 | Persona fairness check (does the system treat the personas alike where it should?) | 7 |
+| F19 | Unit-economics model (measured vs assumed, reproducible) | 7 |
+| F20 | Financial literacy personalizer (recommended learn modules) | 7 |
+| F21 | Responsible credit readiness scorecard (informational only) | 7 |
 
 ---
 
@@ -285,10 +292,23 @@ Each component is normalized to 0-100 over the last 90 days, then weighted. The 
 - **Savings rate:** (income - spending) / income, where transfers into the Savings category count as saving, not spending. 20% saved scores 100, linear from 0%.
 - **Budget adherence:** average over this month's budgets; within the limit scores 100, 50% over scores 0.
 - **Emergency buffer:** wallet balance divided by monthly essential spending; 3 months scores 100.
-- **Income stability:** coefficient of variation of income across three 30-day periods; 0% variation scores 100, 50% or more scores 0.
-- A component that cannot be measured yet (no income, no budgets, under two 30-day periods) counts as a neutral 50 and is labelled as such. Confidence is "low" under 15 transactions or 28 days of history, and the screen says so.
+- **Income stability:** coefficient of variation of income across the last three **complete calendar months** (Bangladesh time; months from the first transaction's month onward are skipped); 0% variation scores 100, 50% or more scores 0. (Rolling 30-day windows were used until Phase 7 and mis-scored steady monthly income; see F18.)
+- A component that cannot be measured yet (no income, no budgets, under two complete months) counts as a neutral 50 and is labelled as such. Confidence is "low" under 15 transactions or 28 days of history, and the screen says so.
 
 The screen shows "what moved your score" (change per component against the previous snapshot) and the top 3 improvement actions, ranked by how many score points each could win. Actions are data (`id` + numbers) rendered through i18n templates, never free text from a model.
+
+**Credit readiness (F21), 0-100, informational only.** A second transparent score in the same style, answering the brief's "responsible credit readiness" idea without ever acting as a lending decision. It is not a credit decision, is not shared with any lender, and does not affect the upay account; the screen says so in a persistent banner rendered before any data loads. Components (`packages/shared/src/readiness.ts`, tested with hand-computed values), each normalized to 0-100:
+
+| Component | Weight | Basis |
+|---|---|---|
+| Income consistency | 30% | the health score's income stability |
+| Bill punctuality | 30% | recurring bills from the Phase 4 detector, each payment against the expected date; within 1 day scores 100, falling in a straight line to 0 at 7 days off |
+| Savings consistency | 25% | months, of the last six that the user was present for, with any goal contribution or round-up (needs 2 observed months) |
+| Budget adherence | 15% | the health score's budget adherence |
+
+A component without enough history counts as a neutral 50 and is labelled. **Assumption, shown on the screen:** punctuality is measured against the date the detector expects each bill from the user's own pattern, because the simulated feed has no real due dates. Weekly and fortnightly bills anchor on the occurrence the others fit best, so one late payment does not make the rest look late. The screen also shows "what moved your score". Snapshots are stored only when something changed, like the health score.
+
+**Learn personalizer (F20).** `rankModules` (pure, `packages/shared/src/learn-rank.ts`, no model): unread alerts point at a module (budget alerts to budgeting, a low-balance forecast to the emergency buffer, a goal behind schedule to goal setting, overspending to needs vs wants); the weakest health components (below 70 and measurable) point at theirs (savings to saving small, buffer to the emergency fund, stability to irregular income, budget to budgeting); unfinished modules always rank above finished ones; the rest follow course order. The reason is a template key rendered through i18n.
 
 **Forecast (F10).** Detect recurring income and bills by interval and amount similarity, project 30-day balance, flag days where balance dips under a safety buffer. Seasonal-naive baseline first; model upgrade only if it measurably improves error.
 
@@ -367,7 +387,7 @@ Reference data (the 12 categories, and later the learn modules) is inserted by m
 
 ### 11.2 Phases
 
-**Status:** Phases 0 to 6 complete (Phase 6 on its branch, not yet merged). Remaining: Bangla copy review, backup video, a dry run on the real phone, and deployment.
+**Status:** Phases 0 to 7 complete (Phase 7 on its branch, not yet merged). Phases 8 and 9 (anomaly detection, explainability, voice) are planned. Remaining: Bangla copy review, backup video, a dry run on the real phone.
 
 ### Phase 0 — Foundations
 
@@ -547,6 +567,26 @@ Reference data (the 12 categories, and later the learn modules) is inserted by m
 
 ---
 
+### Phase 7 — Score Parity & Quick Wins (F18, F19, F20, F21)
+
+**Build process**
+1. **Credit readiness (F21):** migration `20261004090000_phase7_readiness.sql` (`readiness_scores`, RLS, Realtime, the `savings_activity()` function, and `reset_demo()` now clears the history); pure scoring in `packages/shared/src/readiness.ts`; Edge Function `compute-readiness-score` (and the ingest pipeline refreshes it after loading data); `/readiness` screen (hero ring, four component cards each with a sentence from counts, the punctuality assumption, "what moved your score", the standing banner) and a dashboard card. The "what moved" card was extracted into a shared component used by both scores.
+2. **Personalizer (F20):** `rankModules` with tests; on `/learn` the lime card is now the top recommendation with its reason and an "Also for you" rail shows the next two; the dashboard has a one-line "Next: ..." card.
+3. **Unit economics (F19):** `pnpm impact:model` prints a deterministic model over the 120-day persona data (fixed end day). Section A is **measured** (payments, cash-outs, auto-categorized share, bill reminders and low-balance days per persona); section B is **modelled** with every assumption in one table (8 seconds per manual entry, 5/10/20% prompt-to-behaviour change, 20% baseline 30-day retention with 5/10/15% relative uplift, a hypothetical real cash-out frequency). The simulated personas barely cash out, so the cash-out table is a sensitivity analysis and says so. `pnpm impact:model --update` writes it into `docs/pitch/impact-metrics.md` between markers and `--check` fails if the document drifts.
+4. **Fairness (F18):** `pnpm audit:fairness` signs in to the local stack, loads each persona through the real `reset-demo` function, calls the health and readiness functions and compares them with hand-labelled categorization ground truth for every merchant the personas produce. It writes `docs/pitch/fairness-report.md`. Each gap above its threshold must be explained as by design (income pattern, buffer, no budgets in the demo data) or the script fails.
+   - **It found a real bug.** Income stability used rolling 30-day windows; a student with perfectly regular monthly income (Rs 8,000 on the 5th, Rs 3,000 on the 25th) scored **9.5 / 100** because the windows split the payments unevenly, while the irregular gig worker scored 91.3. Migration `20261004100000_phase7_income_months.sql` now sums income per complete calendar month: the student scores 100 and the gig worker 61.5. This also feeds the readiness scorecard's income consistency.
+
+**Verify:** unit tests (readiness with hand-computed scores, ranking order); a browser run on a production build; the fairness script under a minute with every gap explained; the model deterministic.
+
+**Verified so far (local stack):**
+- 189 shared and 33 simulator tests, including 6 integration tests for the readiness table, the savings function and the stability fix. Typecheck, lint and format are clean; axe found no violations on the new screens.
+- Readiness browser run (10 checks): dashboard card; the "informational only" banner is on screen while the snapshot request is still delayed by 3 seconds; the four components with their sentences; the score on screen equals the stored snapshot; "what moved" lists a changed component; Bangla.
+- Personalizer browser run (7 checks): a low savings rate puts the saving module first with its reason (English and Bangla); the dashboard card agrees; an unread budget alert outranks the score-driven pick; finished modules drop out.
+- Fairness: categorization accuracy 100% for all three personas and coverage 95.9 to 98.7% (spread under 5 points); the score gaps are explained by persona design. Impact model: identical output on repeated runs.
+- Not verified: the cloud project (the new migrations are applied there only after review), and the Section 16 browser rehearsal script needs updating for the UI revamp (its sign-up steps use the old screens).
+
+---
+
 ### 11.3 Build Order and Parallelism
 
 ```
@@ -597,6 +637,8 @@ The team is growing. The table below maps the work streams; agree on who takes w
 - Health score improvement demonstrated across a simulated 3 months
 - Savings goals created and round-up savings accumulated in the demo
 - Coach answers that cite the user's actual numbers
+- Unit economics: measured figures and labelled assumptions in `docs/pitch/impact-metrics.md`, reproduced with `pnpm impact:model`
+- Fairness: `docs/pitch/fairness-report.md`, reproduced with `pnpm audit:fairness`
 
 ---
 
@@ -703,6 +745,8 @@ pnpm dev           # http://localhost:3000
 | `pnpm sb db push` | Apply pending migrations to the cloud project (Section 17.6) |
 | `pnpm sb functions deploy <name> --use-api` | Deploy an Edge Function to the cloud project |
 | `pnpm sb functions serve --env-file supabase/.env.functions` | Serve functions locally with your local secrets (needs the local stack; pulls an extra image the first time) |
+| `pnpm audit:fairness` | Persona fairness report (loads each persona into the test account through the local functions; needs the stack up and functions served; writes `docs/pitch/fairness-report.md`) |
+| `pnpm impact:model` | Print the unit-economics model; `--update` writes it into the pitch doc, `--check` fails if the doc has drifted |
 | `pnpm audit:rls` | Security audit of the local database (RLS, anon grants, security definer functions, user-writable columns); needs the local stack up |
 | `pnpm audit:bundle` | Scan the built client bundle (`pnpm build` first) for secrets |
 | `pnpm coach:eval` | Run the 16-question coach evaluation against local functions (spends a few cents of OpenAI usage; needs `EVAL_ANON_KEY` from `pnpm sb status`) |
@@ -748,6 +792,6 @@ Teammates get the Supabase **Developer** role on the project, so everyone can ru
 
 ### 17.7 Current status
 
-Phases 0 to 5 are merged (PRs #1 to #6). Phase 6 (admin insights, demo reset and cohort, accessibility pass, security hardening, pitch assets, rehearsal) is on branch `feat/phase6-admin-demo`. The web app runs against the shared cloud project by default. Remaining: native-speaker Bangla review, backup video, a dry run on the real phone, then deployment and scheduled jobs.
+Phases 0 to 6 are merged (PRs #1 to #7), plus the UI revamp (PRs #8 and #9). Phase 7 (credit readiness scorecard, learn personalizer, unit-economics model, persona fairness audit and the income-stability fix it found) is on branch `feat/phase7-readiness-quickwins`. The web app is deployed on Vercel against the shared cloud project. Remaining: native-speaker Bangla review, backup video, a dry run on the real phone; phases 8 and 9 are planned.
 
 ---

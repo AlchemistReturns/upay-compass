@@ -12,3 +12,6 @@ next-env.d.ts
 .DS_Store
 supabase/.temp
 supabase/.branches
+
+# working plan for phases 7-9 (deleted when folded into spec.md)
+phase7-9-plan.md

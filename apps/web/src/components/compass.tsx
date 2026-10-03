@@ -31,7 +31,7 @@ import { cn } from "@/lib/utils";
 export function BrandMark({ className }: { className?: string }) {
   const id = useId();
   return (
-    <svg viewBox="0 0 48 48" className={cn("size-9 shrink-0", className)} aria-hidden>
+    <svg viewBox="0 0 48 48" className={cn("size-9 shrink-0 rounded-[31%]", className)} aria-hidden>
       <defs>
         <linearGradient id={`${id}-bg`} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor="#13696a" />
@@ -40,8 +40,10 @@ export function BrandMark({ className }: { className?: string }) {
       </defs>
       <rect width="48" height="48" rx="15" fill={`url(#${id}-bg)`} />
       <circle cx="24" cy="24" r="14.5" fill="none" stroke="#c3ea8c" strokeOpacity=".28" />
-      <path d="M24 24 L34.2 13.8 L27.2 27.2 Z" fill="#c3ea8c" />
-      <path d="M24 24 L13.8 34.2 L20.8 20.8 Z" fill="#f1f8ec" fillOpacity=".9" />
+      <g className="brand-needle">
+        <path d="M24 24 L34.2 13.8 L27.2 27.2 Z" fill="#c3ea8c" />
+        <path d="M24 24 L13.8 34.2 L20.8 20.8 Z" fill="#f1f8ec" fillOpacity=".9" />
+      </g>
       <circle cx="24" cy="24" r="2.4" fill="#062f31" stroke="#c3ea8c" strokeWidth="1.4" />
     </svg>
   );
@@ -284,10 +286,10 @@ export function SectionHeader({
         <Link
           href={href}
           transitionTypes={NAV_FORWARD}
-          className="text-primary hover:bg-secondary -mr-2 inline-flex min-h-11 shrink-0 items-center gap-0.5 rounded-full px-3 text-[13px] font-semibold transition-[background-color,transform] active:scale-95"
+          className="text-primary hover:bg-secondary tap -mr-2 inline-flex min-h-11 shrink-0 items-center gap-0.5 rounded-full px-3 text-[13px] font-semibold"
         >
           {linkLabel}
-          <ChevronRight className="size-4" aria-hidden />
+          <ChevronRight className="ic-forward size-4" aria-hidden />
         </Link>
       )}
     </div>
@@ -316,8 +318,12 @@ export function EmptyState({
         className,
       )}
     >
-      <span className="bg-secondary text-primary relative grid size-16 place-items-center rounded-[1.4rem]">
-        <span className="bg-lime/50 absolute -top-1 -right-1 size-4 rounded-full" aria-hidden />
+      {/* the icon settles in a beat after the card, so the eye lands on it */}
+      <span className="bg-secondary text-primary pop-spring relative grid size-16 place-items-center rounded-[1.4rem] [animation-delay:120ms]">
+        <span
+          className="bg-lime/50 dark:bg-lime/85 pop-spring absolute -top-1 -right-1 size-4 rounded-full [animation-delay:320ms]"
+          aria-hidden
+        />
         <Icon className="size-7" strokeWidth={1.75} aria-hidden />
       </span>
       {title && <p className="text-base font-bold">{title}</p>}
@@ -332,7 +338,7 @@ export function ErrorState({ onRetry, className }: { onRetry?: () => void; class
   return (
     <div role="alert" className={cn("finance-card flex items-center gap-3 p-4 pr-3", className)}>
       <span className="icon-chip bg-negative-soft text-destructive">
-        <AlertCircle className="size-5" aria-hidden />
+        <AlertCircle className="ic-shake size-5" aria-hidden />
       </span>
       <p className="min-w-0 flex-1 text-sm font-medium">{t("common.error")}</p>
       {onRetry && (
@@ -359,19 +365,20 @@ export function LoadingCards({ hero = false, rows = 3 }: { hero?: boolean; rows?
 
 /* -------------------------------------------------------------- categories */
 
-const CATEGORY_STYLE: Record<string, { icon: LucideIcon; bg: string; fg: string }> = {
-  food: { icon: UtensilsCrossed, bg: "#fff1de", fg: "#9a5a00" },
-  transport: { icon: Bus, bg: "#e3f0fb", fg: "#1f5f95" },
-  recharge_data: { icon: Smartphone, bg: "#efe9fb", fg: "#5b3ea3" },
-  bills: { icon: ReceiptText, bg: "#e2f1f0", fg: "#0d5c5d" },
-  education: { icon: GraduationCap, bg: "#e7ebfb", fg: "#3647a0" },
-  shopping: { icon: ShoppingBag, bg: "#fbe8f1", fg: "#a2316b" },
-  family: { icon: HeartHandshake, bg: "#fde9e5", fg: "#a83c25" },
-  health: { icon: HeartPulse, bg: "#fce8e8", fg: "#b02f3c" },
-  entertainment: { icon: Clapperboard, bg: "#f2e8fa", fg: "#7a3a9e" },
-  savings: { icon: PiggyBank, bg: "#ecf8da", fg: "#3d7a1f" },
-  income: { icon: Wallet, bg: "#e2f3e1", fg: "#1f7a3c" },
-  other: { icon: Shapes, bg: "#edf1ef", fg: "#566d6c" },
+/** One hue per category; .cat-chip derives the tint and icon colour for each theme. */
+const CATEGORY_STYLE: Record<string, { icon: LucideIcon; fg: string }> = {
+  food: { icon: UtensilsCrossed, fg: "#9a5a00" },
+  transport: { icon: Bus, fg: "#1f5f95" },
+  recharge_data: { icon: Smartphone, fg: "#5b3ea3" },
+  bills: { icon: ReceiptText, fg: "#0d5c5d" },
+  education: { icon: GraduationCap, fg: "#3647a0" },
+  shopping: { icon: ShoppingBag, fg: "#a2316b" },
+  family: { icon: HeartHandshake, fg: "#a83c25" },
+  health: { icon: HeartPulse, fg: "#b02f3c" },
+  entertainment: { icon: Clapperboard, fg: "#7a3a9e" },
+  savings: { icon: PiggyBank, fg: "#3d7a1f" },
+  income: { icon: Wallet, fg: "#1f7a3c" },
+  other: { icon: Shapes, fg: "#566d6c" },
 };
 
 export function categoryStyle(key: string | null | undefined) {
@@ -388,9 +395,13 @@ export function CategoryIcon({
   className?: string;
   iconClassName?: string;
 }) {
-  const { icon: Icon, bg, fg } = categoryStyle(categoryKey);
+  const { icon: Icon, fg } = categoryStyle(categoryKey);
   return (
-    <span className={cn("icon-chip", className)} style={{ background: bg, color: fg }} aria-hidden>
+    <span
+      className={cn("icon-chip cat-chip", className)}
+      style={{ "--cat": fg } as React.CSSProperties}
+      aria-hidden
+    >
       <Icon className={cn("size-[19px]", iconClassName)} strokeWidth={1.9} />
     </span>
   );

@@ -60,7 +60,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label={t("nav.label")}
-      style={{ viewTransitionName: "tab-bar" }}
+      data-vt="tab-bar"
       className="tab-bar fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+var(--nav-gap))] z-40 px-3 transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] lg:hidden"
     >
       <div className="relative mx-auto max-w-md rounded-[1.75rem] bg-[image:var(--gradient-teal)] p-1.5 shadow-[var(--shadow-float)] ring-1 ring-white/10">

@@ -50,7 +50,7 @@ export function ReadinessCard() {
           </div>
         )}
       </div>
-      <ChevronRight className="text-muted-foreground/60 size-5 shrink-0" aria-hidden />
+      <ChevronRight className="ic-forward text-muted-foreground/60 size-5 shrink-0" aria-hidden />
     </Link>
   );
 }

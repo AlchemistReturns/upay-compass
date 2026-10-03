@@ -29,11 +29,11 @@ export function Sheet({
     <Drawer.Root open={open} onOpenChange={onOpenChange}>
       <Drawer.VirtualKeyboardProvider>
         <Drawer.Portal>
-          <Drawer.Backdrop className="fixed inset-0 z-50 min-h-dvh bg-[#062f31] opacity-[calc(0.42*(1-var(--drawer-swipe-progress)))] transition-opacity duration-[450ms] ease-[cubic-bezier(0.32,0.72,0,1)] data-ending-style:opacity-0 data-ending-style:duration-[calc(var(--drawer-swipe-strength)*400ms)] data-starting-style:opacity-0 data-swiping:duration-0 supports-[-webkit-touch-callout:none]:absolute" />
+          <Drawer.Backdrop className="fixed inset-0 z-50 min-h-dvh bg-scrim opacity-[calc(var(--scrim-opacity)*(1-var(--drawer-swipe-progress)))] transition-opacity duration-[450ms] ease-[cubic-bezier(0.32,0.72,0,1)] data-ending-style:opacity-0 data-ending-style:duration-[calc(var(--drawer-swipe-strength)*400ms)] data-starting-style:opacity-0 data-swiping:duration-0 supports-[-webkit-touch-callout:none]:absolute" />
           <Drawer.Viewport className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6">
             <Drawer.Popup
               className={cn(
-                "bg-card text-card-foreground relative flex max-h-[calc(100dvh-1.5rem)] w-full flex-col overflow-hidden rounded-t-[2rem] shadow-[0_-12px_48px_-12px_rgba(6,47,49,.35)] outline-none sm:max-w-lg sm:rounded-[2rem] sm:shadow-[0_30px_80px_-20px_rgba(6,47,49,.5)]",
+                "bg-elevated text-card-foreground relative flex max-h-[calc(100dvh-1.5rem)] w-full flex-col overflow-hidden rounded-t-[2rem] shadow-[0_-12px_48px_-12px_rgba(6,47,49,.35)] outline-none sm:max-w-lg sm:rounded-[2rem] sm:shadow-[var(--shadow-pop)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,.08),0_-20px_60px_-10px_rgba(0,0,0,.8)]",
                 "[transform:translateY(var(--drawer-swipe-movement-y))] transition-transform duration-[450ms] ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform data-swiping:select-none",
                 "data-starting-style:[transform:translateY(100%)] data-ending-style:[transform:translateY(100%)] data-ending-style:duration-[calc(var(--drawer-swipe-strength)*400ms)]",
                 "sm:data-starting-style:[transform:translateY(2.5rem)_scale(.97)] sm:data-starting-style:opacity-0 sm:data-ending-style:[transform:translateY(2.5rem)_scale(.97)] sm:data-ending-style:opacity-0 sm:transition-[transform,opacity]",
@@ -58,9 +58,9 @@ export function Sheet({
                   </div>
                   <Drawer.Close
                     aria-label={t("common.close")}
-                    className="bg-muted text-muted-foreground hover:text-foreground -mr-1 grid size-11 shrink-0 place-items-center rounded-full transition-colors"
+                    className="bg-muted text-muted-foreground hover:text-foreground tap -mr-1 grid size-11 shrink-0 place-items-center rounded-full"
                   >
-                    <X className="size-[18px]" aria-hidden />
+                    <X className="ic-close size-[18px]" aria-hidden />
                   </Drawer.Close>
                 </div>
               </div>

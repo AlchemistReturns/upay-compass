@@ -34,7 +34,6 @@ import {
   useCountUp,
 } from "@/components/compass";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { ScoreMoved } from "@/features/health/score-moved";
 import { scoreBand } from "@/features/health/score-view";
 import { useRealtimeInvalidate } from "@/features/realtime/use-realtime-invalidate";
@@ -155,9 +154,10 @@ function Hero({
             size="sm"
             className="mt-4"
             disabled={refreshing}
+            aria-busy={refreshing || undefined}
             onClick={onRefresh}
           >
-            <RefreshCw className={cn(refreshing && "animate-spin")} aria-hidden />
+            <RefreshCw className="ic-refresh" aria-hidden />
             {refreshing ? t("common.loading") : t("score.refresh")}
           </Button>
         </div>

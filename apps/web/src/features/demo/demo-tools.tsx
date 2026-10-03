@@ -59,7 +59,7 @@ export function DemoTools() {
 
   return (
     <section
-      className="space-y-3.5 rounded-[1.75rem] border border-dashed border-[rgba(13,75,76,.18)] bg-white/50 p-4 sm:p-5"
+      className="space-y-3.5 rounded-[1.75rem] border border-dashed border-hairline-strong bg-white/50 p-4 dark:bg-white/[.025] sm:p-5"
       aria-label={t("demo.tools_title")}
     >
       <div className="flex items-start gap-3">
@@ -81,7 +81,7 @@ export function DemoTools() {
               type="button"
               disabled={reset.isPending || !online}
               onClick={() => void startOver(p)}
-              className="bg-card hover:border-primary/30 flex min-h-[4.5rem] flex-col items-center justify-center gap-1.5 rounded-2xl border border-[rgba(13,75,76,.1)] px-2 text-center text-[12px] leading-tight font-semibold transition-[border-color,transform] active:scale-95 disabled:opacity-50"
+              className="bg-card hover:border-primary/30 flex min-h-[4.5rem] flex-col items-center justify-center gap-1.5 rounded-2xl border border-hairline-strong px-2 text-center text-[12px] leading-tight font-semibold tap disabled:opacity-50"
             >
               <span className="relative">
                 <Icon className="text-primary size-5" aria-hidden />
@@ -89,7 +89,7 @@ export function DemoTools() {
                   {busy ? (
                     <Loader2 className="text-muted-foreground size-3 animate-spin" aria-hidden />
                   ) : (
-                    <RotateCcw className="text-muted-foreground size-3" aria-hidden />
+                    <RotateCcw className="ic-refresh text-muted-foreground size-3" aria-hidden />
                   )}
                 </span>
               </span>
@@ -111,11 +111,11 @@ export function DemoTools() {
       {profile.data?.role === "admin" && (
         <Link
           href="/admin"
-          className="bg-card hover:bg-secondary flex min-h-12 items-center gap-2.5 rounded-2xl border border-[rgba(13,75,76,.1)] px-3.5 text-sm font-semibold transition-colors"
+          className="bg-card hover:bg-secondary flex min-h-12 items-center gap-2.5 rounded-2xl border border-hairline-strong px-3.5 text-sm font-semibold transition-colors"
         >
           <ShieldCheck className="text-primary size-[18px]" aria-hidden />
           <span className="flex-1">{t("admin.open")}</span>
-          <ChevronRight className="text-muted-foreground size-4" aria-hidden />
+          <ChevronRight className="ic-forward text-muted-foreground size-4" aria-hidden />
         </Link>
       )}
     </section>

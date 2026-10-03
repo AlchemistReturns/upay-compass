@@ -43,7 +43,7 @@ export function CategoryBars({ data }: { data: CategorySpend[] }) {
             {data.map((r) => (
               <tr
                 key={r.category_id ?? "none"}
-                className="border-t border-[rgba(13,75,76,.07)] first:border-t-0"
+                className="border-t border-hairline first:border-t-0"
               >
                 <td className="py-2">{name(r.category_id)}</td>
                 <td className="num py-2 text-right">{formatMoney(r.total, lang)}</td>

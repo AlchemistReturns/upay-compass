@@ -43,13 +43,13 @@ const TONE_STYLE: Record<Tone, { card: string; chip: string; Icon: typeof Info }
   neutral: { card: "finance-card", chip: "bg-secondary text-primary", Icon: Info },
   good: { card: "surface-lime", chip: "bg-brand-ink text-lime", Icon: CircleCheck },
   warn: {
-    card: "bg-warning-soft border border-[#f3d9a4]",
+    card: "bg-warning-soft border border-[color-mix(in_oklab,var(--status-warning)_32%,transparent)]",
     chip: "bg-[#f7c35c] text-[#4d2f00]",
     Icon: TriangleAlert,
   },
   critical: {
-    card: "bg-negative-soft border border-[#f3c6ba]",
-    chip: "bg-destructive text-white",
+    card: "bg-negative-soft border border-[color-mix(in_oklab,var(--destructive)_28%,transparent)]",
+    chip: "bg-destructive text-white dark:text-[#3d0f05]",
     Icon: OctagonAlert,
   },
 };
@@ -142,9 +142,10 @@ export function ForecastView() {
               aria-label={t("score.refresh")}
               title={t("score.refresh")}
               disabled={refreshing}
+              aria-busy={refreshing || undefined}
               onClick={() => void run()}
             >
-              <RefreshCw className={cn("size-[18px]", refreshing && "animate-spin")} aria-hidden />
+              <RefreshCw className="ic-refresh size-[18px]" aria-hidden />
             </button>
           )
         }
@@ -217,7 +218,7 @@ export function ForecastView() {
                           <h3 className="text-muted-foreground px-2 pt-1.5 pb-1 text-xs font-bold tracking-wide uppercase">
                             {title}
                           </h3>
-                          <ul className="divide-y divide-[rgba(13,75,76,.07)]">
+                          <ul className="divide-y divide-hairline">
                             {list.map((r) => (
                               <li
                                 key={`${r.counterparty}-${r.nextDay}`}

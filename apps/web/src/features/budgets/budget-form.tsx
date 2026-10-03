@@ -117,15 +117,17 @@ export function BudgetForm({
                   setCategoryId(c.id);
                 }}
                 className={cn(
-                  "flex min-h-[5.25rem] flex-col items-center justify-center gap-1.5 rounded-2xl border px-1.5 py-2.5 text-center text-[12px] leading-tight font-semibold transition-[border-color,background-color,box-shadow,transform] active:scale-95 disabled:cursor-default",
+                  "flex min-h-[5.25rem] flex-col items-center justify-center gap-1.5 rounded-2xl border px-1.5 py-2.5 text-center text-[12px] leading-tight font-semibold tap disabled:cursor-default",
                   selected
                     ? "border-primary bg-secondary shadow-[0_0_0_3px_rgba(195,234,140,.7)]"
-                    : "bg-card border-[rgba(13,75,76,.1)] hover:border-primary/30",
+                    : "bg-card border-hairline-strong hover:border-primary/30",
                 )}
               >
                 <CategoryIcon
+                  // re-keyed so the chosen category's icon springs once
+                  key={selected ? "on" : "off"}
                   categoryKey={c.key}
-                  className="size-9 rounded-xl"
+                  className={cn("size-9 rounded-xl", selected && "pop-spring")}
                   iconClassName="size-4"
                 />
                 <span className="line-clamp-2">{name(c)}</span>

@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { LANGUAGE_STORAGE_KEY, type Language } from "@/i18n";
 import { useAuth } from "@/features/auth/auth-provider";
 import { useUpdateProfile } from "@/features/profile/use-profile";
+import { haptic } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 
 /** Switch the app language: UI now, the saved choice on this device, and the profile once signed in. */
@@ -26,7 +27,8 @@ export function useSetLanguage() {
 
 /**
  * Shows the short code of the language it switches to (EN / বাং), so it is the same size in both
- * languages; the full name is in the accessible label. Default look is a round glass button.
+ * languages; the full name is in the accessible label. On a switch the code flips over like a
+ * card turning, so the change is felt, not just seen. Default look is a round glass button.
  */
 export function LanguageToggle({ className }: { className?: string }) {
   const { t, i18n } = useTranslation();
@@ -37,18 +39,21 @@ export function LanguageToggle({ className }: { className?: string }) {
   return (
     <button
       type="button"
-      onClick={() => setLanguage(next)}
+      onClick={() => {
+        haptic("light");
+        setLanguage(next);
+      }}
       aria-label={label}
       title={label}
       lang={next}
       className={cn(
-        "glass hover:text-primary flex size-11 items-center justify-center rounded-full transition-colors",
-        className,
-        "text-[13px] leading-none font-bold",
+        "flex items-center justify-center",
+        className ?? "glass tap hover:text-primary size-11 rounded-full",
+        "text-[13px] leading-none font-bold [perspective:200px]",
       )}
     >
-      {/* keyed, so the label crossfades when the language flips */}
-      <span key={next} className="pop">
+      {/* keyed, so the label turns over when the language flips */}
+      <span key={next} className="lang-flip inline-block">
         {t(`language.short_${next}`)}
       </span>
     </button>

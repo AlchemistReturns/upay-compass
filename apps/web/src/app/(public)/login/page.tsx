@@ -38,18 +38,19 @@ export default function LoginPage() {
       {/* Brand panel: a compact header on phones, the full story from md up */}
       <div className="auth-showcase relative flex flex-col justify-between gap-6 px-6 pt-[calc(env(safe-area-inset-top)+1.25rem)] pb-14 sm:p-10 md:pb-10 lg:p-12">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+          <div className="brand-intro flex items-center gap-3">
             <BrandMark className="size-11 shadow-[0_8px_20px_-8px_rgba(0,0,0,.5)]" />
             <span className="text-lg font-bold tracking-tight">
               upay <span className="text-on-dark-muted font-medium">Compass</span>
             </span>
           </div>
-          <LanguageToggle className="text-on-dark border-white/15 bg-white/10 shadow-none hover:bg-white/18 md:hidden" />
+          <LanguageToggle className="text-on-dark tap size-11 rounded-full border border-white/15 bg-white/10 backdrop-blur-md hover:bg-white/18 md:hidden" />
         </div>
 
         <div className="rise max-w-lg md:my-10">
           <div className="text-lime mb-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/8 px-3 py-1.5 text-xs font-semibold">
-            <Sparkles className="size-3.5" aria-hidden /> {t("login.hero_tag")}
+            <Sparkles className="ic-spin-in size-3.5 [animation-delay:.5s]" aria-hidden />{" "}
+            {t("login.hero_tag")}
           </div>
           <h1 className="text-[1.875rem] leading-[1.12] font-extrabold tracking-[-0.03em] text-balance sm:text-4xl lg:text-[3.25rem] lg:leading-[1.05]">
             {t("login.hero_title")}
@@ -65,7 +66,7 @@ export default function LoginPage() {
                 style={{ "--i": i + 2 } as React.CSSProperties}
               >
                 <span className="bg-lime text-brand-ink grid size-6 shrink-0 place-items-center rounded-full">
-                  <Check className="size-3.5" strokeWidth={3} aria-hidden />
+                  <Check className="ic-draw size-3.5" strokeWidth={3} aria-hidden />
                 </span>
                 {item}
               </li>

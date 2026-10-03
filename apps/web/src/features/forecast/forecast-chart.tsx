@@ -109,7 +109,7 @@ export function ForecastChart({ snapshot }: { snapshot: ForecastSnapshot }) {
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.day} className="border-t border-[rgba(13,75,76,.07)]">
+                <tr key={r.day} className="border-t border-hairline">
                   <td className="py-2">
                     {r.label}
                     {r.risk && (
@@ -187,12 +187,17 @@ export function ForecastChart({ snapshot }: { snapshot: ForecastSnapshot }) {
                       cy={cy}
                       r={4}
                       fill="var(--status-critical)"
-                      stroke="#fff"
+                      stroke="var(--card)"
                       strokeWidth={2}
                     />
                   );
                 }}
-                activeDot={{ r: 5, stroke: "#fff", strokeWidth: 2, fill: "var(--chart-expense)" }}
+                activeDot={{
+                  r: 5,
+                  stroke: "var(--card)",
+                  strokeWidth: 2,
+                  fill: "var(--chart-expense)",
+                }}
               />
             </AreaChart>
           </ResponsiveContainer>

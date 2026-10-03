@@ -36,16 +36,19 @@ export function Switch({
       <span
         className={cn(
           "absolute inset-x-0 h-8 rounded-full transition-colors duration-300",
-          checked ? "bg-primary" : "bg-[#cfdcd3]",
+          checked ? "bg-primary" : "bg-switch-off",
         )}
       />
       <span
         className={cn(
-          "absolute top-1/2 grid size-7 -translate-y-1/2 place-items-center rounded-full bg-white shadow-[0_2px_6px_rgba(6,47,49,.25)] transition-[left] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
-          checked ? "left-[calc(100%-1.875rem)]" : "left-0.5",
+          // the thumb stretches while pressed, toward where it will go, like the iOS switch
+          "absolute top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-white shadow-[0_2px_6px_rgba(6,47,49,.25)] transition-[left,width] duration-500 ease-[var(--ease-spring)] group-active:w-[2.125rem] group-active:duration-200",
+          checked
+            ? "left-[calc(100%-1.875rem)] group-active:left-[calc(100%-2.25rem)]"
+            : "left-0.5",
         )}
       >
-        {checked && <span className="bg-lime size-2 rounded-full" />}
+        {checked && <span className="bg-lime pop-spring size-2 rounded-full dark:bg-[#4f9e3a]" />}
       </span>
     </button>
   );

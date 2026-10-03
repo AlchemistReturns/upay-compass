@@ -217,7 +217,9 @@ export function buildCoachContext(
 
 /** The language to answer in: whatever script the user wrote in, else their app language. */
 export function detectReplyLanguage(message: string, fallback: "bn" | "en"): "bn" | "en" {
-  if (/[ঀ-৿]/.test(message)) return "bn";
+  // Bangla letters only: the taka sign (U+09F3) is in the same Unicode block but is not a letter,
+  // and an English question that mentions an amount ("Can I afford ৳5,000?") is still English.
+  if (/[ঀ-ৱ]/.test(message)) return "bn";
   if (/[A-Za-z]{2,}/.test(message)) return "en";
   return fallback;
 }

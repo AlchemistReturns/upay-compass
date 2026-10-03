@@ -142,6 +142,14 @@ describe("detectReplyLanguage", () => {
     expect(detectReplyLanguage("5000?", "bn")).toBe("bn");
     expect(detectReplyLanguage("5000?", "en")).toBe("en");
   });
+
+  it("the taka sign alone does not make a message Bangla", () => {
+    // the app's own suggestion chip is "Can I afford ৳5,000 for a phone?"
+    expect(detectReplyLanguage("Can I afford ৳5,000 for a phone?", "bn")).toBe("en");
+    expect(detectReplyLanguage("৳5,000", "en")).toBe("en");
+    expect(detectReplyLanguage("৳5,000", "bn")).toBe("bn"); // no letters: the app language decides
+    expect(detectReplyLanguage("৳5,000 কিনতে পারব?", "en")).toBe("bn");
+  });
 });
 
 describe("week comparison in the coach context", () => {

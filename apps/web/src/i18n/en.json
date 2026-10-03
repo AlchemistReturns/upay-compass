@@ -152,7 +152,19 @@
     "context_line": "Uses your last 30 days of totals. Never your name, phone or merchants.",
     "suggest_prev": "Previous suggestions",
     "suggest_next": "More suggestions",
-    "toast_cleared": "Chat cleared"
+    "toast_cleared": "Chat cleared",
+    "listen": "Listen",
+    "stop_listening": "Stop",
+    "mic_start": "Speak your question",
+    "mic_stop": "Stop listening",
+    "listening": "Listening…",
+    "voice_privacy": "Voice input uses your browser's speech service, which may send your voice to its provider. Answers are read aloud on your device.",
+    "voice_problem_denied": "The microphone is blocked. Allow it in your browser settings to speak a question.",
+    "voice_problem_no_mic": "No microphone was found.",
+    "voice_problem_no_speech": "We did not hear anything. Try again.",
+    "voice_problem_unsupported_language": "Your browser cannot recognise speech in this language. Type your question instead.",
+    "voice_problem_network": "Voice input needs an internet connection.",
+    "voice_problem_other": "Voice input did not work. Type your question instead."
   },
   "learn": {
     "title": "Learn",

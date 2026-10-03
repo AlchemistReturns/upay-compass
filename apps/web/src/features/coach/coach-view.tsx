@@ -349,7 +349,16 @@ export function CoachView() {
   const stt = useSpeechRecognition({
     lang: appLang,
     onTranscript: (spoken) => setText(spoken),
-    onProblem: (problem) => toast.error(t(`coach.voice_problem_${problem}`)),
+    onProblem: (problem) =>
+      toast.error(
+        t(
+          // "network" from the browser usually means its speech service could not be reached, not
+          // that the device is offline; only say "no internet" when the browser agrees
+          problem === "network" && navigator.onLine
+            ? "coach.voice_problem_service"
+            : `coach.voice_problem_${problem}`,
+        ),
+      ),
   });
 
   async function clearChat() {

@@ -164,7 +164,8 @@
     "voice_problem_no_speech": "We did not hear anything. Try again.",
     "voice_problem_unsupported_language": "Your browser cannot recognise speech in this language. Type your question instead.",
     "voice_problem_network": "Voice input needs an internet connection.",
-    "voice_problem_other": "Voice input did not work. Type your question instead."
+    "voice_problem_other": "Voice input did not work. Type your question instead.",
+    "voice_problem_service": "Your browser's speech service could not be reached, even though you are online. A VPN, firewall, ad blocker or privacy browser (such as Brave) can block it. Try Chrome on your phone, or type your question."
   },
   "learn": {
     "title": "Learn",

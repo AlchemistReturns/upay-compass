@@ -8,6 +8,7 @@ import {
   LineChart,
   OctagonAlert,
   PiggyBank,
+  ScanSearch,
   Target,
   TrendingUp,
   type LucideIcon,
@@ -28,6 +29,7 @@ const TYPE_STYLE: Record<string, { Icon: LucideIcon; tone: string }> = {
   goal_behind: { Icon: Target, tone: "bg-secondary text-primary" },
   bill_due: { Icon: CalendarClock, tone: "bg-[#e3f0fb] text-[#1f5f95]" },
   forecast_risk: { Icon: LineChart, tone: "bg-negative-soft text-destructive" },
+  unusual_transaction: { Icon: ScanSearch, tone: "bg-warning-soft text-warning-ink" },
 };
 const FALLBACK = { Icon: BellOff, tone: "bg-muted text-muted-foreground" };
 

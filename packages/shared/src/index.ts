@@ -16,3 +16,4 @@ export * from "./coach-fallback.ts";
 export * from "./learn.ts";
 export * from "./readiness.ts";
 export * from "./learn-rank.ts";
+export * from "./anomaly.ts";

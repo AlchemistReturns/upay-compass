@@ -85,6 +85,21 @@ export function useNudgeText() {
           href: "/forecast",
         };
       }
+      case "unusual_transaction": {
+        const first = d.rule === "new_counterparty";
+        return {
+          title: t("nudges.unusual_title", { category }),
+          body: t(first ? "nudges.unusual_body_new" : "nudges.unusual_body", {
+            amount: money(d.amount),
+            typical: money(d.typical),
+            name: String(d.counterparty ?? ""),
+          }),
+          href:
+            typeof d.transaction_id === "string"
+              ? `/transactions/${d.transaction_id}`
+              : "/transactions",
+        };
+      }
       default:
         return { title: t("nudges.generic_title"), body: "", href: "/" };
     }

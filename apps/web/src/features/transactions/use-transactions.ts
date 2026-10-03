@@ -97,6 +97,7 @@ export function useAddTransaction() {
   const { userId } = useAuth();
   const { data: categories } = useCategories();
   const invalidate = useInvalidateMoney();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (input: TransactionInput) => {
@@ -138,7 +139,13 @@ export function useAddTransaction() {
       }
       return data.id as string;
     },
-    onSuccess: invalidate,
+    onSuccess: async () => {
+      await invalidate();
+      // Best effort: check the new payment for being unusual, so the alert shows up straight away.
+      void supabase.functions
+        .invoke("generate-nudges", { body: {} })
+        .finally(() => queryClient.invalidateQueries({ queryKey: ["nudges", userId] }));
+    },
   });
 }
 

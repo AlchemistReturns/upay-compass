@@ -397,7 +397,10 @@
     "forecast_risk_title": "Your balance may run low",
     "forecast_risk_low": "Around {{day}} it could fall to {{amount}}, below your safety buffer of {{buffer}}.",
     "forecast_risk_negative": "Around {{day}} it could go below zero, down to {{amount}}. Your safety buffer is {{buffer}}.",
-    "toast_all_read": "You're all caught up"
+    "toast_all_read": "You're all caught up",
+    "unusual_title": "Unusual payment: {{category}}",
+    "unusual_body": "You paid {{amount}} at {{name}}. A typical payment there is about {{typical}}.",
+    "unusual_body_new": "First payment to {{name}}: {{amount}} is more than twice a typical {{category}} payment of about {{typical}}."
   },
   "forecast": {
     "title": "Cashflow forecast",

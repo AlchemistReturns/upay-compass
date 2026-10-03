@@ -4,7 +4,13 @@ import type { GoalProjection } from "./goals.ts";
 import type { RecurringItem } from "./recurring.ts";
 
 /** Rule-driven nudges (no model involved). Each carries a dedupe key so it fires once. */
-export type NudgeType = "overspend" | "goal_behind" | "bill_due" | "forecast_risk";
+export type NudgeType =
+  | "overspend"
+  | "goal_behind"
+  | "bill_due"
+  | "forecast_risk"
+  /** raised by the unusual-payment detector (anomaly.ts), not by generateNudges */
+  | "unusual_transaction";
 
 export type GeneratedNudge = {
   type: NudgeType;

@@ -397,7 +397,10 @@
     "forecast_risk_title": "আপনার ব্যালেন্স কমে যেতে পারে",
     "forecast_risk_low": "{{day}} নাগাদ তা {{amount}} পর্যন্ত নামতে পারে, যা নিরাপদ সীমা {{buffer}} এর নিচে।",
     "forecast_risk_negative": "{{day}} নাগাদ তা শূন্যের নিচে নামতে পারে, {{amount}} পর্যন্ত। আপনার নিরাপদ সীমা {{buffer}}।",
-    "toast_all_read": "সব সতর্কতা পড়া হয়েছে"
+    "toast_all_read": "সব সতর্কতা পড়া হয়েছে",
+    "unusual_title": "অস্বাভাবিক পেমেন্ট: {{category}}",
+    "unusual_body": "আপনি {{name}}-কে {{amount}} দিয়েছেন। সেখানে সাধারণত প্রায় {{typical}} লাগে।",
+    "unusual_body_new": "{{name}}-কে প্রথমবার পেমেন্ট: {{amount}}, যা একটি সাধারণ {{category}} পেমেন্টের (প্রায় {{typical}}) দ্বিগুণের বেশি।"
   },
   "forecast": {
     "title": "নগদ প্রবাহের পূর্বাভাস",

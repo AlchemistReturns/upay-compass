@@ -55,6 +55,15 @@
   --color-negative-soft: var(--negative-soft);
   --color-warning-soft: var(--warning-soft);
   --color-warning-ink: var(--warning-ink);
+  --color-hairline: var(--hairline);
+  --color-hairline-strong: var(--hairline-strong);
+  --color-field: var(--field);
+  --color-segment: var(--segment);
+  --color-row-hover: var(--row-hover);
+  --color-elevated: var(--elevated);
+  --color-scrim: var(--scrim);
+  --color-switch-off: var(--switch-off);
+  --color-thumb: var(--thumb);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -64,6 +73,120 @@
   --radius-4xl: calc(var(--radius) * 2.6);
   --ease-out-soft: cubic-bezier(0.2, 0.7, 0.2, 1);
   --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+  /*
+   * Springs, sampled from a damped harmonic oscillator. Snappy settles with a hint of overshoot
+   * (presses, toggles); bouncy overshoots ~12% (selection, success); wobbly is for the rare
+   * celebratory moment. Older browsers that lack linear() fall back to the transition default.
+   */
+  --ease-spring: linear(
+    0,
+    0.0835,
+    0.2583,
+    0.4499,
+    0.6209,
+    0.757,
+    0.8565,
+    0.9243,
+    0.9672,
+    0.992,
+    1.0048,
+    1.0101,
+    1.0111,
+    1.0099,
+    1.0079,
+    1.0057,
+    1.0039,
+    1.0025,
+    1.0014,
+    1.0007,
+    1
+  );
+  --ease-bounce: linear(
+    0,
+    0.0568,
+    0.1953,
+    0.3741,
+    0.5609,
+    0.7333,
+    0.8775,
+    0.9875,
+    1.0627,
+    1.1066,
+    1.1248,
+    1.1237,
+    1.1098,
+    1.0888,
+    1.0652,
+    1.0424,
+    1.0226,
+    1.0068,
+    0.9955,
+    0.9884,
+    0.9848,
+    0.9841,
+    0.9852,
+    0.9876,
+    0.9905,
+    0.9935,
+    0.9962,
+    0.9984,
+    1,
+    1.0012,
+    1.0018,
+    1.002,
+    1.0019,
+    1.0017,
+    1.0014,
+    1.001,
+    1
+  );
+  --ease-wobble: linear(
+    0,
+    0.0598,
+    0.2125,
+    0.4184,
+    0.641,
+    0.8509,
+    1.0271,
+    1.1577,
+    1.2388,
+    1.2729,
+    1.2677,
+    1.2331,
+    1.1802,
+    1.1195,
+    1.0598,
+    1.0077,
+    0.9673,
+    0.9404,
+    0.9268,
+    0.9248,
+    0.9319,
+    0.9451,
+    0.9614,
+    0.9781,
+    0.9933,
+    1.0056,
+    1.0143,
+    1.0193,
+    1.0208,
+    1.0196,
+    1.0165,
+    1.0122,
+    1.0076,
+    1.0032,
+    0.9995,
+    0.9968,
+    0.9951,
+    0.9943,
+    0.9944,
+    0.9951,
+    0.9962,
+    0.9975,
+    0.9987,
+    0.9998,
+    1
+  );
 }
 
 /*
@@ -120,6 +243,44 @@
   --shadow-card-hover: 0 1px 2px rgba(6, 47, 49, 0.05), 0 18px 36px -16px rgba(6, 47, 49, 0.22);
   --shadow-raised: 0 28px 50px -26px rgba(6, 47, 49, 0.6), 0 2px 6px rgba(6, 47, 49, 0.12);
   --shadow-float: 0 18px 40px -12px rgba(6, 47, 49, 0.45), 0 2px 8px rgba(6, 47, 49, 0.12);
+  --shadow-pop: 0 24px 60px -20px rgba(6, 47, 49, 0.55);
+  --shadow-thumb: 0 1px 2px rgba(6, 47, 49, 0.1), 0 4px 12px -4px rgba(6, 47, 49, 0.22);
+
+  /* hairlines, fields and other quiet surfaces that change character between themes */
+  --hairline: rgba(13, 75, 76, 0.07);
+  --hairline-strong: rgba(13, 75, 76, 0.12);
+  --field: #fbfdfa;
+  --segment: #e3ece4;
+  --row-hover: #f6faf4;
+  --elevated: #ffffff;
+  --scrim: #062f31;
+  --scrim-opacity: 0.42;
+  --switch-off: #cfdcd3;
+  --thumb: #ffffff;
+  --skeleton: #e2ebe3;
+  --skeleton-sheen: rgba(255, 255, 255, 0.55);
+  --card-sheen: none;
+
+  /*
+   * Liquid glass: a thin, bright material that lets the page through, with a specular rim that
+   * is brighter where the light hits (top left) and a soft inner glow along the top edge.
+   */
+  --liquid-bg: rgba(255, 255, 255, 0.58);
+  --liquid-bg-strong: rgba(255, 255, 255, 0.82);
+  --liquid-rim: linear-gradient(
+    150deg,
+    rgba(255, 255, 255, 0.98) 0%,
+    rgba(255, 255, 255, 0.35) 30%,
+    rgba(255, 255, 255, 0) 52%,
+    rgba(255, 255, 255, 0.55) 100%
+  );
+  --liquid-glow: radial-gradient(120% 70% at 50% 0%, rgba(255, 255, 255, 0.7), transparent 62%);
+  --liquid-shadow:
+    0 0 0 0.5px rgba(13, 75, 76, 0.1), 0 1px 2px rgba(6, 47, 49, 0.06),
+    0 10px 28px -14px rgba(6, 47, 49, 0.3);
+  --liquid-divider: rgba(13, 75, 76, 0.1);
+  --liquid-press: rgba(13, 75, 76, 0.07);
+  --bar-tint: rgba(241, 246, 238, 0.82);
 
   --chart-1: #0d4b4c;
   --chart-2: #79bf57;
@@ -157,6 +318,121 @@
   --status-good: #2c8f45;
   --status-warning: #e19a17;
   --status-critical: #cc4a30;
+}
+
+/*
+ * Dark: not an inversion. A near-black field with a whisper of teal, surfaces that step up in
+ * lightness as they come forward (page → card → sheet), hairlines instead of shadows for
+ * separation, and accents lifted so they glow rather than shout. Lime stays the one bright note.
+ */
+.dark {
+  color-scheme: dark;
+  --background: #060d0e;
+  --foreground: #e7f1ec;
+  --card: #0f1b1c;
+  --card-foreground: #e7f1ec;
+  --popover: #152425;
+  --popover-foreground: #e7f1ec;
+  --primary: #93d8c2;
+  --primary-foreground: #032628;
+  --secondary: #142829;
+  --secondary-foreground: #bfe8d7;
+  --muted: #142223;
+  /* 6.6:1 on cards, 7.4:1 on the page */
+  --muted-foreground: #8fa6a1;
+  --accent: #142829;
+  --accent-foreground: #bfe8d7;
+  --destructive: #ff8068;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.11);
+  --ring: #a6db78;
+
+  --brand-ink: #062f31;
+  --brand-deep: #0d4b4c;
+  --lime: #c3ea8c;
+  --lime-soft: rgba(195, 234, 140, 0.14);
+  --leaf: #8fd06b;
+  --mint: #142829;
+  --on-dark: #f1f8ec;
+  --on-dark-muted: #a8c7c1;
+
+  --reward: #f4b24c;
+  --reward-soft: rgba(244, 178, 76, 0.14);
+  --reward-ink: #ffd085;
+  --positive: #7fd896;
+  --positive-soft: rgba(127, 216, 150, 0.13);
+  --negative-soft: rgba(255, 128, 104, 0.14);
+  --warning-soft: rgba(244, 178, 76, 0.13);
+  --warning-ink: #ffd27c;
+
+  --gradient-teal:
+    radial-gradient(120% 90% at 100% 0%, rgba(195, 234, 140, 0.13) 0%, transparent 46%),
+    linear-gradient(155deg, #115a5b 0%, #0b3f41 52%, #072c2e 100%);
+  --gradient-lime: linear-gradient(135deg, #d2f0a6 0%, #addb72 100%);
+
+  --shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.035), 0 12px 30px -18px rgba(0, 0, 0, 0.8);
+  --shadow-card-hover:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 18px 40px -18px rgba(0, 0, 0, 0.9);
+  --shadow-raised: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 30px 60px -30px rgba(0, 0, 0, 0.9);
+  --shadow-float: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 20px 44px -12px rgba(0, 0, 0, 0.75);
+  --shadow-pop: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 30px 70px -20px rgba(0, 0, 0, 0.85);
+  --shadow-thumb: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 12px -4px rgba(0, 0, 0, 0.5);
+
+  --hairline: rgba(255, 255, 255, 0.07);
+  --hairline-strong: rgba(255, 255, 255, 0.12);
+  --field: rgba(255, 255, 255, 0.045);
+  --segment: rgba(255, 255, 255, 0.07);
+  --row-hover: rgba(255, 255, 255, 0.035);
+  --elevated: #152425;
+  --scrim: #000000;
+  --scrim-opacity: 0.6;
+  --switch-off: rgba(150, 175, 170, 0.28);
+  /* segmented-control thumb: lighter than the track, as on iOS */
+  --thumb: #2b3e3f;
+  --skeleton: #132223;
+  --skeleton-sheen: rgba(255, 255, 255, 0.05);
+  /* a faint top light on every card, the way a dark surface catches the room */
+  --card-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.028), transparent 38%);
+
+  --liquid-bg: rgba(38, 56, 57, 0.46);
+  --liquid-bg-strong: rgba(30, 47, 48, 0.86);
+  --liquid-rim: linear-gradient(
+    150deg,
+    rgba(255, 255, 255, 0.34) 0%,
+    rgba(255, 255, 255, 0.08) 30%,
+    rgba(255, 255, 255, 0) 52%,
+    rgba(255, 255, 255, 0.16) 100%
+  );
+  --liquid-glow: radial-gradient(120% 70% at 50% 0%, rgba(255, 255, 255, 0.1), transparent 62%);
+  --liquid-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 12px 30px -12px rgba(0, 0, 0, 0.7);
+  --liquid-divider: rgba(255, 255, 255, 0.1);
+  --liquid-press: rgba(255, 255, 255, 0.08);
+  --bar-tint: rgba(6, 13, 14, 0.8);
+
+  --chart-1: #93d8c2;
+  --chart-2: #8fd06b;
+  --chart-3: #c3ea8c;
+  --chart-4: #8fa6a1;
+  --chart-5: #f4b24c;
+  --chart-income: #8fd06b;
+  --chart-expense: #5fbfb3;
+  --chart-bar: #5fbfb3;
+  --chart-grid: rgba(255, 255, 255, 0.06);
+  --chart-axis: #7d938f;
+  --chart-cursor: rgba(255, 255, 255, 0.05);
+
+  --status-good: #63cd80;
+  --status-warning: #f2b443;
+  --status-critical: #ff8068;
+
+  --sidebar: #0b1617;
+  --sidebar-foreground: #e7f1ec;
+  --sidebar-primary: #93d8c2;
+  --sidebar-primary-foreground: #032628;
+  --sidebar-accent: #142829;
+  --sidebar-accent-foreground: #bfe8d7;
+  --sidebar-border: rgba(255, 255, 255, 0.07);
+  --sidebar-ring: #a6db78;
 }
 
 @layer base {
@@ -199,6 +475,12 @@
       radial-gradient(36rem 28rem at 100% 0%, rgba(178, 222, 206, 0.45), transparent 62%),
       var(--background);
   }
+  .dark body::before {
+    background:
+      radial-gradient(40rem 26rem at 0% -12%, rgba(195, 234, 140, 0.075), transparent 64%),
+      radial-gradient(38rem 28rem at 100% -4%, rgba(70, 168, 150, 0.14), transparent 62%),
+      var(--background);
+  }
   h1,
   h2,
   h3 {
@@ -221,16 +503,16 @@
 @layer components {
   /* The everyday card: solid white, hairline edge, soft teal-tinted shadow. */
   .finance-card {
-    border: 1px solid rgba(13, 75, 76, 0.07);
+    border: 1px solid var(--hairline);
     border-radius: 1.5rem;
-    background: var(--card);
+    background: var(--card-sheen), var(--card);
     box-shadow: var(--shadow-card);
   }
   a.finance-card,
   button.finance-card {
     transition:
       box-shadow 0.25s var(--ease-out-soft),
-      transform 0.25s var(--ease-out-soft),
+      transform 0.5s var(--ease-spring),
       background-color 0.2s ease;
   }
   @media (hover: hover) {
@@ -255,6 +537,126 @@
     box-shadow:
       0 1px 0 rgba(255, 255, 255, 0.8) inset,
       0 16px 40px -18px rgba(6, 47, 49, 0.35);
+  }
+  .dark .glass {
+    border-color: rgba(255, 255, 255, 0.09);
+    background: rgba(24, 40, 41, 0.78);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.07) inset,
+      0 24px 50px -16px rgba(0, 0, 0, 0.8);
+  }
+
+  /*
+   * Liquid glass, for the few controls that float over content: the header toolbar, the back
+   * button. A thin tinted layer that blurs and brightens what is behind it, a specular rim (::before)
+   * and a soft inner glow along the top (::after). Pressing it lights it up from inside.
+   */
+  .liquid {
+    position: relative;
+    isolation: isolate;
+    background: var(--liquid-bg);
+    -webkit-backdrop-filter: blur(16px) saturate(190%) brightness(1.04);
+    backdrop-filter: blur(16px) saturate(190%) brightness(1.04);
+    box-shadow: var(--liquid-shadow);
+  }
+  .liquid::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background: var(--liquid-rim);
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#000 0 0) content-box exclude,
+      linear-gradient(#000 0 0);
+    pointer-events: none;
+  }
+  .liquid::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: var(--liquid-glow);
+    pointer-events: none;
+  }
+  /* where the material sits over busy content and has to stay legible */
+  .liquid-strong {
+    background: var(--liquid-bg-strong);
+  }
+  /* one press target inside (or as) a liquid surface */
+  .liquid-btn {
+    position: relative;
+    display: grid;
+    place-items: center;
+    border-radius: 9999px;
+    color: var(--foreground);
+    transition:
+      transform 0.45s var(--ease-spring),
+      background-color 0.2s ease;
+  }
+  .liquid-btn:active:not(:disabled) {
+    transform: scale(0.9);
+    background-color: var(--liquid-press);
+    transition-duration: 0.12s, 0.05s;
+  }
+  @media (hover: hover) {
+    .liquid-btn:hover:not(:disabled) {
+      background-color: var(--liquid-press);
+    }
+  }
+
+  /*
+   * The header's scroll edge: once content runs under the toolbar it is tinted and blurred, and
+   * the effect fades out downward, so there is no hard line between bar and page.
+   */
+  .scroll-edge {
+    background: linear-gradient(to bottom, var(--bar-tint) 0%, var(--bar-tint) 60%, transparent);
+    -webkit-backdrop-filter: blur(20px) saturate(170%);
+    backdrop-filter: blur(20px) saturate(170%);
+    -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent);
+    mask-image: linear-gradient(to bottom, #000 70%, transparent);
+  }
+
+  /* The compass needle settles in when the mark appears, and swings when touched. */
+  .brand-needle {
+    transform-box: view-box;
+    transform-origin: 24px 24px;
+    transition: rotate 0.9s var(--ease-wobble);
+  }
+  /* only where the mark is the first thing you see (sign-in, unlock), not on every page */
+  .brand-intro .brand-needle {
+    animation: needle-settle 1.4s var(--ease-wobble) 0.15s both;
+  }
+  /* loading: the needle hunts for north */
+  .brand-seek .brand-needle {
+    animation: needle-seek 1.8s ease-in-out infinite;
+  }
+  @media (hover: hover) {
+    .brand-link:hover .brand-needle {
+      rotate: 28deg;
+    }
+  }
+  .brand-link:active .brand-needle {
+    rotate: -24deg;
+    transition-duration: 0.2s;
+  }
+
+  /*
+   * Category chips carry one hue (--cat). Light: pale tint behind a deep icon. Dark: the hue
+   * glows through a translucent tint and the icon is lifted toward white.
+   */
+  .cat-chip {
+    background: color-mix(in oklch, var(--cat) 12%, white);
+    color: var(--cat);
+  }
+  .dark .cat-chip {
+    background: color-mix(in oklab, var(--cat) 30%, transparent);
+    color: color-mix(in oklab, var(--cat), white 58%);
   }
 
   /* Small rounded square that holds an icon. */
@@ -309,6 +711,14 @@
   .surface-lime {
     background: var(--gradient-lime);
     color: var(--brand-ink);
+    /* a bright surface in either theme: whatever sits on it uses light-theme ink and fields */
+    --foreground: var(--brand-ink);
+    --muted-foreground: #3d5b50;
+    --card: #ffffff;
+    --input: rgba(6, 47, 49, 0.14);
+    --field: rgba(255, 255, 255, 0.72);
+    --primary: #0d4b4c;
+    --primary-foreground: #f3fbee;
   }
 
   .auth-showcase {
@@ -393,6 +803,203 @@
   }
 }
 
+/*
+ * Press feedback. The element sinks fast (100ms) and springs back when released, overshooting a
+ * hair, the way an iOS control does. tap for buttons and chips, tap-soft for big cards and rows.
+ */
+@utility tap {
+  transition-property: scale, background-color, border-color, color, box-shadow, opacity;
+  transition-duration: 0.42s, 0.18s, 0.18s, 0.18s, 0.25s, 0.2s;
+  transition-timing-function: var(--ease-spring), ease, ease, ease, ease, ease;
+  &:active:not(:disabled):not([aria-disabled="true"]) {
+    scale: var(--tap-scale, 0.94);
+    transition-duration: 0.1s, 0.05s, 0.05s, 0.05s, 0.1s, 0.1s;
+  }
+}
+@utility tap-soft {
+  transition-property: scale, background-color, border-color, color, box-shadow, opacity;
+  transition-duration: 0.5s, 0.18s, 0.18s, 0.18s, 0.25s, 0.2s;
+  transition-timing-function: var(--ease-spring), ease, ease, ease, ease, ease;
+  &:active:not(:disabled):not([aria-disabled="true"]) {
+    scale: var(--tap-scale, 0.982);
+    transition-duration: 0.12s, 0.05s, 0.05s, 0.05s, 0.1s, 0.1s;
+  }
+}
+
+@utility lang-flip {
+  animation: lang-flip 0.5s var(--ease-spring) both;
+  transform-origin: 50% 50% -6px;
+}
+
+@utility moon-in {
+  animation: moon-in 0.6s var(--ease-bounce) both;
+}
+
+/* Springy entrance for something that was just chosen or just arrived. */
+@utility pop-spring {
+  animation: pop-spring 0.5s var(--ease-bounce) both;
+}
+
+/*
+ * Icon motion. Each class names what the icon *means*, and its nearest control drives it, so
+ * the same gesture reads differently on a bell, a trash can or a forward chevron. Hover motion
+ * only where a real pointer exists; press motion everywhere. Never on a loop unless something
+ * is actually in progress.
+ */
+@layer components {
+  .ic,
+  [class*="ic-"]:is(svg) {
+    transition:
+      translate 0.45s var(--ease-spring),
+      rotate 0.5s var(--ease-spring),
+      scale 0.45s var(--ease-spring),
+      color 0.2s ease,
+      fill 0.2s ease,
+      stroke-width 0.2s ease;
+  }
+
+  /* forward: chevrons and arrows lean toward where they go */
+  :is(a, button, [role="button"], [role="menuitem"], label):active .ic-forward {
+    translate: 3px 0;
+  }
+  :is(a, button, [role="button"], [role="menuitem"], label):active .ic-back {
+    translate: -3px 0;
+  }
+  /* add: the plus turns a quarter, like a dial clicking over */
+  :is(a, button, [role="button"]):active .ic-add {
+    rotate: 90deg;
+    scale: 0.86;
+  }
+  /* close: an X turns and shrinks away */
+  :is(a, button, [role="button"]):active .ic-close {
+    rotate: 90deg;
+    scale: 0.8;
+  }
+  /* delete: the can tips toward the press */
+  :is(a, button, [role="button"], [role="menuitem"]):active .ic-delete {
+    rotate: -12deg;
+    scale: 0.88;
+  }
+  /* refresh: a half turn on press, and keeps turning while the work runs */
+  :is(a, button, [role="button"]):active .ic-refresh {
+    rotate: 180deg;
+  }
+  :is(button, [role="button"])[aria-busy="true"] .ic-refresh {
+    animation: spin-on 0.9s linear infinite;
+  }
+  /* send: the plane leaves */
+  :is(a, button, [role="button"]):active .ic-send {
+    translate: 4px -4px;
+    scale: 0.88;
+  }
+  /* up: the arrow lifts off (send) */
+  :is(a, button, [role="button"]):active .ic-up {
+    translate: 0 -3px;
+  }
+  /* AI / sparkles: a quick glint */
+  :is(a, button, [role="button"]):active .ic-spark {
+    rotate: 18deg;
+    scale: 0.9;
+  }
+  /* things that simply acknowledge the touch */
+  :is(a, button, [role="button"], [role="menuitem"], [role="tab"], label):active .ic-pop {
+    scale: 0.84;
+  }
+  /* expand / collapse chevron follows the disclosure state */
+  [aria-expanded="true"] .ic-expand,
+  [data-popup-open] .ic-expand {
+    rotate: 180deg;
+  }
+  /* bell: a short, damped swing from its hook */
+  .ic-bell {
+    transform-origin: 50% 12%;
+  }
+  :is(a, button):active .ic-bell {
+    rotate: 14deg;
+  }
+  .ic-bell.is-ringing {
+    animation: bell-ring 0.9s var(--ease-out-soft) 0.2s both;
+  }
+
+  @media (hover: hover) {
+    :is(a, button, [role="button"], [role="menuitem"], label):hover .ic-forward {
+      translate: 2px 0;
+    }
+    :is(a, button, [role="button"], [role="menuitem"], label):hover .ic-back {
+      translate: -2px 0;
+    }
+    :is(a, button, [role="button"]):hover .ic-add {
+      rotate: 90deg;
+    }
+    :is(a, button, [role="button"]):hover .ic-close {
+      rotate: 90deg;
+    }
+    :is(a, button, [role="button"], [role="menuitem"]):hover .ic-delete {
+      rotate: -8deg;
+      translate: 0 -1px;
+    }
+    :is(a, button, [role="button"]):hover .ic-refresh {
+      rotate: 40deg;
+    }
+    :is(a, button, [role="button"]):hover .ic-send {
+      translate: 2px -2px;
+    }
+    :is(a, button, [role="button"]):hover .ic-spark {
+      rotate: 12deg;
+      scale: 1.1;
+    }
+    :is(a, button, [role="button"], [role="menuitem"], [role="tab"], label):hover .ic-pop {
+      scale: 1.1;
+    }
+    :is(a, button):hover .ic-bell {
+      animation: bell-ring 0.8s var(--ease-out-soft) both;
+    }
+    :is(a, button, [role="button"]):hover .ic-down {
+      translate: 0 2px;
+    }
+    :is(a, button, [role="button"]):hover .ic-up {
+      translate: 0 -2px;
+    }
+  }
+
+  /* one-shot icon moments, played when the icon mounts */
+  .ic-draw :is(path, polyline, line, circle) {
+    stroke-dasharray: 64;
+    stroke-dashoffset: 64;
+    animation: draw 0.55s var(--ease-out-soft) 0.12s forwards;
+  }
+  .ic-shake {
+    animation: shake 0.42s ease-in-out 0.1s both;
+  }
+  .ic-beat {
+    animation: beat 0.7s var(--ease-out-soft) both;
+  }
+  .ic-flicker {
+    transform-origin: 50% 90%;
+    animation: flicker 0.9s var(--ease-out-soft) 0.15s both;
+  }
+  .ic-flip-in {
+    animation: flip-in 0.42s var(--ease-spring) both;
+  }
+  .ic-spin-in {
+    animation: spin-in 0.6s var(--ease-bounce) both;
+  }
+}
+
+/* A gentle ring that radiates once from an element that just changed for the better. */
+/* (the element itself must be positioned) */
+@utility glow-ping {
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -3px;
+    border-radius: inherit;
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--lime) 80%, transparent);
+    animation: glow-ping 1s var(--ease-out-soft) both;
+    pointer-events: none;
+  }
+}
+
 @keyframes rise {
   from {
     opacity: 0;
@@ -412,6 +1019,139 @@
   from {
     opacity: 0;
     transform: scale(0.92);
+  }
+}
+@keyframes pop-spring {
+  from {
+    opacity: 0;
+    scale: 0.6;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+@keyframes bell-ring {
+  0% {
+    rotate: 0deg;
+  }
+  15% {
+    rotate: 16deg;
+  }
+  32% {
+    rotate: -13deg;
+  }
+  48% {
+    rotate: 9deg;
+  }
+  64% {
+    rotate: -5deg;
+  }
+  80% {
+    rotate: 2deg;
+  }
+  100% {
+    rotate: 0deg;
+  }
+}
+@keyframes lang-flip {
+  from {
+    opacity: 0;
+    transform: rotateX(-90deg);
+  }
+}
+@keyframes moon-in {
+  from {
+    opacity: 0;
+    rotate: 50deg;
+    scale: 0.6;
+  }
+}
+@keyframes typing {
+  0%,
+  60%,
+  100% {
+    translate: 0 0;
+    opacity: 0.45;
+  }
+  30% {
+    translate: 0 -4px;
+    opacity: 1;
+  }
+}
+@keyframes needle-seek {
+  0%,
+  100% {
+    rotate: -22deg;
+  }
+  50% {
+    rotate: 26deg;
+  }
+}
+@keyframes needle-settle {
+  from {
+    rotate: -70deg;
+  }
+}
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes beat {
+  0% {
+    scale: 1;
+  }
+  30% {
+    scale: 1.22;
+  }
+  55% {
+    scale: var(--tap-scale, 0.94);
+  }
+  100% {
+    scale: 1;
+  }
+}
+@keyframes flicker {
+  0% {
+    scale: 0.7 0.5;
+    opacity: 0.4;
+  }
+  45% {
+    scale: 1.08 1.18;
+    opacity: 1;
+  }
+  70% {
+    scale: 0.97 0.94;
+  }
+  100% {
+    scale: 1;
+  }
+}
+@keyframes flip-in {
+  from {
+    opacity: 0;
+    rotate: -90deg;
+    scale: 0.6;
+  }
+}
+@keyframes spin-in {
+  from {
+    opacity: 0;
+    rotate: -120deg;
+    scale: 0.5;
+  }
+}
+@keyframes spin-on {
+  to {
+    rotate: 360deg;
+  }
+}
+@keyframes glow-ping {
+  from {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--lime) 85%, transparent);
+  }
+  to {
+    box-shadow: 0 0 0 14px color-mix(in oklab, var(--lime) 0%, transparent);
   }
 }
 @keyframes alert-in {
@@ -469,6 +1209,23 @@
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation: none;
+}
+/*
+ * Floating layers get their own names only while a transition runs. A view-transition-name makes
+ * an element a backdrop root, which would stop the glass inside it (header toolbar, toasts) from
+ * blurring the page behind; outside transitions they must not have one.
+ */
+html:active-view-transition [data-vt="page-toolbar"] {
+  view-transition-name: page-toolbar;
+}
+html:active-view-transition [data-vt="tab-bar"] {
+  view-transition-name: tab-bar;
+}
+html:active-view-transition [data-vt="app-sidebar"] {
+  view-transition-name: app-sidebar;
+}
+html:active-view-transition [data-vt="toasts"] {
+  view-transition-name: toasts;
 }
 /* the header toolbar is an anchor: it swaps instantly instead of sliding with the page */
 ::view-transition-group(page-toolbar) {
@@ -573,6 +1330,28 @@
   ::view-transition-group(*) {
     animation-duration: 0s !important;
     animation-delay: 0s !important;
+  }
+}
+
+/*
+ * Theme switch (lib/theme.ts): the new theme grows in a circle from the control that was tapped.
+ * Named layers are folded back into the root for the moment, so the page changes as one piece.
+ */
+html[data-theme-switching] * {
+  view-transition-name: none !important;
+}
+html[data-theme-switching]::view-transition-old(root) {
+  animation: none;
+}
+html[data-theme-switching]::view-transition-new(root) {
+  animation: theme-reveal 0.62s var(--ease-sheet) both;
+}
+@keyframes theme-reveal {
+  from {
+    clip-path: circle(0 at var(--reveal-x, 50%) var(--reveal-y, 0));
+  }
+  to {
+    clip-path: circle(var(--reveal-r, 150vmax) at var(--reveal-x, 50%) var(--reveal-y, 0));
   }
 }
 

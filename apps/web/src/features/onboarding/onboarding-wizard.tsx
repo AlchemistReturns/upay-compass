@@ -43,17 +43,17 @@ function Choice({
       aria-pressed={selected}
       lang={lang}
       className={cn(
-        "flex min-h-[3.75rem] w-full items-center gap-3.5 rounded-2xl border px-4 text-left text-[15px] transition-[border-color,background-color,box-shadow,transform] duration-200 active:scale-[0.98]",
+        "flex min-h-[3.75rem] w-full items-center gap-3.5 rounded-2xl border px-4 text-left text-[15px] tap-soft",
         selected
           ? "border-primary bg-secondary font-bold shadow-[0_0_0_3px_rgba(195,234,140,.7)]"
-          : "bg-card hover:border-primary/30 border-[rgba(13,75,76,.12)] font-semibold",
+          : "bg-card hover:border-primary/30 border-hairline-strong font-semibold",
       )}
     >
       {icon && (
         <span
           className={cn(
             "grid size-10 shrink-0 place-items-center rounded-xl transition-colors",
-            selected ? "bg-primary text-lime" : "bg-secondary text-primary",
+            selected ? "bg-brand-deep text-lime" : "bg-secondary text-primary",
           )}
         >
           {icon}
@@ -64,10 +64,12 @@ function Choice({
         aria-hidden
         className={cn(
           "grid size-6 shrink-0 place-items-center rounded-full border-2 transition-colors",
-          selected ? "border-primary bg-primary text-lime" : "border-input",
+          selected
+            ? "border-brand-deep bg-brand-deep text-lime dark:border-lime/40"
+            : "border-input",
         )}
       >
-        {selected && <Check className="size-3.5" strokeWidth={3} />}
+        {selected && <Check className="ic-draw size-3.5" strokeWidth={3} />}
       </span>
     </button>
   );

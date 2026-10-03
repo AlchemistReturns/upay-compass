@@ -503,5 +503,11 @@
     "coach_stop": "Stop sharing",
     "coach_stop_confirm": "Stop sharing your numbers with the coach? The coach will not answer until you allow it again. Your chat history stays until you clear it.",
     "toast_sharing_off": "Coach sharing turned off"
+  },
+  "appearance": {
+    "title": "Appearance",
+    "system": "Auto",
+    "light": "Light",
+    "dark": "Dark"
   }
 }

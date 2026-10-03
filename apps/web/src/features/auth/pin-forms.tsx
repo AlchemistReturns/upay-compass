@@ -41,7 +41,7 @@ function PinField({
         "relative flex h-16 items-center justify-center gap-3.5 rounded-2xl border transition-[border-color,box-shadow,background-color] duration-150",
         dark
           ? "border-white/15 bg-white/8 has-[input:focus-visible]:border-white/40 has-[input:focus-visible]:ring-4 has-[input:focus-visible]:ring-white/10"
-          : "border-input bg-[#fbfdfa] has-[input:focus-visible]:border-primary/60 has-[input:focus-visible]:bg-white has-[input:focus-visible]:ring-4 has-[input:focus-visible]:ring-ring/20",
+          : "border-input bg-field has-[input:focus-visible]:border-primary/60 has-[input:focus-visible]:bg-card has-[input:focus-visible]:ring-4 has-[input:focus-visible]:ring-ring/20",
         invalid && "animate-[shake_.4s_ease] border-destructive/60",
       )}
     >
@@ -164,7 +164,7 @@ export function LockScreen() {
     <div className="auth-showcase flex min-h-dvh w-full flex-1 flex-col items-center justify-center px-6 py-10">
       <div className="rise w-full max-w-sm text-center">
         <div className="relative mx-auto mb-6 w-fit">
-          <BrandMark className="size-16 shadow-[0_14px_30px_-12px_rgba(0,0,0,.6)]" />
+          <BrandMark className="brand-intro size-16 shadow-[0_14px_30px_-12px_rgba(0,0,0,.6)]" />
           <span className="bg-lime text-brand-ink absolute -right-2 -bottom-2 grid size-8 place-items-center rounded-full ring-4 ring-[#0a3f41]">
             <LockKeyhole className="size-4" aria-hidden />
           </span>

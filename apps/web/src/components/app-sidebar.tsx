@@ -33,13 +33,16 @@ function Item({
       transitionTypes={NAV_TAB}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "flex min-h-11 items-center gap-3 rounded-2xl px-3.5 text-[14px] font-semibold transition-[background-color,color,box-shadow,transform] duration-200 active:scale-[0.98]",
+        "tap-soft flex min-h-11 items-center gap-3 rounded-2xl px-3.5 text-[14px] font-semibold",
         active
           ? "text-on-dark bg-[image:var(--gradient-teal)] shadow-[0_10px_24px_-14px_rgba(6,47,49,.8)]"
-          : "text-muted-foreground hover:text-foreground hover:bg-white/80",
+          : "text-muted-foreground hover:text-foreground hover:bg-white/80 dark:hover:bg-white/5",
       )}
     >
-      <Icon className={cn("size-[19px] shrink-0", active && "text-lime")} strokeWidth={2} />
+      <Icon
+        className={cn("ic-pop size-[19px] shrink-0", active && "text-lime")}
+        strokeWidth={active ? 2.2 : 1.9}
+      />
       <span className="truncate">{label}</span>
     </Link>
   );
@@ -52,8 +55,8 @@ export function AppSidebar() {
 
   return (
     <aside
-      style={{ viewTransitionName: "app-sidebar" }}
-      className="fixed inset-y-0 left-0 z-40 hidden w-[var(--sidebar-w)] flex-col gap-7 border-r border-[rgba(13,75,76,.07)] bg-white/45 px-4 py-6 backdrop-blur-xl lg:flex"
+      data-vt="app-sidebar"
+      className="fixed inset-y-0 left-0 z-40 hidden w-[var(--sidebar-w)] flex-col gap-7 border-r border-hairline bg-white/45 px-4 dark:bg-[rgba(9,19,20,.72)] py-6 backdrop-blur-xl lg:flex"
     >
       <Logo className="px-2" />
       <nav aria-label={t("nav.label")} className="flex flex-col gap-1">

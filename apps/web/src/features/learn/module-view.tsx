@@ -95,8 +95,8 @@ export function ModuleView({ slug }: { slug: string }) {
                     {bn ? next.title_bn : next.title_en}
                   </span>
                 </span>
-                <span className="bg-secondary text-primary grid size-10 shrink-0 place-items-center rounded-full transition-transform group-hover:translate-x-0.5">
-                  <ArrowRight className="size-[18px]" aria-hidden />
+                <span className="bg-secondary text-primary grid size-10 shrink-0 place-items-center rounded-full">
+                  <ArrowRight className="ic-forward size-[18px]" aria-hidden />
                 </span>
               </Link>
             )}

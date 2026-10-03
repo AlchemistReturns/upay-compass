@@ -10,9 +10,10 @@ import { useAuth } from "@/features/auth/auth-provider";
 import { Avatar, formatPhone } from "@/features/profile/avatar";
 import { useProfile } from "@/features/profile/use-profile";
 import { NAV_FORWARD } from "@/components/page-transition";
+import { ThemeSwitch } from "@/components/theme-switch";
 
 const ITEM =
-  "flex min-h-11 w-full cursor-default items-center gap-3 rounded-xl px-3 text-sm font-medium outline-none select-none data-[highlighted]:bg-secondary data-[highlighted]:text-secondary-foreground";
+  "tap-soft flex min-h-11 w-full cursor-default items-center gap-3 rounded-xl px-3 text-sm font-medium outline-none select-none data-[highlighted]:bg-secondary data-[highlighted]:text-secondary-foreground";
 
 /** Avatar button in the header toolbar; opens the account menu (who you are, profile, sign out). */
 export function UserMenu({ triggerClassName }: { triggerClassName?: string }) {
@@ -27,14 +28,17 @@ export function UserMenu({ triggerClassName }: { triggerClassName?: string }) {
       <Menu.Trigger
         aria-label={t("profile.menu")}
         title={t("profile.menu")}
-        className={cn(triggerClassName, "data-[popup-open]:bg-muted")}
+        className={cn(triggerClassName, "group/avatar")}
       >
-        <Avatar name={name} className="size-[38px] ring-0" />
+        <Avatar
+          name={name}
+          className="size-9 ring-0 transition-[box-shadow] duration-300 group-data-[popup-open]/avatar:shadow-[0_0_0_2px_var(--background),0_0_0_4px_var(--lime)]"
+        />
       </Menu.Trigger>
 
       <Menu.Portal>
         <Menu.Positioner side="bottom" align="end" sideOffset={10} className="z-50 outline-none">
-          <Menu.Popup className="glass w-[min(19.5rem,calc(100vw-1.5rem))] origin-[var(--transform-origin)] rounded-[1.75rem] p-2 transition-[transform,opacity] duration-150 outline-none data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0">
+          <Menu.Popup className="glass w-[min(19.5rem,calc(100vw-1.5rem))] origin-[var(--transform-origin)] rounded-[1.75rem] p-2 transition-[scale,opacity] duration-[380ms] ease-[var(--ease-spring)] outline-none data-[ending-style]:scale-90 data-[ending-style]:opacity-0 data-[ending-style]:duration-150 data-[ending-style]:ease-out data-[starting-style]:scale-75 data-[starting-style]:opacity-0">
             {/* who is signed in */}
             <div className="flex items-center gap-3 px-2.5 pt-2 pb-3">
               <Avatar name={name} className="size-12 text-base" />
@@ -76,12 +80,12 @@ export function UserMenu({ triggerClassName }: { triggerClassName?: string }) {
             >
               <UserRound className="text-muted-foreground size-[18px]" aria-hidden />
               <span className="flex-1">{t("profile.open")}</span>
-              <ChevronRight className="text-muted-foreground size-4" aria-hidden />
+              <ChevronRight className="ic-forward text-muted-foreground size-4" aria-hidden />
             </Menu.LinkItem>
             <Menu.LinkItem render={<Link href="/learn" />} className={ITEM}>
-              <Award className="text-muted-foreground size-[18px]" aria-hidden />
+              <Award className="ic-pop text-muted-foreground size-[18px]" aria-hidden />
               <span className="flex-1">{t("profile.badges")}</span>
-              <ChevronRight className="text-muted-foreground size-4" aria-hidden />
+              <ChevronRight className="ic-forward text-muted-foreground size-4" aria-hidden />
             </Menu.LinkItem>
             {p?.role === "admin" && (
               <Menu.LinkItem
@@ -90,9 +94,19 @@ export function UserMenu({ triggerClassName }: { triggerClassName?: string }) {
               >
                 <ShieldCheck className="text-muted-foreground size-[18px]" aria-hidden />
                 <span className="flex-1">{t("admin.open")}</span>
-                <ChevronRight className="text-muted-foreground size-4" aria-hidden />
+                <ChevronRight className="ic-forward text-muted-foreground size-4" aria-hidden />
               </Menu.LinkItem>
             )}
+
+            <Menu.Separator className="bg-border mx-2 my-1.5 h-px" />
+
+            {/* not a menu item: choosing a theme should not close the menu */}
+            <div className="px-1 pt-1 pb-1.5">
+              <p className="text-muted-foreground mb-1.5 px-2 text-[11.5px] font-bold tracking-[0.06em] uppercase">
+                {t("appearance.title")}
+              </p>
+              <ThemeSwitch size="sm" />
+            </div>
 
             <Menu.Separator className="bg-border mx-2 my-1.5 h-px" />
 
@@ -103,7 +117,7 @@ export function UserMenu({ triggerClassName }: { triggerClassName?: string }) {
                 "text-destructive data-[highlighted]:bg-negative-soft data-[highlighted]:text-destructive",
               )}
             >
-              <LogOut className="size-[18px]" aria-hidden />
+              <LogOut className="ic-forward size-[18px]" aria-hidden />
               {t("common.logout")}
             </Menu.Item>
           </Menu.Popup>

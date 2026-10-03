@@ -88,7 +88,7 @@ export function GamificationProvider({ children }: { children: React.ReactNode }
             className="text-on-dark-muted grid size-10 shrink-0 place-items-center rounded-full hover:bg-white/10"
             onClick={() => setToast([])}
           >
-            <X className="size-4" aria-hidden />
+            <X className="ic-close size-4" aria-hidden />
           </button>
         </div>
       )}

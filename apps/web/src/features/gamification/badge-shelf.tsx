@@ -26,8 +26,8 @@ export function BadgeShelf() {
               className={cn(
                 "flex flex-col gap-3 rounded-3xl p-4",
                 has
-                  ? "border border-[#f6dca3] bg-[linear-gradient(160deg,#fffaf0,#fff0d2)] shadow-[0_12px_26px_-18px_rgba(240,165,49,.9)]"
-                  : "border border-dashed border-[rgba(13,75,76,.16)] bg-white/45",
+                  ? "border border-[#f6dca3] bg-[linear-gradient(160deg,#fffaf0,#fff0d2)] shadow-[0_12px_26px_-18px_rgba(240,165,49,.9)] dark:border-[rgba(244,178,76,.22)] dark:bg-[linear-gradient(160deg,rgba(244,178,76,.16),rgba(244,178,76,.05))] dark:shadow-none"
+                  : "border border-dashed border-hairline-strong bg-white/45 dark:bg-white/[.025]",
               )}
             >
               <span

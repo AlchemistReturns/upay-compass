@@ -190,9 +190,10 @@ function ScoreHero({
             size="sm"
             className="mt-4"
             disabled={refreshing}
+            aria-busy={refreshing || undefined}
             onClick={onRefresh}
           >
-            <RefreshCw className={cn(refreshing && "animate-spin")} aria-hidden />
+            <RefreshCw className="ic-refresh" aria-hidden />
             {refreshing ? t("common.loading") : t("score.refresh")}
           </Button>
         </div>
@@ -339,7 +340,7 @@ export function ScoreView() {
                       <span className="min-w-0 flex-1 text-sm leading-6">{text}</span>
                       {href && (
                         <span className="bg-secondary text-primary grid size-9 shrink-0 place-items-center self-center rounded-full">
-                          <ArrowRight className="size-4" aria-hidden />
+                          <ArrowRight className="ic-forward size-4" aria-hidden />
                           <span className="sr-only">{t("score.take_action")}</span>
                         </span>
                       )}
@@ -369,7 +370,7 @@ export function ScoreView() {
               ) : changes.length === 0 ? (
                 <p className="text-muted-foreground text-sm">{t("score.moved_none")}</p>
               ) : (
-                <ul className="divide-y divide-[rgba(13,75,76,.07)] text-sm">
+                <ul className="divide-y divide-hairline text-sm">
                   {changes.map((c) => (
                     <li
                       key={c.component}

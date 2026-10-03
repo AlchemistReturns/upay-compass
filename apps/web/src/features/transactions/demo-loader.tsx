@@ -48,7 +48,7 @@ export function DemoLoader({ suggested }: { suggested: IncomeType | null }) {
               <span
                 className={cn(
                   "icon-chip size-12 rounded-2xl",
-                  isSuggested && "bg-primary text-lime",
+                  isSuggested && "bg-brand-deep text-lime",
                 )}
               >
                 {loading ? (

@@ -46,7 +46,8 @@ export function BudgetCard({
       style={{ "--i": index + 1 } as React.CSSProperties}
       className={cn(
         "finance-card rise w-full p-4 text-left sm:p-5",
-        status === "over" && "border-destructive/20 bg-[linear-gradient(180deg,#fff,#fff7f4)]",
+        status === "over" &&
+          "border-destructive/20 bg-[linear-gradient(180deg,var(--card),color-mix(in_oklab,var(--card),var(--destructive)_6%))]",
       )}
       aria-label={`${name}: ${t(`budgets.status_${status}`)}`}
     >

@@ -66,7 +66,7 @@ export function InstallPrompt() {
       aria-label={t("pwa.install_title")}
     >
       <span className="icon-chip size-10 rounded-xl">
-        <Download className="size-[18px]" aria-hidden />
+        <Download className="ic-down size-[18px]" aria-hidden />
       </span>
       <div className="min-w-0 flex-1">
         <div className="text-sm font-bold">{t("pwa.install_title")}</div>
@@ -81,7 +81,7 @@ export function InstallPrompt() {
         className="text-muted-foreground hover:bg-muted flex size-11 shrink-0 items-center justify-center rounded-full"
         onClick={dismiss}
       >
-        <X className="size-4" aria-hidden />
+        <X className="ic-close size-4" aria-hidden />
       </button>
     </section>
   );

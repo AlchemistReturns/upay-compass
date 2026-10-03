@@ -70,7 +70,7 @@ export function Guard({
   if (status !== own && !(optimistic && status === "loading")) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8" role="status">
-        <BrandMark className="size-14 animate-pulse" />
+        <BrandMark className="brand-seek size-14" />
         <span className="sr-only">{t("common.loading")}</span>
       </div>
     );

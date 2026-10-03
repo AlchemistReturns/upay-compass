@@ -110,13 +110,13 @@ export function TransactionForm({ existing }: { existing?: TransactionRow }) {
         <div
           role="group"
           aria-label={t("transactions.direction")}
-          className="relative flex rounded-full bg-[#e3ece4] p-1"
+          className="relative flex rounded-full bg-segment p-1"
         >
           <span
             aria-hidden
             className={cn(
-              "absolute top-1 bottom-1 left-1 w-[calc(50%-0.25rem)] rounded-full shadow-[0_4px_12px_-4px_rgba(6,47,49,.3)] transition-[transform,background-color] duration-400 ease-[cubic-bezier(0.32,0.72,0,1)]",
-              direction === "out" ? "bg-card" : "bg-positive translate-x-full",
+              "absolute top-1 bottom-1 left-1 w-[calc(50%-0.25rem)] rounded-full shadow-[var(--shadow-thumb)] transition-[translate,background-color] duration-500 ease-[var(--ease-spring)]",
+              direction === "out" ? "bg-thumb" : "bg-positive translate-x-full",
             )}
           />
           {(["out", "in"] as const).map((d) => (
@@ -126,10 +126,10 @@ export function TransactionForm({ existing }: { existing?: TransactionRow }) {
               aria-pressed={direction === d}
               onClick={() => setDirection(d)}
               className={cn(
-                "relative min-h-10 flex-1 rounded-full text-sm font-semibold transition-colors duration-300",
+                "tap relative min-h-10 flex-1 rounded-full text-sm font-semibold",
                 direction === d
                   ? d === "in"
-                    ? "text-white"
+                    ? "text-white dark:text-[#05301a]"
                     : "text-foreground"
                   : "text-muted-foreground",
               )}

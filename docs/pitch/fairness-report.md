@@ -8,9 +8,9 @@ Question: does the system behave differently across the three demo personas? Som
 |---|---|---|---|---|---|---|
 | Categorization accuracy (of decided payments) | 100.0 | 100.0 | 100.0 | 0.0 | 2 | within threshold |
 | Categorization coverage (decided without AI) | 98.1 | 98.7 | 95.9 | 2.8 | 5 | within threshold |
-| Health: savings rate | 0.0 | 0.0 | 37.4 | 37.4 | 15 | expected: personas earn and spend differently: the student saves little by design, the salaried worker more |
+| Health: savings rate | 30.0 | 8.1 | 29.8 | 21.9 | 15 | expected: personas earn and spend differently: the student saves little by design, the salaried worker more |
 | Health: budget adherence | 50.0 (neutral) | 50.0 (neutral) | 50.0 (neutral) | 0.0 | 15 | within threshold |
-| Health: emergency buffer | 13.0 | 17.2 | 35.7 | 22.6 | 15 | expected: starting balances and essential spending differ by design |
+| Health: emergency buffer | 12.1 | 15.2 | 35.5 | 23.4 | 15 | expected: starting balances and essential spending differ by design |
 | Health: income stability | 100.0 | 61.5 | 100.0 | 38.5 | 15 | expected: by design: a salary and a fixed allowance are steady, gig payouts are irregular |
 | Readiness: income consistency | 100.0 | 61.5 | 100.0 | 38.5 | 15 | expected: same measure as health income stability, so same by-design difference |
 | Readiness: bill punctuality | 100.0 | 100.0 | 100.0 | 0.0 | 15 | within threshold |
@@ -21,7 +21,7 @@ Overall scores after loading each persona:
 
 | Score | student | gig | salaried |
 |---|---|---|---|
-| Health score | 36 | 29 | 53 |
+| Health score | 45 | 31 | 50 |
 | Credit readiness (informational) | 73 | 61 | 73 |
 
 ## Categorization detail

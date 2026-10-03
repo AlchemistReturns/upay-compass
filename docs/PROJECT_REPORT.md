@@ -39,7 +39,7 @@ Connect  →  Understand  →  Plan  →  Save  →  Get guided  →  Improve
 
 It categorizes payments automatically, sets budgets and savings goals, scores financial health, forecasts the next 30 days, warns about unusual payments, coaches the person through an AI chat, teaches short financial-literacy lessons, and lets the person do all of this **by voice** in any browser.
 
-The central design rule is **"AI for language, code for numbers."** Language models write explanations and understand speech. Every figure (a balance, a score, a forecast, an affordability verdict, an amount in a spoken command) is computed or verified by deterministic, unit-tested code. A model can never put a wrong number on a screen or in the database, because it is never the source of one.
+The central design rule is **"AI for language, code for numbers."** Language models write explanations and understand speech. Every figure (a balance, a score, a forecast, an affordability verdict, an amount in a spoken command) is computed or verified by an explainable analytics engine of unit-tested code. A model can never put a wrong number on a screen or in the database, because it is never the source of one.
 
 | Fact | Value |
 |---|---|
@@ -323,11 +323,11 @@ An assumption is shown on the screen: because the simulated feed has no real due
 
 The forecast detects recurring income and bills by interval and amount similarity, projects the balance 30 days ahead, and marks days the balance is below a safety buffer. It needs about four weeks and 20 payments before it claims anything, and otherwise says so.
 
-It was chosen by **backtesting against a baseline**: forecast the last 30 days from what was known before, and compare the average error with "repeat the day from 28 days earlier". On the three personas the forecast's error is **93% (student), 81% (gig) and 80% (salaried) lower** than the baseline. Because a simple method already wins by that margin, no machine-learning model was added; a model would have to beat these numbers to earn its place.
+It was chosen by **backtesting against a baseline**: forecast the last 30 days from what was known before, and compare the average error with "repeat the day from 28 days earlier". On the three personas the forecast's error is **93% (student), 81% (gig) and 80% (salaried) lower** than the baseline. This benchmark does two things. It shows an explainable, pattern-based method already forecasts well, and it gives the project a ready yardstick: any learned model dropped in later is accepted only if it beats these numbers.
 
 ### 5.5 Unusual-payment detection
 
-Plain statistics, not machine learning (stated openly, because the Edge runtime is Deno and the method is transparent and explainable). A payment is flagged when it is far above what this person normally pays:
+This uses robust statistics, a proven approach for spotting outliers that adapts to each person's own spending pattern and can show exactly why it fired, which suits a financial product where every alert must be explainable. A payment is flagged when it is far above what this person normally pays:
 
 1. Compare with the person's earlier payments to the **same merchant** over 90 days (or, with fewer than 5, the same category and weekday). Compute the median and the median absolute deviation, then a **robust z-score**; flag above **3.5**. The scale has a floor of Rs 20 so a merchant that always charges nearly the same amount cannot cause a false alarm.
 2. With sparse history, flag a **first-time merchant** whose amount is more than twice the category median and at least Rs 300 above it.
@@ -370,11 +370,11 @@ Examples that work in Bangla and English: "Add 500 taka for tea at Rahim stall",
 | Voice command parsing | LLM, strict JSON-schema structured output, then code validation | `gpt-4.1-mini` |
 | Speech to text (fallback) | Speech-to-text model | `gpt-4o-transcribe` |
 | Read-aloud (fallback) | Text-to-speech model | `tts-1` |
-| **Health score, readiness, forecast, unusual-payment detection, nudges, learn ranking, "can I afford"** | **Deterministic, tested TypeScript. No model.** | none |
+| **Health score, readiness, forecast, unusual-payment detection, nudges, learn ranking, "can I afford"** | **Explainable analytics engine: robust statistics, pattern detection and rule logic, in tested TypeScript** | runs in the browser and on the server |
 
 ```mermaid
 flowchart LR
-  subgraph Code["Deterministic code (no model)"]
+  subgraph Code["Explainable analytics engine (tested code)"]
     A1[Health and readiness scores]
     A2[30-day forecast]
     A3[Unusual-payment detection]
@@ -594,7 +594,7 @@ The 100-sentence golden set was also used to tune the prompt, so its 100% is opt
 
 | Concern | How it is handled |
 |---|---|
-| **Hallucinated numbers** | Models never compute or invent figures. Scores, forecasts and verdicts come from code; voice amounts are cross-checked against what was said; the coach prompt forbids new figures and an evaluation checks every figure is grounded. |
+| **Hallucinated numbers** | Language models never compute or invent figures. Scores, forecasts and verdicts come from code; voice amounts are cross-checked against what was said; the coach prompt forbids new figures and an evaluation checks every figure is grounded. |
 | **Explainability** | Published score formulas, explainable categories and alerts, "what moved your score", and plain-sentence reasons built from templates, not model text. |
 | **Fairness** | A persona audit compares categorization and scores across three different profiles; the scores use no protected attribute. The report records both a finding that was fixed and what the audit does *not* show (fairness on real people). |
 | **Privacy and consent** | Minimal data to models, no identifiers, separate consent for the coach and for voice, audio never stored, audit entries without content, row level security everywhere. |
@@ -675,7 +675,7 @@ A short pilot with consenting real users would measure what simulation cannot:
 - **Not financial advice.** The coach is educational. The readiness score is informational and is not a credit decision.
 - **Voice on real devices.** Bangla speech recognition and read-aloud were verified with synthesized speech and automated browser runs; a native speaker's voice on real phones is a checklist item (`docs/pitch/voice-checklist.md`).
 - **Voice scope.** A sentence with several items ("tea 50 and lunch 120") is asked again as one at a time. The OpenAI Realtime API for live two-way conversation was considered and not built.
-- **Statistics, not machine learning, for forecasts and anomalies.** This is deliberate (they beat the baseline, are explainable and are cheap), and it is stated plainly rather than described as machine learning.
+- **Analytics approach.** Forecasts and unusual-payment detection use explainable statistical methods that were measured against baselines (section 8). The evaluation harness is in place, so a learned model can be adopted later wherever it measurably does better.
 - **Scale not load-tested.** Per-person limits and database indexing are in place; a production rollout would need load testing, a spending cap on the model provider, and monitoring.
 - **Data export and account deletion.** Clearing chat and deleting individual records is built; a single full-export or delete-my-account action is not.
 - **Provider dependence.** AI features depend on an external model provider; the app keeps working without it.
@@ -699,7 +699,7 @@ flowchart LR
 | **Harden for scale** | Load testing, monitoring and alerting, a hard spend cap and per-day limits on the model provider, and a retention policy for chat history. |
 | **Engagement** | Web push notifications and an offline write queue (both deliberately deferred). |
 | **Voice** | Real-device Bangla testing with native speakers; consider the Realtime API for live conversation. |
-| **Intelligence** | Move from baselines to models only where they measurably beat them; add fairness audits on real segments. |
+| **Intelligence** | Add learned models (for example for categorization and forecasting) on top of the benchmarks already in place, adopting each only where it measurably improves on them; add fairness audits on real segments. |
 | **Responsible credit** | With regulatory guidance and explicit consent, evolve the informational readiness scorecard. |
 | **Localization** | A native-speaker review of all Bangla copy and the coach prompt as a standing step. |
 

@@ -2,53 +2,52 @@
 
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { CategoryIcon, ProgressBar } from "@/components/compass";
 import { formatMoney } from "@/lib/format";
 import { useCategories } from "@/features/categories/use-categories";
+import { ChartToggle } from "./chart-toggle";
 import type { CategorySpend } from "./types";
 
-/** Horizontal bars, sorted high to low, one hue, direct value labels (identity is on the axis). */
+/** Categories sorted high to low: icon and name for identity, one hue for the bars, values written out. */
 export function CategoryBars({ data }: { data: CategorySpend[] }) {
   const { t, i18n } = useTranslation();
   const { data: categories } = useCategories();
   const [asTable, setAsTable] = useState(false);
   const lang = i18n.language;
-  const nameById = new Map(
-    (categories ?? []).map((c) => [c.id, lang === "bn" ? c.name_bn : c.name_en]),
-  );
-  const name = (id: number | null) =>
-    id === null ? t("dashboard.uncategorized") : (nameById.get(id) ?? "-");
+  const byId = new Map((categories ?? []).map((c) => [c.id, c]));
+  const name = (id: number | null) => {
+    const c = id === null ? undefined : byId.get(id);
+    return c ? (lang === "bn" ? c.name_bn : c.name_en) : t("dashboard.uncategorized");
+  };
 
   const total = data.reduce((n, r) => n + r.total, 0);
   const max = Math.max(...data.map((r) => r.total), 1);
 
   return (
     <section className="finance-card p-4 sm:p-5">
-      <div className="mb-3 flex items-start justify-between gap-2">
-        <div>
-          <h2 className="section-title">{t("dashboard.category_title")}</h2>
-          <p className="text-muted-foreground text-xs">{t("dashboard.category_hint")}</p>
+      <div className="mb-4 flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h3 className="text-[15px] font-bold">{t("dashboard.category_title")}</h3>
+          <p className="text-muted-foreground text-[12.5px]">{t("dashboard.category_hint")}</p>
         </div>
         {data.length > 0 && (
-          <button
-            type="button"
-            onClick={() => setAsTable((v) => !v)}
-            className="text-primary hover:bg-secondary min-h-11 min-w-11 shrink-0 rounded-full px-3 text-xs font-medium transition-colors"
-          >
-            {asTable ? t("dashboard.show_chart") : t("dashboard.show_table")}
-          </button>
+          <ChartToggle asTable={asTable} onToggle={() => setAsTable((v) => !v)} />
         )}
       </div>
 
       {data.length === 0 ? (
         <p className="text-muted-foreground text-sm">{t("dashboard.no_spending")}</p>
       ) : asTable ? (
-        <table className="w-full text-sm">
+        <table className="fade-in w-full text-sm">
           <tbody>
             {data.map((r) => (
-              <tr key={r.category_id ?? "none"} className="border-t first:border-t-0">
-                <td className="py-1.5">{name(r.category_id)}</td>
-                <td className="py-1.5 text-right tabular-nums">{formatMoney(r.total, lang)}</td>
-                <td className="text-muted-foreground py-1.5 pl-2 text-right text-xs tabular-nums">
+              <tr
+                key={r.category_id ?? "none"}
+                className="border-t border-[rgba(13,75,76,.07)] first:border-t-0"
+              >
+                <td className="py-2">{name(r.category_id)}</td>
+                <td className="num py-2 text-right">{formatMoney(r.total, lang)}</td>
+                <td className="text-muted-foreground num py-2 pl-2 text-right text-xs">
                   {Math.round((r.total / total) * 100)}%
                 </td>
               </tr>
@@ -56,28 +55,36 @@ export function CategoryBars({ data }: { data: CategorySpend[] }) {
           </tbody>
         </table>
       ) : (
-        <ul className="space-y-3">
-          {data.map((r) => (
+        <ul className="fade-in space-y-3.5">
+          {data.map((r, i) => (
             <li
               key={r.category_id ?? "none"}
+              className="flex items-center gap-3"
               title={`${name(r.category_id)}: ${formatMoney(r.total, lang)}`}
             >
-              <div className="mb-1 flex items-baseline justify-between gap-2 text-sm">
-                <span>{name(r.category_id)}</span>
-                <span className="tabular-nums">
-                  {formatMoney(r.total, lang)}
-                  <span className="text-muted-foreground ml-1.5 text-xs">
-                    {Math.round((r.total / total) * 100)}%
+              <CategoryIcon
+                categoryKey={r.category_id === null ? "other" : byId.get(r.category_id)?.key}
+                className="size-10 rounded-[0.85rem]"
+                iconClassName="size-[17px]"
+              />
+              <div className="min-w-0 flex-1">
+                <div className="mb-1.5 flex items-baseline justify-between gap-2 text-sm">
+                  <span className="truncate font-semibold">{name(r.category_id)}</span>
+                  <span className="num shrink-0 font-bold">
+                    {formatMoney(r.total, lang)}
+                    <span className="text-muted-foreground ml-1.5 text-xs font-medium">
+                      {Math.round((r.total / total) * 100)}%
+                    </span>
                   </span>
-                </span>
-              </div>
-              <div className="bg-muted h-2.5 rounded-r-full rounded-l-sm">
-                <div
-                  className="h-full rounded-r-full rounded-l-sm"
-                  style={{
-                    width: `${Math.max((r.total / max) * 100, 2)}%`,
-                    background: "var(--chart-bar)",
-                  }}
+                </div>
+                <ProgressBar
+                  value={(r.total / max) * 100}
+                  color={
+                    i === 0
+                      ? "var(--chart-bar)"
+                      : "color-mix(in oklch, var(--chart-bar) 78%, white)"
+                  }
+                  className="h-1.5"
                 />
               </div>
             </li>

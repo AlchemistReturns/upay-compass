@@ -47,7 +47,10 @@ export function LanguageToggle({ className }: { className?: string }) {
         "text-[13px] leading-none font-bold",
       )}
     >
-      {t(`language.short_${next}`)}
+      {/* keyed, so the label crossfades when the language flips */}
+      <span key={next} className="pop">
+        {t(`language.short_${next}`)}
+      </span>
     </button>
   );
 }

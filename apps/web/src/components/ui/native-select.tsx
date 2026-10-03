@@ -1,16 +1,17 @@
 import * as React from "react";
+import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { FIELD } from "./input";
 
-/** Native <select>: best mobile behaviour, styled like Input. */
+/** Native <select>: best mobile behaviour, styled like Input, with our own chevron. */
 export function NativeSelect({ className, ...props }: React.ComponentProps<"select">) {
   return (
-    <select
-      className={cn(
-        "border-input bg-card h-11 w-full rounded-xl border px-3 text-base outline-none md:text-sm",
-        "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3",
-        className,
-      )}
-      {...props}
-    />
+    <div className="relative">
+      <select className={cn(FIELD, "appearance-none pr-11", className)} {...props} />
+      <ChevronDown
+        aria-hidden
+        className="text-muted-foreground pointer-events-none absolute top-1/2 right-4 size-4 -translate-y-1/2"
+      />
+    </div>
   );
 }

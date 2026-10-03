@@ -5,8 +5,12 @@ import { Plus, Target } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { OfflineNote } from "@/features/pwa/offline-note";
 import { useOnline } from "@/features/pwa/use-online";
-import { PageHeader } from "@/components/page-header";
+import { PageHeader, TOOLBAR_BUTTON } from "@/components/page-header";
+import { AnimatedNumber, EmptyState, ErrorState, LoadingCards, Ring } from "@/components/compass";
+import { MoneyInput } from "@/components/money-input";
+import { Sheet } from "@/components/sheet";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/toaster";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatMoney } from "@/lib/format";
@@ -15,7 +19,7 @@ import { GoalCard } from "./goal-card";
 import { RoundupCard } from "./roundup-card";
 import { useContributions, useCreateGoal, useGoals, type Goal } from "./use-goals";
 
-/** Navy summary at the top: everything saved across goals, as a ring and in words. */
+/** Teal summary at the top: everything saved across goals, as a ring and in words. */
 function GoalsSummary({ goals, onNew }: { goals: Goal[]; onNew: () => void }) {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
@@ -24,43 +28,25 @@ function GoalsSummary({ goals, onNew }: { goals: Goal[]; onNew: () => void }) {
   const pct = target > 0 ? Math.round((saved / target) * 100) : 0;
 
   return (
-    <section className="balance-panel flex items-center gap-4 p-5 sm:p-6">
-      {/* the ring is decorative; the same figure is written out beside it */}
-      <svg
-        viewBox="0 0 36 36"
-        className="relative z-[1] size-[4.5rem] shrink-0 -rotate-90"
-        aria-hidden
-      >
-        <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,.15)" strokeWidth="4" />
-        <circle
-          cx="18"
-          cy="18"
-          r="15"
-          fill="none"
-          stroke="#fff"
-          strokeWidth="4"
-          strokeLinecap="round"
-          pathLength={100}
-          strokeDasharray={`${Math.max(pct, 2)} 100`}
-        />
-      </svg>
-      <div className="relative z-[1] min-w-0 flex-1">
-        <div className="text-[13px] text-white/80">{t("goals.saved_across")}</div>
-        <div className="text-[1.75rem] leading-tight font-bold tracking-tight tabular-nums">
-          {formatMoney(saved, lang)}
+    <section className="balance-panel rise flex items-center gap-5 p-5 sm:gap-7 sm:p-7">
+      <Ring value={pct} size={104} stroke={10} track="rgba(255,255,255,.1)" color="var(--lime)">
+        <span className="num text-2xl leading-none font-extrabold">{pct}%</span>
+      </Ring>
+      <div className="min-w-0 flex-1">
+        <div className="text-on-dark-muted text-[13px] font-semibold">
+          {t("goals.saved_across")}
         </div>
-        <div className="text-[13px] text-white/80 tabular-nums">
+        <div className="mt-1 text-[1.75rem] leading-none font-extrabold tracking-tight sm:text-[2rem]">
+          <AnimatedNumber value={saved} format={(n) => formatMoney(n, lang)} />
+        </div>
+        <div className="text-on-dark-muted num mt-1.5 text-[13px]">
           {t("goals.of_target", { pct, amount: formatMoney(target, lang) })}
         </div>
+        <Button variant="onDark" size="sm" className="mt-4" onClick={onNew}>
+          <Plus strokeWidth={2.5} aria-hidden />
+          {t("goals.new")}
+        </Button>
       </div>
-      <button
-        type="button"
-        onClick={onNew}
-        className="text-brand-ink relative z-[1] flex min-h-11 shrink-0 items-center gap-1.5 self-start rounded-full bg-white px-4 text-sm font-semibold transition-colors hover:bg-white/90"
-      >
-        <Plus className="size-4" strokeWidth={2.5} aria-hidden />
-        <span className="max-sm:sr-only">{t("goals.new")}</span>
-      </button>
     </section>
   );
 }
@@ -85,6 +71,7 @@ function NewGoalForm({ onDone }: { onDone: () => void }) {
         target_amount: amount,
         target_date: date || null,
       });
+      toast.success(t("goals.toast_created"));
       onDone();
     } catch {
       setError(t("common.error"));
@@ -92,8 +79,7 @@ function NewGoalForm({ onDone }: { onDone: () => void }) {
   }
 
   return (
-    <form onSubmit={submit} className="finance-card space-y-3 p-4 sm:p-5" noValidate>
-      <h2 className="section-title">{t("goals.new")}</h2>
+    <form onSubmit={submit} className="space-y-4" noValidate>
       <div className="space-y-2">
         <Label htmlFor="goal-name">{t("goals.name")}</Label>
         <Input
@@ -105,29 +91,24 @@ function NewGoalForm({ onDone }: { onDone: () => void }) {
       </div>
       <div className="space-y-2">
         <Label htmlFor="goal-target">{t("goals.target")}</Label>
-        <Input
-          id="goal-target"
-          inputMode="numeric"
-          value={target}
-          onChange={(e) => setTarget(e.target.value.replace(/\D/g, ""))}
-        />
+        <MoneyInput id="goal-target" value={target} onChange={setTarget} />
       </div>
       <div className="space-y-2">
         <Label htmlFor="goal-by">{t("goals.date")}</Label>
         <Input id="goal-by" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
       </div>
       {error && (
-        <p role="alert" className="text-destructive text-sm">
+        <p role="alert" className="text-destructive text-sm font-medium">
           {error}
         </p>
       )}
       <OfflineNote />
-      <div className="flex gap-2">
-        <Button type="button" variant="outline" onClick={onDone}>
+      <div className="flex gap-2 pt-1">
+        <Button type="button" variant="secondary" onClick={onDone}>
           {t("common.cancel")}
         </Button>
-        <Button type="submit" className="flex-1" disabled={create.isPending || !online}>
-          {create.isPending ? t("common.saving") : t("goals.create")}
+        <Button type="submit" className="flex-1" loading={create.isPending} disabled={!online}>
+          {t("goals.create")}
         </Button>
       </div>
     </form>
@@ -139,12 +120,18 @@ export function GoalsView() {
   const goals = useGoals();
   const contributions = useContributions();
   const [creating, setCreating] = useState(false);
+  const [opens, setOpens] = useState(0);
 
   useRealtimeInvalidate("goals", [["goals"]]);
   useRealtimeInvalidate("goal_contributions", [["goals"]]);
 
   const loading = goals.isPending || contributions.isPending;
   const failed = goals.isError || contributions.isError;
+
+  function startNew() {
+    setOpens((n) => n + 1);
+    setCreating(true);
+  }
 
   return (
     <>
@@ -158,57 +145,69 @@ export function GoalsView() {
               })
             : undefined
         }
+        actions={
+          goals.isSuccess && (
+            <button
+              type="button"
+              className={TOOLBAR_BUTTON}
+              aria-label={t("goals.new")}
+              title={t("goals.new")}
+              onClick={startNew}
+            >
+              <Plus className="size-5" aria-hidden />
+            </button>
+          )
+        }
       />
 
-      {loading && <p className="text-muted-foreground">{t("common.loading")}</p>}
+      {loading && !failed && <LoadingCards hero rows={2} />}
       {failed && (
-        <div>
-          <p className="mb-2">{t("common.error")}</p>
-          <Button
-            onClick={() => {
-              void goals.refetch();
-              void contributions.refetch();
-            }}
-          >
-            {t("common.retry")}
-          </Button>
-        </div>
+        <ErrorState
+          onRetry={() => {
+            void goals.refetch();
+            void contributions.refetch();
+          }}
+        />
       )}
 
       {goals.isSuccess && contributions.isSuccess && (
-        <div className="space-y-4 pb-4">
-          {goals.data.length > 0 && (
-            <GoalsSummary goals={goals.data} onNew={() => setCreating(true)} />
+        <div className="space-y-5 pb-4">
+          {goals.data.length > 0 ? (
+            <GoalsSummary goals={goals.data} onNew={startNew} />
+          ) : (
+            <EmptyState
+              icon={Target}
+              title={t("goals.new")}
+              body={t("goals.empty")}
+              action={
+                <Button onClick={startNew}>
+                  <Plus aria-hidden />
+                  {t("goals.new")}
+                </Button>
+              }
+            />
           )}
 
-          {creating && <NewGoalForm onDone={() => setCreating(false)} />}
-
-          {goals.data.length === 0 && !creating && (
-            <div className="finance-card flex flex-col items-center gap-3 px-6 py-10 text-center">
-              <span className="icon-chip size-12 rounded-2xl">
-                <Target className="size-6" aria-hidden />
-              </span>
-              <p className="text-muted-foreground max-w-xs text-sm">{t("goals.empty")}</p>
-              <Button onClick={() => setCreating(true)}>
-                <Plus className="size-4" aria-hidden />
-                {t("goals.new")}
-              </Button>
+          {goals.data.length > 0 && (
+            <div className="grid items-start gap-3 lg:grid-cols-2 [&>*]:min-w-0 [&>*:only-child]:col-span-full">
+              {goals.data.map((g, i) => (
+                <GoalCard
+                  key={g.id}
+                  goal={g}
+                  index={i}
+                  contributions={contributions.data.filter((c) => c.goal_id === g.id)}
+                />
+              ))}
             </div>
           )}
-
-          <div className="grid items-start gap-4 lg:grid-cols-2">
-            {goals.data.map((g) => (
-              <GoalCard
-                key={g.id}
-                goal={g}
-                contributions={contributions.data.filter((c) => c.goal_id === g.id)}
-              />
-            ))}
-          </div>
 
           <RoundupCard goals={goals.data} contributions={contributions.data} />
         </div>
       )}
+
+      <Sheet open={creating} onOpenChange={setCreating} title={t("goals.new")}>
+        <NewGoalForm key={opens} onDone={() => setCreating(false)} />
+      </Sheet>
     </>
   );
 }

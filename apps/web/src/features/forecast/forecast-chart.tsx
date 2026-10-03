@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import {
+  Area,
+  AreaChart,
   CartesianGrid,
-  Line,
-  LineChart,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -13,6 +13,8 @@ import {
 } from "recharts";
 import { useTranslation } from "react-i18next";
 import { formatCompact, formatMoney, formatShortDate } from "@/lib/format";
+import { ChartToggle } from "@/features/transactions/chart-toggle";
+import { ChartTooltip } from "@/features/transactions/weekly-chart";
 import type { ForecastSnapshot } from "./use-forecast";
 
 type Row = { day: string; label: string; balance: number; risk: boolean };
@@ -28,15 +30,16 @@ function ForecastTooltip({
   const row = payload?.[0]?.payload;
   if (!active || !row) return null;
   return (
-    <div className="bg-card rounded-xl border p-2.5 text-xs shadow-lg">
-      <div className="font-medium">{row.label}</div>
-      <div className="tabular-nums">{formatMoney(row.balance, lang)}</div>
-      {row.risk && <div className="mt-0.5 font-medium">{t("forecast.below_buffer")}</div>}
-    </div>
+    <ChartTooltip title={row.label}>
+      <div className="num text-sm font-bold">{formatMoney(row.balance, lang)}</div>
+      {row.risk && (
+        <div className="mt-0.5 font-semibold text-[#ffb59e]">{t("forecast.below_buffer")}</div>
+      )}
+    </ChartTooltip>
   );
 }
 
-/** One line (projected balance), a dashed safety-buffer line, and red dots on the days that dip below it. */
+/** Projected balance as a filled area, a dashed safety-buffer line, and red dots on days below it. */
 export function ForecastChart({ snapshot }: { snapshot: ForecastSnapshot }) {
   const { t, i18n } = useTranslation();
   const [asTable, setAsTable] = useState(false);
@@ -52,30 +55,26 @@ export function ForecastChart({ snapshot }: { snapshot: ForecastSnapshot }) {
   const hasNegative = rows.some((r) => r.balance < 0);
 
   return (
-    <section className="finance-card p-4 sm:p-5">
+    <section className="finance-card rise p-4 sm:p-5" style={{ "--i": 1 } as React.CSSProperties}>
       <div className="mb-3 flex items-start justify-between gap-2">
-        <div>
-          <h2 className="section-title">{t("forecast.chart_title")}</h2>
-          <p className="text-muted-foreground text-xs">{t("forecast.chart_hint")}</p>
+        <div className="min-w-0">
+          <h2 className="text-[15px] font-bold">{t("forecast.chart_title")}</h2>
+          <p className="text-muted-foreground text-[12.5px] leading-5">
+            {t("forecast.chart_hint")}
+          </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setAsTable((v) => !v)}
-          className="text-primary hover:bg-secondary min-h-11 min-w-11 shrink-0 rounded-full px-3 text-xs font-medium transition-colors"
-        >
-          {asTable ? t("dashboard.show_chart") : t("dashboard.show_table")}
-        </button>
+        <ChartToggle asTable={asTable} onToggle={() => setAsTable((v) => !v)} />
       </div>
 
       <ul
-        className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-xs"
+        className="mb-3 flex flex-wrap gap-x-4 gap-y-1.5 text-[12px] font-medium"
         aria-label={t("dashboard.legend")}
       >
         <li className="flex items-center gap-1.5">
           <span
             aria-hidden
-            className="inline-block h-0.5 w-4"
-            style={{ background: "var(--chart-income)" }}
+            className="inline-block h-[3px] w-4 rounded-full"
+            style={{ background: "var(--chart-expense)" }}
           />
           {t("forecast.legend_balance")}
         </li>
@@ -83,7 +82,7 @@ export function ForecastChart({ snapshot }: { snapshot: ForecastSnapshot }) {
           <span
             aria-hidden
             className="inline-block w-4 border-t-2 border-dashed"
-            style={{ borderColor: "var(--chart-axis)" }}
+            style={{ borderColor: "var(--status-warning)" }}
           />
           {t("forecast.legend_buffer")}
         </li>
@@ -100,55 +99,67 @@ export function ForecastChart({ snapshot }: { snapshot: ForecastSnapshot }) {
       </ul>
 
       {asTable ? (
-        <div className="max-h-72 overflow-y-auto">
+        <div className="fade-in max-h-80 overflow-y-auto">
           <table className="w-full text-sm">
-            <thead className="text-muted-foreground bg-background sticky top-0 text-left text-xs">
+            <thead className="text-muted-foreground bg-card sticky top-0 text-left text-xs">
               <tr>
-                <th className="py-1 font-normal">{t("forecast.date")}</th>
-                <th className="py-1 text-right font-normal">{t("forecast.balance")}</th>
+                <th className="py-1.5 font-semibold">{t("forecast.date")}</th>
+                <th className="py-1.5 text-right font-semibold">{t("forecast.balance")}</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.day} className="border-t">
-                  <td className="py-1.5">
+                <tr key={r.day} className="border-t border-[rgba(13,75,76,.07)]">
+                  <td className="py-2">
                     {r.label}
                     {r.risk && (
-                      <span className="text-muted-foreground ml-2 text-xs">
+                      <span className="text-destructive ml-2 text-xs font-semibold">
                         {t("forecast.below_buffer")}
                       </span>
                     )}
                   </td>
-                  <td className="py-1.5 text-right tabular-nums">{formatMoney(r.balance, lang)}</td>
+                  <td className="num py-2 text-right">{formatMoney(r.balance, lang)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       ) : (
-        <div className="h-56" role="img" aria-label={t("forecast.chart_title")}>
+        <div className="fade-in -ml-1 h-60" role="img" aria-label={t("forecast.chart_title")}>
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={rows} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-              <CartesianGrid vertical={false} stroke="var(--chart-grid)" />
+            <AreaChart data={rows} margin={{ top: 8, right: 6, bottom: 0, left: 0 }}>
+              <defs>
+                <linearGradient id="forecast-fill" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0%" stopColor="#79bf57" stopOpacity={0.45} />
+                  <stop offset="100%" stopColor="#79bf57" stopOpacity={0.02} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid vertical={false} stroke="var(--chart-grid)" strokeDasharray="3 4" />
               <XAxis
                 dataKey="label"
                 tickLine={false}
-                axisLine={{ stroke: "var(--chart-grid)" }}
+                axisLine={false}
                 tick={{ fill: "var(--chart-axis)", fontSize: 11 }}
                 interval="preserveStartEnd"
                 minTickGap={28}
+                tickMargin={8}
               />
               <YAxis
-                width={44}
+                width={42}
                 tickLine={false}
                 axisLine={false}
                 tick={{ fill: "var(--chart-axis)", fontSize: 11 }}
                 tickFormatter={(v: number) => formatCompact(v, lang)}
               />
               {hasNegative && <ReferenceLine y={0} stroke="var(--chart-axis)" />}
-              <ReferenceLine y={buffer} stroke="var(--chart-axis)" strokeDasharray="5 4" />
+              <ReferenceLine
+                y={buffer}
+                stroke="var(--status-warning)"
+                strokeWidth={1.5}
+                strokeDasharray="6 5"
+              />
               <Tooltip
-                cursor={{ stroke: "var(--chart-axis)", strokeWidth: 1 }}
+                cursor={{ stroke: "var(--chart-axis)", strokeWidth: 1, strokeDasharray: "3 3" }}
                 content={(props) => (
                   <ForecastTooltip
                     {...(props as unknown as TooltipProps)}
@@ -157,12 +168,13 @@ export function ForecastChart({ snapshot }: { snapshot: ForecastSnapshot }) {
                   />
                 )}
               />
-              <Line
+              <Area
                 type="monotone"
                 dataKey="balance"
-                stroke="var(--chart-income)"
-                strokeWidth={2}
-                isAnimationActive={false}
+                stroke="var(--chart-expense)"
+                strokeWidth={2.5}
+                fill="url(#forecast-fill)"
+                animationDuration={900}
                 dot={(props: { cx?: number; cy?: number; payload?: Row; index?: number }) => {
                   const { cx, cy, payload, index } = props;
                   if (!payload?.risk || cx === undefined || cy === undefined) {
@@ -173,16 +185,16 @@ export function ForecastChart({ snapshot }: { snapshot: ForecastSnapshot }) {
                       key={`d-${index}`}
                       cx={cx}
                       cy={cy}
-                      r={3.5}
+                      r={4}
                       fill="var(--status-critical)"
-                      stroke="var(--background)"
+                      stroke="#fff"
                       strokeWidth={2}
                     />
                   );
                 }}
-                activeDot={{ r: 4 }}
+                activeDot={{ r: 5, stroke: "#fff", strokeWidth: 2, fill: "var(--chart-expense)" }}
               />
-            </LineChart>
+            </AreaChart>
           </ResponsiveContainer>
         </div>
       )}

@@ -62,17 +62,19 @@ export function GamificationProvider({ children }: { children: React.ReactNode }
       {toast.length > 0 && (
         <div
           role="status"
-          className="bg-card ring-foreground/15 fixed inset-x-4 top-4 z-30 mx-auto flex max-w-md items-start gap-3 rounded-xl p-3 shadow-lg ring-1"
+          className="pop text-on-dark fixed inset-x-4 top-[calc(env(safe-area-inset-top)+0.75rem)] z-[60] mx-auto flex max-w-md items-center gap-3 rounded-[1.5rem] bg-[image:var(--gradient-teal)] p-3 pl-3.5 shadow-[var(--shadow-float)] ring-1 ring-white/10"
         >
           <div className="flex-1 space-y-1">
             {toast.map((id) => {
               const Icon = badgeIcon(id);
               return (
-                <div key={id} className="flex items-center gap-2">
-                  <Icon className="text-primary size-5 shrink-0" aria-hidden />
+                <div key={id} className="flex items-center gap-3">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[linear-gradient(145deg,#ffd27a,#f0a531)] text-white">
+                    <Icon className="size-5" aria-hidden />
+                  </span>
                   <div>
-                    <div className="text-sm font-medium">{t("gamification.earned")}</div>
-                    <div className="text-muted-foreground text-xs">
+                    <div className="text-sm font-bold">{t("gamification.earned")}</div>
+                    <div className="text-on-dark-muted text-xs">
                       {t(`gamification.badges.${id}.title`)}
                     </div>
                   </div>
@@ -83,7 +85,7 @@ export function GamificationProvider({ children }: { children: React.ReactNode }
           <button
             type="button"
             aria-label={t("common.close")}
-            className="flex size-8 items-center justify-center rounded-lg"
+            className="text-on-dark-muted grid size-10 shrink-0 place-items-center rounded-full hover:bg-white/10"
             onClick={() => setToast([])}
           >
             <X className="size-4" aria-hidden />

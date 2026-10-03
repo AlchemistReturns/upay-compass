@@ -1,11 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle, CheckCircle2, ChevronRight, Info, OctagonAlert } from "lucide-react";
+import { ChevronRight, CircleCheck, Info, OctagonAlert, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatMoney, formatShortDate } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { useRealtimeInvalidate } from "@/features/realtime/use-realtime-invalidate";
 import { useLatestForecast } from "./use-forecast";
+import { NAV_FORWARD } from "@/components/page-transition";
+
+const TONE = {
+  neutral: { chip: "bg-secondary text-primary", Icon: Info },
+  good: { chip: "bg-positive-soft text-positive", Icon: CircleCheck },
+  warn: { chip: "bg-warning-soft text-warning-ink", Icon: TriangleAlert },
+  critical: { chip: "bg-negative-soft text-destructive", Icon: OctagonAlert },
+} as const;
 
 /** Dashboard teaser for the 30-day forecast: the verdict in one line, with an icon and words. */
 export function ForecastCard() {
@@ -16,41 +25,38 @@ export function ForecastCard() {
   const d = forecast.data?.details;
 
   let line = t("forecast.see_yours");
-  let Icon = Info;
-  let color = "currentColor";
+  let tone: keyof typeof TONE = "neutral";
   if (d?.insufficient) {
     line = t("forecast.card_insufficient");
   } else if (d && d.lowest && d.firstRiskDay) {
     const negative = d.lowest.balance < 0;
-    Icon = negative ? OctagonAlert : AlertTriangle;
-    color = negative ? "var(--status-critical)" : "var(--status-warning)";
+    tone = negative ? "critical" : "warn";
     line = t(negative ? "forecast.card_negative" : "forecast.card_low", {
       day: formatShortDate(d.lowest.day, lang),
       amount: formatMoney(d.lowest.balance, lang),
     });
   } else if (d) {
-    Icon = CheckCircle2;
-    color = "var(--status-good)";
+    tone = "good";
     line = t("forecast.card_ok");
   }
+  const { chip, Icon } = TONE[tone];
 
   return (
-    <Link href="/forecast" className="finance-card flex min-h-20 items-center gap-3 p-4">
-      <span
-        className="icon-chip"
-        style={
-          color === "currentColor"
-            ? undefined
-            : { color, background: `color-mix(in srgb, ${color} 14%, white)` }
-        }
-      >
-        <Icon className="size-5" aria-hidden />
+    <Link
+      href="/forecast"
+      transitionTypes={NAV_FORWARD}
+      className="finance-card flex min-h-[5.5rem] items-center gap-4 p-4"
+    >
+      <span className={cn("grid size-14 shrink-0 place-items-center rounded-[1.1rem]", chip)}>
+        <Icon className="size-6" strokeWidth={2} aria-hidden />
       </span>
       <div className="min-w-0 flex-1">
-        <div className="text-muted-foreground text-xs font-medium">{t("forecast.title")}</div>
-        <div className="text-sm leading-snug font-medium">{line}</div>
+        <div className="text-muted-foreground text-[12.5px] font-semibold">
+          {t("forecast.title")}
+        </div>
+        <div className="mt-0.5 text-sm leading-snug font-semibold">{line}</div>
       </div>
-      <ChevronRight className="text-muted-foreground size-5 shrink-0" aria-hidden />
+      <ChevronRight className="text-muted-foreground/60 size-5 shrink-0" aria-hidden />
     </Link>
   );
 }

@@ -1,14 +1,35 @@
 "use client";
 
 import Link from "next/link";
-import { BellOff } from "lucide-react";
+import {
+  BellOff,
+  CalendarClock,
+  CheckCheck,
+  LineChart,
+  OctagonAlert,
+  PiggyBank,
+  Target,
+  TrendingUp,
+  type LucideIcon,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { PageHeader } from "@/components/page-header";
-import { Button } from "@/components/ui/button";
+import { PageHeader, TOOLBAR_BUTTON } from "@/components/page-header";
+import { EmptyState, ErrorState, LoadingCards } from "@/components/compass";
+import { toast } from "@/components/toaster";
 import { formatShortDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useNudgeText } from "./use-nudge-text";
 import { useMarkNudgesRead, useNudges } from "./use-nudges";
+
+const TYPE_STYLE: Record<string, { Icon: LucideIcon; tone: string }> = {
+  budget_threshold: { Icon: PiggyBank, tone: "bg-warning-soft text-warning-ink" },
+  budget_exceeded: { Icon: OctagonAlert, tone: "bg-negative-soft text-destructive" },
+  overspend: { Icon: TrendingUp, tone: "bg-warning-soft text-warning-ink" },
+  goal_behind: { Icon: Target, tone: "bg-secondary text-primary" },
+  bill_due: { Icon: CalendarClock, tone: "bg-[#e3f0fb] text-[#1f5f95]" },
+  forecast_risk: { Icon: LineChart, tone: "bg-negative-soft text-destructive" },
+};
+const FALLBACK = { Icon: BellOff, tone: "bg-muted text-muted-foreground" };
 
 export function NudgesView() {
   const { t, i18n } = useTranslation();
@@ -19,66 +40,87 @@ export function NudgesView() {
 
   return (
     <>
-      <PageHeader title={t("nudges.title")} />
+      <PageHeader
+        title={t("nudges.title")}
+        back="/"
+        subtitle={unread > 0 ? t("nudges.bell_unread", { count: unread }) : undefined}
+        actions={
+          unread > 0 && (
+            <button
+              type="button"
+              className={TOOLBAR_BUTTON}
+              aria-label={t("nudges.mark_all")}
+              title={t("nudges.mark_all")}
+              disabled={markRead.isPending}
+              onClick={() =>
+                markRead.mutate("all", {
+                  onSuccess: () => toast.success(t("nudges.toast_all_read")),
+                })
+              }
+            >
+              <CheckCheck className="size-[18px]" aria-hidden />
+            </button>
+          )
+        }
+      />
 
-      {nudges.isPending && <p className="text-muted-foreground">{t("common.loading")}</p>}
-      {nudges.isError && (
-        <div>
-          <p className="mb-2">{t("common.error")}</p>
-          <Button onClick={() => void nudges.refetch()}>{t("common.retry")}</Button>
-        </div>
-      )}
+      {nudges.isPending && <LoadingCards rows={4} />}
+      {nudges.isError && <ErrorState onRetry={() => void nudges.refetch()} />}
 
       {nudges.isSuccess && (
         <div className="space-y-3 pb-4">
-          {unread > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={markRead.isPending}
-              onClick={() => markRead.mutate("all")}
-            >
-              {t("nudges.mark_all")}
-            </Button>
-          )}
           {nudges.data.length === 0 ? (
-            <div className="finance-card flex flex-col items-center gap-3 px-6 py-10 text-center">
-              <span className="icon-chip size-12">
-                <BellOff className="size-5" aria-hidden />
-              </span>
-              <p className="text-muted-foreground text-sm">{t("nudges.empty")}</p>
-            </div>
+            <EmptyState icon={BellOff} body={t("nudges.empty")} />
           ) : (
-            <ul className="finance-card divide-y overflow-hidden">
-              {nudges.data.map((n) => {
+            <ul className="space-y-2.5">
+              {nudges.data.map((n, i) => {
                 const { title, body, href } = text(n);
+                const { Icon, tone } = TYPE_STYLE[n.type] ?? FALLBACK;
                 return (
-                  <li key={n.id}>
+                  <li
+                    key={n.id}
+                    className="rise"
+                    style={{ "--i": Math.min(i, 8) } as React.CSSProperties}
+                  >
                     <Link
                       href={href}
                       onClick={() => !n.read && markRead.mutate([n.id])}
                       className={cn(
-                        "hover:bg-muted/60 flex min-h-16 items-start gap-3 px-4 py-3.5 transition-colors",
-                        !n.read && "bg-secondary/50",
+                        "finance-card relative flex min-h-16 items-start gap-3.5 p-4",
+                        !n.read &&
+                          "border-leaf/40 shadow-[0_0_0_3px_rgba(195,234,140,.45),var(--shadow-card)]",
                       )}
                     >
                       <span
-                        aria-hidden
-                        className={cn(
-                          "mt-1.5 size-2.5 shrink-0 rounded-full",
-                          n.read ? "bg-border" : "bg-primary ring-secondary ring-4",
-                        )}
-                      />
+                        className={cn("grid size-11 shrink-0 place-items-center rounded-2xl", tone)}
+                      >
+                        <Icon className="size-5" aria-hidden />
+                      </span>
                       <div className="min-w-0 flex-1">
-                        <div className={cn("text-sm", !n.read && "font-medium")}>
+                        <div
+                          className={cn(
+                            "text-[15px] leading-snug",
+                            n.read ? "font-semibold" : "font-bold",
+                          )}
+                        >
                           {!n.read && <span className="sr-only">{t("nudges.unread")}: </span>}
                           {title}
                         </div>
-                        {body && <div className="text-muted-foreground text-xs">{body}</div>}
-                        <div className="text-muted-foreground mt-0.5 text-xs">
+                        {body && (
+                          <div className="text-muted-foreground mt-0.5 text-[13px] leading-5">
+                            {body}
+                          </div>
+                        )}
+                        <div className="text-muted-foreground/80 mt-1.5 text-xs font-medium">
                           {formatShortDate(n.created_at, i18n.language)}
                         </div>
                       </div>
+                      {!n.read && (
+                        <span
+                          aria-hidden
+                          className="bg-leaf mt-1.5 size-2.5 shrink-0 rounded-full"
+                        />
+                      )}
                     </Link>
                   </li>
                 );

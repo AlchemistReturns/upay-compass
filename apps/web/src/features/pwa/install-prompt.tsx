@@ -62,21 +62,23 @@ export function InstallPrompt() {
 
   return (
     <section
-      className="finance-card flex items-center gap-3 p-4"
+      className="finance-card rise flex items-center gap-3 p-3 pl-4"
       aria-label={t("pwa.install_title")}
     >
-      <Download className="text-primary size-5 shrink-0" aria-hidden />
+      <span className="icon-chip size-10 rounded-xl">
+        <Download className="size-[18px]" aria-hidden />
+      </span>
       <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium">{t("pwa.install_title")}</div>
-        <div className="text-muted-foreground text-xs">{t("pwa.install_hint")}</div>
+        <div className="text-sm font-bold">{t("pwa.install_title")}</div>
+        <div className="text-muted-foreground text-xs leading-4">{t("pwa.install_hint")}</div>
       </div>
-      <Button size="sm" className="min-h-11" onClick={() => void install()}>
+      <Button size="sm" onClick={() => void install()}>
         {t("pwa.install")}
       </Button>
       <button
         type="button"
         aria-label={t("common.close")}
-        className="flex size-11 items-center justify-center rounded-lg"
+        className="text-muted-foreground hover:bg-muted flex size-11 shrink-0 items-center justify-center rounded-full"
         onClick={dismiss}
       >
         <X className="size-4" aria-hidden />

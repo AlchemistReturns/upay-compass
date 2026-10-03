@@ -21,9 +21,9 @@ export function PwaShell() {
   return (
     <div
       role="status"
-      className="bg-muted text-foreground sticky top-0 z-20 flex items-center justify-center gap-2 px-4 py-2 text-center text-sm"
+      className="bg-brand-ink text-on-dark sticky top-0 z-50 flex items-center justify-center gap-2 px-4 pt-[calc(env(safe-area-inset-top)+0.5rem)] pb-2 text-center text-[13px] font-medium"
     >
-      <WifiOff className="size-4 shrink-0" aria-hidden />
+      <WifiOff className="text-lime size-4 shrink-0" aria-hidden />
       {t("pwa.offline_banner")}
     </div>
   );

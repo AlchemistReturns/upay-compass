@@ -5,6 +5,7 @@ import { ShieldCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
+import { ProgressBar } from "@/components/compass";
 import { useAuth } from "@/features/auth/auth-provider";
 import { useProfile } from "@/features/profile/use-profile";
 import { useOnline } from "@/features/pwa/use-online";
@@ -21,9 +22,9 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="finance-card p-4 sm:p-5">
-      <h2 className="section-title">{title}</h2>
-      {hint && <p className="text-muted-foreground mb-3 text-xs">{hint}</p>}
+    <section className="finance-card rise p-4 sm:p-5">
+      <h2 className="text-[15px] font-bold">{title}</h2>
+      {hint && <p className="text-muted-foreground mb-4 text-xs leading-5">{hint}</p>}
       <div className={hint ? "" : "mt-3"}>{children}</div>
     </section>
   );
@@ -37,7 +38,7 @@ function Hidden({ min }: { min: number }) {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-2xl font-semibold tabular-nums">{value}</div>
+      <div className="num text-[1.75rem] leading-tight font-extrabold">{value}</div>
       <div className="text-muted-foreground text-xs">{label}</div>
     </div>
   );
@@ -65,12 +66,7 @@ function Insights({ data }: { data: AdminInsights }) {
                     {pct(c.share)} · {formatMoney(c.total, lang)}
                   </span>
                 </div>
-                <div className="bg-muted mt-1 h-2 overflow-hidden rounded-full">
-                  <div
-                    className="bg-primary h-full rounded-full"
-                    style={{ width: `${Math.max(c.share * 100, 2)}%` }}
-                  />
-                </div>
+                <ProgressBar className="mt-1.5 h-1.5" value={c.share * 100} />
               </li>
             ))}
           </ul>
@@ -106,7 +102,7 @@ function Insights({ data }: { data: AdminInsights }) {
         )}
       </Section>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-3">
         <Section title={t("admin.goals_title")}>
           {isSuppressed(goals) ? (
             <Hidden min={k} />
@@ -158,7 +154,7 @@ export function AdminView() {
   if (profile.isPending) {
     return (
       <>
-        <PageHeader title={t("admin.title")} />
+        <PageHeader title={t("admin.title")} back="/" />
         <p className="text-muted-foreground" role="status">
           {t("common.loading")}
         </p>
@@ -169,7 +165,7 @@ export function AdminView() {
   if (!isAdmin) {
     return (
       <>
-        <PageHeader title={t("admin.title")} />
+        <PageHeader title={t("admin.title")} back="/" />
         <p>{t("admin.not_allowed")}</p>
         <Link href="/" className="text-primary mt-3 inline-flex min-h-11 items-center">
           {t("common.back")}
@@ -180,9 +176,9 @@ export function AdminView() {
 
   return (
     <>
-      <PageHeader title={t("admin.title")} />
+      <PageHeader title={t("admin.title")} back="/" />
       <div className="space-y-4 pb-4">
-        <p className="text-muted-foreground flex gap-2 text-sm">
+        <p className="callout">
           <ShieldCheck className="mt-0.5 size-4 shrink-0" aria-hidden />
           {t("admin.privacy", { count: insights.data?.min_group_size ?? 5 })}
         </p>

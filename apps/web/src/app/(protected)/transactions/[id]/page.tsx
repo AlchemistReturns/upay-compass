@@ -13,7 +13,7 @@ export default function EditTransactionPage() {
 
   return (
     <>
-      <PageHeader title={t("transactions.edit")} />
+      <PageHeader title={t("transactions.edit")} back="/transactions" />
       {tx.isPending && <p className="text-muted-foreground">{t("common.loading")}</p>}
       {tx.isError && <p>{t("common.error")}</p>}
       {tx.isSuccess && !tx.data && <p>{t("transactions.not_found")}</p>}

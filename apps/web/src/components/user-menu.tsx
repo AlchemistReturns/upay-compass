@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/features/auth/auth-provider";
 import { Avatar, formatPhone } from "@/features/profile/avatar";
 import { useProfile } from "@/features/profile/use-profile";
+import { NAV_FORWARD } from "@/components/page-transition";
 
 const ITEM =
   "flex min-h-11 w-full cursor-default items-center gap-3 rounded-xl px-3 text-sm font-medium outline-none select-none data-[highlighted]:bg-secondary data-[highlighted]:text-secondary-foreground";
@@ -28,12 +29,12 @@ export function UserMenu({ triggerClassName }: { triggerClassName?: string }) {
         title={t("profile.menu")}
         className={cn(triggerClassName, "data-[popup-open]:bg-muted")}
       >
-        <Avatar name={name} className="size-9" />
+        <Avatar name={name} className="size-[38px] ring-0" />
       </Menu.Trigger>
 
       <Menu.Portal>
         <Menu.Positioner side="bottom" align="end" sideOffset={10} className="z-50 outline-none">
-          <Menu.Popup className="glass w-[min(19rem,calc(100vw-1.5rem))] origin-[var(--transform-origin)] rounded-3xl p-2 transition-[transform,opacity] duration-150 outline-none data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0">
+          <Menu.Popup className="glass w-[min(19.5rem,calc(100vw-1.5rem))] origin-[var(--transform-origin)] rounded-[1.75rem] p-2 transition-[transform,opacity] duration-150 outline-none data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0">
             {/* who is signed in */}
             <div className="flex items-center gap-3 px-2.5 pt-2 pb-3">
               <Avatar name={name} className="size-12 text-base" />
@@ -69,7 +70,10 @@ export function UserMenu({ triggerClassName }: { triggerClassName?: string }) {
               </div>
             )}
 
-            <Menu.LinkItem render={<Link href="/profile" />} className={ITEM}>
+            <Menu.LinkItem
+              render={<Link href="/profile" transitionTypes={NAV_FORWARD} />}
+              className={ITEM}
+            >
               <UserRound className="text-muted-foreground size-[18px]" aria-hidden />
               <span className="flex-1">{t("profile.open")}</span>
               <ChevronRight className="text-muted-foreground size-4" aria-hidden />
@@ -80,7 +84,10 @@ export function UserMenu({ triggerClassName }: { triggerClassName?: string }) {
               <ChevronRight className="text-muted-foreground size-4" aria-hidden />
             </Menu.LinkItem>
             {p?.role === "admin" && (
-              <Menu.LinkItem render={<Link href="/admin" />} className={ITEM}>
+              <Menu.LinkItem
+                render={<Link href="/admin" transitionTypes={NAV_FORWARD} />}
+                className={ITEM}
+              >
                 <ShieldCheck className="text-muted-foreground size-[18px]" aria-hidden />
                 <span className="flex-1">{t("admin.open")}</span>
                 <ChevronRight className="text-muted-foreground size-4" aria-hidden />

@@ -6,15 +6,15 @@ import { Fragment } from "react";
  */
 
 function inline(text: string) {
-  return text
-    .split(/(\*\*[^*]+\*\*)/g)
-    .map((part, i) =>
-      part.startsWith("**") && part.endsWith("**") ? (
-        <strong key={i}>{part.slice(2, -2)}</strong>
-      ) : (
-        <Fragment key={i}>{part}</Fragment>
-      ),
-    );
+  return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
+    part.startsWith("**") && part.endsWith("**") ? (
+      <strong key={i} className="text-foreground font-bold">
+        {part.slice(2, -2)}
+      </strong>
+    ) : (
+      <Fragment key={i}>{part}</Fragment>
+    ),
+  );
 }
 
 type Block =
@@ -58,16 +58,22 @@ export function parseBlocks(source: string): Block[] {
 
 export function Markdown({ source }: { source: string }) {
   return (
-    <div className="space-y-3 text-[15px] leading-relaxed">
+    <div className="text-foreground/90 space-y-4 text-base leading-[1.75]">
       {parseBlocks(source).map((b, i) =>
         b.kind === "h" ? (
-          <h2 key={i} className="pt-2 text-base font-semibold">
+          <h2
+            key={i}
+            className="text-foreground pt-3 text-lg leading-snug font-extrabold tracking-tight"
+          >
             {b.text}
           </h2>
         ) : b.kind === "ul" ? (
-          <ul key={i} className="list-disc space-y-1.5 ps-5">
+          <ul key={i} className="space-y-2.5">
             {b.items.map((item, j) => (
-              <li key={j}>{inline(item)}</li>
+              <li key={j} className="flex gap-3">
+                <span aria-hidden className="bg-leaf mt-[0.7em] size-1.5 shrink-0 rounded-full" />
+                <span>{inline(item)}</span>
+              </li>
             ))}
           </ul>
         ) : (

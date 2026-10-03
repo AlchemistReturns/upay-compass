@@ -13,8 +13,12 @@ export type HealthInputs = {
   income: number;
   /** Money out over the window, excluding transfers into savings. */
   spend: number;
-  /** Money out in essential categories over the window. */
+  /** Money out in essential categories over the window (not used by the buffer any more). */
   essentialSpend: number;
+  /** Essential spending per complete calendar month (Bangladesh time), newest first (up to 3). */
+  essentialMonths: number[];
+  /** Essential spending so far in the current calendar month. */
+  essentialThisMonth: number;
   /** Income per complete calendar month (Bangladesh time), newest first (up to 3). */
   incomeBuckets: number[];
   /** Current wallet balance. */
@@ -49,6 +53,8 @@ export type Component = {
   available: boolean;
   /** The measured quantity: savings rate, over-budget count, months of buffer, income CV. */
   raw: number | null;
+  /** Buffer only: whether the monthly figure is an average of complete months or this month so far. */
+  basis?: "months" | "month_so_far";
 };
 
 export type ActionId =
@@ -107,15 +113,33 @@ export function budgetComponent(i: Pick<HealthInputs, "budgets">): Component {
   };
 }
 
+/**
+ * What the person spends on essentials in a month, from what they logged, with no scaling: the
+ * average of the complete calendar months we have (up to three), or, until one has completed,
+ * this month's essentials so far (clearly marked as such, because early in a month it undercounts).
+ * Rent paid once a month counts once; a bill paid three times counts three times.
+ */
+export function monthlyEssential(
+  i: Pick<HealthInputs, "essentialMonths" | "essentialThisMonth">,
+): { amount: number; basis: "months" | "month_so_far" } | null {
+  if (i.essentialMonths.length > 0) {
+    const amount = i.essentialMonths.reduce((a, c) => a + c, 0) / i.essentialMonths.length;
+    // complete months with nothing logged say nothing about spending: fall through to this month
+    if (amount > 0) return { amount, basis: "months" };
+  }
+  return i.essentialThisMonth > 0 ? { amount: i.essentialThisMonth, basis: "month_so_far" } : null;
+}
+
 function bufferComponent(i: HealthInputs): Component {
-  const monthlyEssential = i.essentialSpend / (i.historyDays / 30);
-  if (!(monthlyEssential > 0)) return unavailable("buffer");
-  const months = Math.max(0, i.balance) / monthlyEssential;
+  const monthly = monthlyEssential(i);
+  if (!monthly) return unavailable("buffer");
+  const months = Math.max(0, i.balance) / monthly.amount;
   return {
     score: clamp01(months / BUFFER_TARGET_MONTHS) * 100,
     weight: HEALTH_WEIGHTS.buffer,
     available: true,
     raw: months,
+    basis: monthly.basis,
   };
 }
 
@@ -135,8 +159,11 @@ export function stabilityComponent(i: Pick<HealthInputs, "incomeBuckets">): Comp
   };
 }
 
+const monthlyEssentialAmount = (i: HealthInputs) => monthlyEssential(i)?.amount ?? 0;
+
 function buildActions(i: HealthInputs, c: Record<ComponentKey, Component>): HealthAction[] {
-  const months = i.historyDays / 30;
+  // what was logged is the month's figure; a history shorter than a month is not scaled up
+  const months = Math.max(1, i.historyDays / 30);
   // Rank by how many points of the total are still on the table.
   const candidates: { shortfall: number; action: HealthAction }[] = [];
   const shortfall = (k: ComponentKey) => c[k].weight * (100 - c[k].score);
@@ -180,7 +207,7 @@ function buildActions(i: HealthInputs, c: Record<ComponentKey, Component>): Heal
   }
 
   if (c.buffer.available && c.buffer.score < 100) {
-    const monthlyEssential = i.essentialSpend / months;
+    const monthlyEssential = monthlyEssentialAmount(i);
     candidates.push({
       shortfall: shortfall("buffer"),
       action: {
@@ -245,6 +272,8 @@ export function parseHealthInputs(raw: unknown): HealthInputs {
     income: n(r.income),
     spend: n(r.spend),
     essentialSpend: n(r.essential_spend),
+    essentialMonths: (Array.isArray(r.essential_months) ? r.essential_months : []).map(n),
+    essentialThisMonth: n(r.essential_this_month),
     incomeBuckets: buckets.map(n),
     balance: n(r.balance),
     budgets: budgets.map((b: Record<string, unknown>) => ({

@@ -47,9 +47,9 @@ The central design rule is **"AI for language, code for numbers."** Language mod
 | Backend | Supabase (Postgres with row level security, Auth, Realtime, Edge Functions) |
 | AI | OpenAI models, called only from server-side functions, always optional |
 | Data | Simulated or user-entered; no real money moves |
-| Automated tests | 330 (252 unit tests run anywhere, 78 integration tests against a running stack) |
-| Database migrations | 16 |
-| Server functions | 12 |
+| Automated tests | 451 (365 unit tests run anywhere, 86 integration tests against a running stack) |
+| Database migrations | 18 |
+| Server functions | 13 |
 
 ---
 
@@ -199,7 +199,7 @@ flowchart TB
 | `apps/web` | The Next.js PWA |
 | `packages/shared` | Types, zod schemas, and the pure logic (health, readiness, forecast, categorizer, anomaly, explain, voice validation) |
 | `adapters/upay-sim` | The simulated upay feed and its three personas |
-| `supabase/` | 16 migrations, 12 Edge Functions, configuration |
+| `supabase/` | 18 migrations, 13 Edge Functions, configuration |
 | `scripts/` | Evaluations and audits |
 | `docs/` | Pitch material, this report |
 | `spec.md` | The full specification and developer guide |
@@ -228,7 +228,7 @@ erDiagram
   PROFILES ||--o{ AUDIT_LOG : "sensitive actions"
 ```
 
-Raw transactions are the source of truth; every score, forecast and alert is *derived* and can be recomputed. All 16 user-data tables have row level security, so a person can only ever read or write their own rows.
+Raw transactions are the source of truth; every score, forecast and alert is *derived* and can be recomputed. Every user-data table has row level security, so a person can only ever read or write their own rows.
 
 ### 4.5 Request flow: from feed to insight
 
@@ -280,23 +280,32 @@ sequenceDiagram
 
 ### 5.2 Financial health score
 
-A transparent 0 to 100 score. Each component is normalized to 0-100 over the last 90 days and then weighted:
+A transparent 0 to 100 score. Each of four components is normalized to 0-100 and then weighted. The rules live in one tested file (`packages/shared/src/health.ts`) and each is measured on the basis that suits it:
 
-| Component | Weight | How it is measured |
-|---|---|---|
-| Savings rate | 30% | (income − spending) ÷ income; transfers into Savings count as saving. 20% saved scores 100, linear from 0%. |
-| Budget adherence | 25% | Average over this month's budgets; within the limit scores 100, 50% over scores 0. |
-| Emergency buffer | 25% | Wallet balance ÷ monthly essential spending; 3 months scores 100. |
-| Income stability | 20% | Variation of income over the last three complete calendar months; steady scores 100, 50% variation or more scores 0. |
+| Component | Weight | How it is measured | Full marks |
+|---|---|---|---|
+| Savings rate | 30% | (income − spending) ÷ income over the last 90 days (or since the first transaction); transfers into Savings count as saving, not spending. | 20% saved |
+| Budget adherence | 25% | Average over this month's budgets: within the limit scores 100, falling to 0 at 50% over. | Every budget within its limit |
+| Emergency buffer | 25% | Wallet balance ÷ **a typical month of essential spending**, measured on a monthly basis (below). | 3 months of essentials in the wallet |
+| Income stability | 20% | Variation of income across the last three complete calendar months (Bangladesh time): steady scores 100, 50% variation or more scores 0. | Steady monthly income |
 
-If a component cannot be measured yet (no income, no budgets), it counts as a neutral 50 and is **labelled as neutral**. Confidence is shown as low under 15 transactions or 28 days of history, and the screen says so. Improvement actions are *data* (an id and numbers) rendered through translation templates, never free text from a model.
+**Savings rate in practice.** With 25,000 in and 4,000 spent, the rate is 84%. That is above the 20% target, which already earns full marks, and the screen says exactly that ("You saved 84% of your income, above the 20% target, so this part earns full marks"). Spending more than you earn is shown as such, not as a negative saving.
+
+**Emergency buffer on a monthly basis.** Whatever a person logs in a month is that month's spending, so the buffer adds up what was logged and never stretches a short history into a month. A payment made once (rent) counts once; a payment made three times counts three times.
+
+- *Typical month of essentials* is the average of the complete calendar months in the data, up to the last three. Essential categories are Food, Transport, Recharge and Data, Bills and Utilities, Education and Health.
+- *Until a month has completed*, the buffer uses this month's essentials so far, and the screen labels it "based on this month so far" and notes that it gets more accurate as the month goes on. Early in a month it can look generous, and it settles as spending is logged.
+- If no essential spending is logged at all, the buffer cannot be measured and counts as a neutral 50.
+- *Worked example:* 25,000 in and 4,000 of essentials gives a wallet of 21,000, so the buffer is 21,000 ÷ 4,000 = 5.25 months and scores 100. With rent of 12,000 plus 3,000 of other essentials in each of the last two months, the typical month is 15,000, so a 30,000 wallet is 2 months and scores 67.
+
+If a component cannot be measured yet (no income, no budgets, no essentials), it counts as a neutral 50 and is **labelled as neutral**. Confidence is shown as low under 15 transactions or 28 days of history, and the screen says so. Improvement actions are *data* (an id and numbers) rendered through translation templates, never free text from a model. The score is recomputed in the background whenever a payment is added, edited, deleted or restored, so it never lags what the person just entered.
 
 ```mermaid
 flowchart LR
-  T[Last 90 days of<br/>transactions] --> S[Savings rate 30%]
-  T --> B[Budget adherence 25%]
-  T --> E[Emergency buffer 25%]
-  T --> I[Income stability 20%]
+  T[Transactions] --> S["Savings rate 30%<br/>last 90 days"]
+  T --> B["Budget adherence 25%<br/>this month's budgets"]
+  T --> E["Emergency buffer 25%<br/>balance ÷ typical month<br/>of essentials"]
+  T --> I["Income stability 20%<br/>last 3 complete months"]
   S --> W[Weighted sum]
   B --> W
   E --> W
@@ -524,7 +533,7 @@ flowchart TB
 |---|---|
 | **Authentication** | Phone number and OTP, then a 4 to 6 digit PIN. The PIN is stored as a bcrypt hash in a table clients cannot read or write; only `has_pin`, `set_pin` and `verify_pin` functions touch it. Five wrong PINs delete it and force a fresh OTP login. Attempts are counted in the database, not the browser. |
 | **Session lock** | The app locks after 2 minutes in the background and in any new browser session. |
-| **Row level security** | On all 16 tables; an audit script checks it. |
+| **Row level security** | On every table; an audit script checks it. |
 | **Secrets** | The OpenAI key exists only as an Edge Function secret. A script scans the production bundle for secrets and finds none. |
 | **Input validation** | zod on every function input; the simulated feed rejects bad records to an audit log. |
 | **Admin aggregates** | Computed in the database, only for the admin role, and any group smaller than 5 people is hidden so no figure points to one person. |
@@ -573,7 +582,7 @@ All results below are measured in the repository on simulated data. The command 
 | **Client secrets** | None found in the production bundle. | `pnpm audit:bundle` |
 | **Accessibility** | No axe-core violations on 12 screens in English and Bangla; the voice sheet scanned clean in both languages. | Browser runs recorded in `spec.md` |
 | **Performance** | Mobile Lighthouse on the production build: performance 98 (real throttling), accessibility 100, best practices 100. | Lighthouse |
-| **Automated tests** | 252 unit tests that run anywhere, plus 78 integration tests (row level security, PIN, voice and coach guards, undo, rate limits under parallel load) that run against a stack. | `pnpm test` |
+| **Automated tests** | 365 unit tests that run anywhere, plus 86 integration tests (row level security, PIN, voice and coach guards, undo, the monthly buffer in the database, rate limits under parallel load) that run against a stack. | `pnpm test` |
 
 ### 8.2 What the evaluations taught the build
 
@@ -582,6 +591,7 @@ Evaluations changed the design more than once. Honest examples:
 - **Income stability** was first measured over rolling 30-day windows, which gave a student with perfectly regular monthly income a score of 9.5 out of 100. The fairness audit exposed it; it now uses complete calendar months.
 - **Unusual-payment detection** first compared against a whole category, which rang the alarm on every delivery order and missed a Rs 1,100 canteen lunch. Comparing against the same merchant first fixed it, and the evaluation also caught a formula that divided by 1.4826 twice.
 - **Voice parsing** initially refused ordinary past-tense sentences ("Bought medicine") as unclear; the prompt was corrected and re-measured.
+- **The emergency buffer** originally scaled the essentials seen in a short history up to a month, so a day with 4,000 of food spending was read as 120,000 a month and scored the buffer 6 out of 100. Measuring it on a monthly basis from what was logged fixed it: the same data now scores 100, labelled "this month so far", and tests cover a one-day history, rent paid once a month and a three-month average.
 - **A parallel-request test** showed the first rate-limit design could be bypassed by a burst; it now takes a slot before the model call, and a test fires 30 parallel calls and finds exactly 20 slots.
 
 ### 8.3 Caveat on the voice numbers

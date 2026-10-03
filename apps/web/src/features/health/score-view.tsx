@@ -111,17 +111,21 @@ function componentDetail(
   if (!c.available) return t("score.not_enough_data");
   const raw = c.raw ?? 0;
   switch (key) {
-    case "savings":
-      return t("score.detail_savings", {
-        pct: Math.round(raw * 100),
-        target: SAVINGS_TARGET_RATE * 100,
-      });
+    case "savings": {
+      const target = SAVINGS_TARGET_RATE * 100;
+      // spending above income, or saving past the target (which already earns full marks)
+      if (raw < 0)
+        return t("score.detail_savings_negative", { pct: Math.round(-raw * 100), target });
+      if (raw >= SAVINGS_TARGET_RATE)
+        return t("score.detail_savings_met", { pct: Math.round(raw * 100), target });
+      return t("score.detail_savings", { pct: Math.round(raw * 100), target });
+    }
     case "budget":
       return raw === 0
         ? t("score.detail_budget_ok")
         : t("score.detail_budget_over", { count: raw });
     case "buffer":
-      return t("score.detail_buffer", {
+      return t(c.basis === "month_so_far" ? "score.detail_buffer_so_far" : "score.detail_buffer", {
         months: (Math.round(raw * 10) / 10).toLocaleString(),
         target: BUFFER_TARGET_MONTHS,
       });

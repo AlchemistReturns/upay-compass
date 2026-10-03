@@ -467,7 +467,10 @@
     "action_build_buffer": "Your wallet covers {{months}} months of essentials. Reaching {{target}} months needs about {{amount}} more.",
     "action_smooth_income": "Your income varies by {{pct}}% between months. Setting some aside in better weeks smooths the lean ones.",
     "how": "The score blends four parts: savings rate (30%), budget adherence (25%), emergency buffer (25%) and income stability (20%), from your last 90 days. It is calculated by code from your own numbers, and it is for learning, not financial advice.",
-    "out_of": "out of 100"
+    "out_of": "out of 100",
+    "detail_savings_met": "You saved {{pct}}% of your income, above the {{target}}% target, so this part earns full marks.",
+    "detail_savings_negative": "You spent {{pct}}% more than you earned (target: save {{target}}%).",
+    "detail_buffer_so_far": "Your wallet covers {{months}} months of essential spending, based on this month so far (target {{target}}). This gets more accurate as the month goes on."
   },
   "nudges": {
     "title": "Alerts",

@@ -109,7 +109,7 @@ OPENAI_API_KEY=<your OpenAI key>
 pnpm sb functions serve --env-file supabase/.env.functions   # keep this running in a second terminal
 ```
 
-Local test logins (from `supabase/config.toml`): `01700000001` to `01700000004`, OTP `123456`.
+Local test logins (from `supabase/config.toml`): `01700000001` to `01700000006`, OTP `123456`.
 
 ### Option B: your own Supabase cloud project
 
@@ -212,7 +212,7 @@ RLS_TEST_ANON_KEY=<anon key from pnpm sb status> \
 pnpm test
 ```
 
-Without those two variables the integration tests are skipped. Add `RLS_TEST_SEED=1` to also run the one test that loads the demo cohort through the admin path. They use the local test numbers `01700000001` to `01700000004`. Some of them call OpenAI and need `OPENAI_API_KEY` in `supabase/.env.functions`.
+Without those two variables the integration tests are skipped. Add `RLS_TEST_SEED=1` to also run the one test that loads the demo cohort through the admin path. They use the local test numbers `01700000001` to `01700000006`. Some of them call OpenAI and need `OPENAI_API_KEY` in `supabase/.env.functions`.
 
 ### Evaluations and audits
 

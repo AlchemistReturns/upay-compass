@@ -7,6 +7,7 @@ import {
   fallbackReply,
 } from "@compass/shared";
 import { adminClient, authenticate, corsHeaders, json } from "../_shared/http.ts";
+import { takeSlot } from "../_shared/limits.ts";
 import { loadFlow, refreshForecast } from "../_shared/flow.ts";
 import {
   HISTORY_MESSAGES,
@@ -45,15 +46,8 @@ Deno.serve(async (req) => {
 
   const admin = adminClient();
 
-  // Rate limit per user.
-  const since = new Date(Date.now() - RATE_WINDOW_MINUTES * 60_000).toISOString();
-  const { count } = await admin
-    .from("coach_messages")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", user.id)
-    .eq("role", "user")
-    .gte("created_at", since);
-  if ((count ?? 0) >= RATE_LIMIT) {
+  // Rate limit per user: the slot is taken before the slow work, so parallel requests are counted.
+  if (!(await takeSlot(user.id, "coach_slot", RATE_LIMIT, RATE_WINDOW_MINUTES))) {
     return json({ error: "rate_limited", retry_after_minutes: RATE_WINDOW_MINUTES }, 429);
   }
 

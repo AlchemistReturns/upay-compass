@@ -7,16 +7,18 @@ const DEFAULT_MODEL = "tts-1";
 const TIMEOUT_MS = 30_000;
 
 const bodySchema = z.object({
-  text: z.string().trim().min(1).max(VOICE_SPEAK_MAX_CHARS),
+  /** The coach answer to read. The text itself is never taken from the client. */
+  message_id: z.string().uuid(),
   language: z.enum(["bn", "en"]),
 });
 
 /**
  * Reads a coach answer aloud with OpenAI text-to-speech, for devices that have no on-device voice
  * for the language (typically Bangla on a desktop). The app uses the free on-device voice first
- * and only calls this when there is none. The caller must have agreed to send their voice data;
- * the answer text is what the coach already wrote for them, never anything else. Nothing is
- * stored except an audit entry with the length and language.
+ * and only calls this when there is none. The caller must have agreed to send their voice data.
+ * The request names a stored coach answer, which is read as the caller (so only their own
+ * assistant messages qualify); arbitrary text is never accepted, so this cannot be used as a
+ * general text-to-speech service. Nothing is stored except an audit entry with length and language.
  */
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -29,14 +31,25 @@ Deno.serve(async (req) => {
   const body = bodySchema.safeParse(await req.json().catch(() => null));
   if (!body.success) return json({ error: "invalid_body" }, 400);
 
+  // only an assistant message of the caller's own (row level security) can be read aloud
+  const { data: message } = await client
+    .from("coach_messages")
+    .select("content,role")
+    .eq("id", body.data.message_id)
+    .maybeSingle();
+  if (!message || message.role !== "assistant") return json({ error: "not_found" }, 404);
+
   const blocked = await guardVoice(client, user.id, "voice_speak");
   if (blocked) return blocked;
   const apiKey = Deno.env.get("OPENAI_API_KEY");
   if (!apiKey) return json({ error: "unavailable" }, 503);
 
   // The taka sign and markdown marks are turned into words first, as for the on-device voice.
-  const input = prepareSpeech(body.data.text, body.data.language).join(" ");
-  if (!input) return json({ error: "invalid_body" }, 400);
+  const input = prepareSpeech(
+    String(message.content).slice(0, VOICE_SPEAK_MAX_CHARS),
+    body.data.language,
+  ).join(" ");
+  if (!input) return json({ error: "not_found" }, 404);
 
   try {
     const controller = new AbortController();

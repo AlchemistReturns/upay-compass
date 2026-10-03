@@ -690,7 +690,7 @@ preview card ("Add Rs 500, Food, Tea Stall, today") -> user confirms -> existing
 **Edge Functions** (all verify the caller, check `voice_consent_at`, rate-limit like the coach, and write an audit entry; `OPENAI_API_KEY` stays server-side)
 1. `voice-transcribe`: audio in (a short clip, size-capped), language hint and a few of the person's own merchant names as a vocabulary hint, text out. Model set by `OPENAI_TRANSCRIBE_MODEL`.
 2. `voice-command`: text in, a validated command out (plus candidates for removal). Model set by `OPENAI_VOICE_MODEL`; structured output so the reply is always the schema.
-3. `voice-speak`: text in, audio out, for reading answers aloud on devices with no voice for the language. Model set by `OPENAI_TTS_MODEL`. Used only when the browser has no installed voice, so the free on-device voice stays the default.
+3. `voice-speak`: a stored coach answer's id in, audio out, for reading answers aloud on devices with no voice for the language. It never accepts text from the client and reads only the caller's own assistant messages, so it cannot be used as a general text-to-speech service. Model set by `OPENAI_TTS_MODEL`. Used only when the browser has no installed voice, so the free on-device voice stays the default.
 
 **Build order**
 1. **Record and transcribe (F25):** `voice_consent_at` migration and consent card; `voice-transcribe`; a recorder (`MediaRecorder`, works in every browser) with a clear recording state and a cap on length; the coach microphone uses it where the browser's speech recognition is missing or blocked. This alone fixes the Brave and Firefox gap.
@@ -734,6 +734,15 @@ Small changes to first-run and everyday entry, no new backend.
 - **Undo:** deleting a payment (form or voice) and saving or deleting a budget now offer Undo. A deleted payment is put back with the same id, time and category.
 - **Privacy copy:** the voice notes in the coach and the voice sheet now describe the server fallbacks (recording, spoken text and, without an on-device voice, the answer text going to OpenAI).
 - **Verified:** typecheck, lint, a browser run on a production build (empty Home, checklist 0 of 3 then 1 of 3, recents fill the form, delete then Undo restores the row) and an integration test for restore and budget upsert. Not checked: Undo for budgets in the browser, and these screens on a real phone.
+
+---
+
+### LLM abuse limits (after the security review)
+
+- **Slots before calls.** Per-user limits (coach 20, voice 60 across the three voice functions, categorizer 20, each per 10 minutes) now take a slot in `audit_log` before the model is called (`_shared/limits.ts`), then count; a request over the limit gives its slot back. The earlier count-then-write check let parallel requests all slip through. A test fires 30 parallel categorizer calls and the database holds exactly 20 slots.
+- **Categorizer limit.** `categorize-transaction` had none.
+- **Read-aloud by id.** See `voice-speak` above.
+- **Still open:** one item in a categorizer batch can influence others (low impact, output is limited to the category list); goal titles and chat text can steer the person's own coach; no spend ceiling beyond the per-user limits, so set a hard monthly budget on the OpenAI project.
 
 ---
 

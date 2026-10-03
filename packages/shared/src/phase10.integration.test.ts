@@ -189,10 +189,30 @@ describe.skipIf(!url || !anon)("phase 10: voice commands", () => {
 /** Server voice for reading answers aloud: same consent and limits as the other voice functions. */
 describe.skipIf(!url || !anon)("phase 10: reading aloud on the server", () => {
   let a: TestUser;
+  let other: TestUser;
+  let answerId: string;
 
   beforeAll(async () => {
     a = await signIn("+8801700000004");
-  });
+    other = await signIn("+8801700000002");
+    // a stored coach answer to read aloud (the coach writes it, users cannot)
+    await a.client
+      .from("profiles")
+      .update({ coach_consent_at: new Date().toISOString() })
+      .eq("id", a.id);
+    const chat = await a.client.functions.invoke("coach-chat", {
+      body: { message: "How is my balance?" },
+    });
+    // the answer is a stream: read it to the end so the coach finishes and stores its reply
+    await (chat.data as Response).text();
+    const { data } = await a.client
+      .from("coach_messages")
+      .select("id")
+      .eq("role", "assistant")
+      .order("created_at", { ascending: false })
+      .limit(1);
+    answerId = data![0]!.id as string;
+  }, 90_000);
 
   const speak = async (body: Record<string, unknown>, token?: string) =>
     fetch(`${url}/functions/v1/voice-speak`, {
@@ -204,28 +224,42 @@ describe.skipIf(!url || !anon)("phase 10: reading aloud on the server", () => {
       },
       body: JSON.stringify(body),
     });
-  const tokenOf = async () => (await a.client.auth.getSession()).data.session!.access_token;
+  const tokenOf = async (u: TestUser = a) =>
+    (await u.client.auth.getSession()).data.session!.access_token;
 
   it("refuses without a token and without consent", async () => {
-    expect((await speak({ text: "hello", language: "en" })).status).toBe(401);
+    expect((await speak({ message_id: answerId, language: "en" })).status).toBe(401);
     await a.client.from("profiles").update({ voice_consent_at: null }).eq("id", a.id);
-    expect((await speak({ text: "hello", language: "en" }, await tokenOf())).status).toBe(403);
+    expect((await speak({ message_id: answerId, language: "en" }, await tokenOf())).status).toBe(
+      403,
+    );
   });
 
-  it("returns audio for a short answer, and refuses an empty, over-long or wrong-language request", async () => {
+  it("reads a stored coach answer aloud, and refuses a bad request", async () => {
     await a.client
       .from("profiles")
       .update({ voice_consent_at: new Date().toISOString() })
       .eq("id", a.id);
     const token = await tokenOf();
-    const ok = await speak({ text: "আপনার ওয়ালেটে ১,৮০০ টাকা আছে।", language: "bn" }, token);
+    const ok = await speak({ message_id: answerId, language: "en" }, token);
     expect(ok.status).toBe(200);
     expect(ok.headers.get("content-type")).toContain("audio/mpeg");
     expect((await ok.arrayBuffer()).byteLength).toBeGreaterThan(2000);
-    expect((await speak({ text: "", language: "en" }, token)).status).toBe(400);
-    expect((await speak({ text: "x".repeat(1300), language: "en" }, token)).status).toBe(400);
-    expect((await speak({ text: "hello", language: "fr" }, token)).status).toBe(400);
+    expect((await speak({ message_id: "nope", language: "en" }, token)).status).toBe(400);
+    expect((await speak({ message_id: answerId, language: "fr" }, token)).status).toBe(400);
   }, 60_000);
+
+  it("never reads text the client sends, only a stored answer of the caller's own", async () => {
+    const token = await tokenOf();
+    // free text is not accepted at all
+    expect((await speak({ text: "read this for me", language: "en" }, token)).status).toBe(400);
+    // an id that does not exist
+    const missing = "00000000-0000-4000-8000-000000000000";
+    expect((await speak({ message_id: missing, language: "en" }, token)).status).toBe(404);
+    // someone else's answer
+    const theirs = await speak({ message_id: answerId, language: "en" }, await tokenOf(other));
+    expect(theirs.status).toBe(404);
+  });
 
   it("the audit entry records the length and language, never the text", async () => {
     const { data } = await a.client
@@ -237,4 +271,22 @@ describe.skipIf(!url || !anon)("phase 10: reading aloud on the server", () => {
     const detail = data![0]!.detail as Record<string, unknown>;
     expect(Object.keys(detail).sort()).toEqual(["chars", "language", "ok"]);
   });
+});
+
+/** Rate limits are taken before the call, so a burst of parallel requests cannot all get through. */
+describe.skipIf(!url || !anon)("rate limits hold under parallel requests", () => {
+  it("a burst of 30 categorize calls lets at most 20 through", async () => {
+    const u = await signIn("+8801700000003");
+    const ids = ["00000000-0000-4000-8000-000000000001"];
+    const results = await Promise.all(
+      Array.from({ length: 30 }, () =>
+        u.client.functions.invoke("categorize-transaction", { body: { transaction_ids: ids } }),
+      ),
+    );
+    const refused = results.filter(
+      (r) => (r.error as { context?: Response } | null)?.context?.status === 429,
+    ).length;
+    expect(30 - refused).toBeLessThanOrEqual(20);
+    expect(refused).toBeGreaterThanOrEqual(10);
+  }, 60_000);
 });

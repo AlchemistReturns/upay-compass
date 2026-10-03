@@ -16,7 +16,16 @@ const ITEM =
   "tap-soft flex min-h-11 w-full cursor-default items-center gap-3 rounded-xl px-3 text-sm font-medium outline-none select-none data-[highlighted]:bg-secondary data-[highlighted]:text-secondary-foreground";
 
 /** Avatar button in the header toolbar; opens the account menu (who you are, profile, sign out). */
-export function UserMenu({ triggerClassName }: { triggerClassName?: string }) {
+export function UserMenu({
+  triggerClassName,
+  open,
+  onOpenChange,
+}: {
+  triggerClassName?: string;
+  /** optional control, so the header can hold the menu back on a first tap */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}) {
   const { t, i18n } = useTranslation();
   const { userId, signOut } = useAuth();
   const profile = useProfile(userId);
@@ -24,7 +33,7 @@ export function UserMenu({ triggerClassName }: { triggerClassName?: string }) {
   const name = p?.full_name?.trim() || null;
 
   return (
-    <Menu.Root>
+    <Menu.Root open={open} onOpenChange={onOpenChange && ((next) => onOpenChange(next))}>
       <Menu.Trigger
         aria-label={t("profile.menu")}
         title={t("profile.menu")}

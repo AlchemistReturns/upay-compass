@@ -31,7 +31,7 @@ Connect → Understand → Plan → Save → Get Guided → Improve
 
 - Operate only on simulated or user-entered data; never move real money.
 - No real credentials or private upay systems.
-- Label simulated data as simulated in the UI.
+- Simulated data is disclosed to evaluators in the presentation, not labelled inside the app.
 - Educational guidance only: no regulated investment, loan, or insurance advice.
 - Send minimal data to the LLM; never phone numbers or raw identifiers.
 - Preserve user control: every automated saving or rule is opt-in and reversible.
@@ -88,10 +88,12 @@ A smaller, explainable, working product beats a broad unfinished one.
 ### 4.1 Simulated upay transaction feed (adapter)
 
 ```
-getTransactions(userId, since) → Transaction[]
+TransactionFeed.pull(ctx { userId, phone }, since) → FeedBatch { records, openingBalance | null }
 Transaction { id, amount, direction(in|out), channel, counterparty, note, occurred_at }
 channel ∈ send_money | cash_out | merchant | recharge | bill | add_money
 ```
+
+- **Pluggable.** The ingestion pipeline depends only on the `TransactionFeed` contract (`packages/shared/src/feed.ts`); sources are `simulated` (`adapters/upay-sim`), `statement_csv` (`adapters/upay-statement`, a tolerant CSV reader with an import screen) and `upay_api` (`adapters/upay-api`, a partner-API pull by verified phone number against an **assumed** API with a configurable field map; never run against upay). A registry (`supabase/functions/_shared/feeds.ts`) selects the feed per request. Every record is validated by the pipeline whatever its source; bad records are counted and logged. See `docs/integration/upay-adapter.md`.
 
 - Seed generator produces realistic Bangladeshi patterns: rickshaw/transport, food, mobile recharge, utility bills, tuition, remittance, salary or gig inflows.
 - Three personas: **Student**, **Gig worker** (irregular income), **Salaried**.
@@ -149,7 +151,7 @@ upay is phone-centric, so login mirrors that.
 4. User sets a 4–6 digit **app PIN once**. It is stored **on the server** (bcrypt hash plus a failed-attempt counter in `user_pins`) and verified by the server, so it survives logout and follows the user to any device. The Supabase JWT stays the real session; the PIN is a UI lock on top of it. The OTP proves the phone; a returning user with a PIN must still enter it after every login, so the PIN is the last step of signing in.
 5. Session persisted and auto-refreshed; PIN lock after 2 minutes in the background, and in any brand-new browser session.
 
-> Design note: this is a competition prototype with simulated data and test accounts, so a server-side PIN is acceptable. The PIN does not protect data (RLS and the JWT do); it only locks the screen. A 4–6 digit PIN is weak by nature, which is why attempts are counted on the server and the 5th failure clears it.
+> Design note: this is a competition prototype with simulated data and test accounts, so a server-side PIN is acceptable. The PIN does not protect data (RLS and the JWT do); it only locks the screen. A 4–6 digit PIN is weak by nature, which is why attempts are counted on the server, wrong tries back off (30 s up to 15 min) and the 8th failure clears it. Fingerprint / face unlock (passkeys) is offered on top of the PIN.
 
 **Roles**
 
@@ -161,7 +163,7 @@ upay is phone-centric, so login mirrors that.
 **Rules**
 - RLS on every table, policies keyed on `auth.uid() = user_id`.
 - No service-role key in the client or the repo; `.env.example` only.
-- OTP rate limiting. 5 wrong PIN attempts clear the PIN, sign the user out, and require an OTP login plus a new PIN. Attempts are counted in the database, not in the browser.
+- OTP rate limiting. Wrong PIN attempts 3 to 7 each start a longer wait (30 s, 1, 2, 5, 15 min) that `verify_pin` enforces; the 8th clears the PIN, signs the user out, and requires an OTP login plus a new PIN. Attempts and waits are kept in the database, not in the browser.
 - Logout clears the session, the query cache and the unlock flag. The PIN is kept on the server.
 - PIN storage is only reachable through the `has_pin`, `set_pin` and `verify_pin` functions (Section 7); clients cannot read or write `user_pins`.
 
@@ -183,7 +185,7 @@ transactions(id uuid pk, user_id uuid, external_id text,  -- id from the upstrea
              amount numeric, direction text, channel text,
              counterparty text, note text, category_id int, category_source text,  -- rule|ai|user
              needs_review boolean,   -- AI unavailable or unsure: filed under Other, flagged for the user
-             is_simulated boolean,   -- labelled "simulated" in the UI
+             is_simulated boolean,   -- true for generated demo data
              occurred_at timestamptz, created_at)
   -- index (user_id, occurred_at desc); unique (user_id, external_id) makes re-ingesting idempotent
 
@@ -447,7 +449,8 @@ Reference data (the 12 categories, and later the learn modules) is inserted by m
 3. **Profile creation:** the `handle_new_user` trigger inserts the `profiles` row; client then redirects to onboarding if `onboarded = false`.
 4. **PIN lock:**
    - A user without a PIN is sent to `/set-pin` after login and sets a 4–6 digit PIN through the `set_pin` RPC (bcrypt via pgcrypto, set once; the raw PIN is never stored). A user who already has one enters it after the OTP on every login (the OTP does not unlock the session).
-   - `verify_pin` returns `{ok, attempts_left, reset}`; it counts failures per user in the database and, on the 5th wrong attempt, deletes the PIN (`reset: true`). The client then signs the user out, so the next login sets a new PIN.
+   - `verify_pin` returns `{ok, attempts_left, reset, locked_seconds}`; it counts failures per user in the database, refuses to check anything while a wait is running (the try is not counted), and on the 8th wrong attempt deletes the PIN (`reset: true`). The client then signs the user out, so the next login sets a new PIN. Migration `20261011090000_pin_cooldown.sql` replaced the earlier 5-try rule.
+   - **Passkeys (WebAuthn).** On the lock screen a fingerprint / face / screen-lock button replaces typing the PIN (it also prompts once when the screen shows). The `passkey` Edge Function does registration and sign-in (`register_options`, `register_verify`, `auth_options`, `auth_verify`) with SimpleWebAuthn: user verification is required, the challenge is stored server-side and used once (5-minute life), and the request origin must be on `PASSKEY_ORIGINS`. Only the public key and a counter are stored (`user_passkeys`, closed to clients); people list and remove their own through `list_passkeys` / `delete_passkey`. A passkey does not replace the OTP login, and the PIN still works.
    - `LockProvider` tracks `visibilitychange`; after 2 minutes hidden, show the PIN screen. A brand-new browser session (new tab or restart) also asks for the PIN; a plain reload does not (flag kept in `sessionStorage`).
 5. **Route guard:** a single `useAuthStatus` hook derives `signed-out | needs-pin | locked | needs-onboarding | ready`, and `<Guard own="…">` redirects each route group to where that state belongs (a locked app shows the PIN screen on every route); `onAuthStateChange` keeps session in sync; logout clears the session, the Query cache and the unlock flag (the PIN stays on the server).
 6. **Onboarding wizard (3 steps):** language → income type & monthly income → first goal (optional). Writes to `goals` (if filled in) and `profiles`, then sets `onboarded = true`. The `goals` table is created in Phase 1 (migration `20260102000000_goals.sql`) with column-level grants so clients cannot write `saved_amount`; Phase 3 adds contributions and the RPCs. The saved language on `profiles.language` is adopted on login and kept in sync by the language toggle.
@@ -590,7 +593,7 @@ Reference data (the 12 categories, and later the learn modules) is inserted by m
 3. **Quality pass:**
    - Accessibility, checked with axe-core on 12 screens in English and Bangla (WCAG 2.0/2.1 A and AA plus best practices): fixed low-contrast muted text (darker token), unnamed progress bars, and every button, input, tab and link now has a tap target of at least 44 px (the shared Button and Input sizes were raised). Result: no violations, no targets under 44 px except two links 39 to 40 px wide that were then widened.
    - Empty, loading and error states exist on every screen; offline and "not saved yet" states were added in Phase 5.
-   - Simulated data is labelled in the app. **Still needed from the team:** a native-speaker review of all Bangla copy (including the 8 learn modules and the coach prompt).
+   - The in-app "simulated data" labels were later removed; the simulation is disclosed in the presentation instead. **Still needed from the team:** a native-speaker review of all Bangla copy (including the 8 learn modules and the coach prompt).
 4. **Hardening** (`pnpm audit:rls`, `pnpm audit:bundle`, `pnpm audit --prod`):
    - `scripts/audit-rls.mjs` checks the local database: RLS on every public table (16), table privileges for `anon`, security definer functions (fixed `search_path`, not callable by `anon`) and which profile columns users can update.
    - It found real problems, fixed by `20261003130000_phase6_hardening.sql`: users could update their own `opening_balance` (their wallet balance) from the browser, `anon` had default table privileges (blocked by RLS, but now removed except for the public category list), and trigger functions were executable. The loading function now writes `opening_balance` with the service role.
@@ -1169,7 +1172,7 @@ CI (`.github/workflows/ci.yml`) runs lint, typecheck, tests and the Prettier che
 - **Numbers come from code, never the LLM.** Score, forecast, categorization rules and "can I afford X" are pure functions in `packages/shared` with unit tests. Edge Functions wrap them. The LLM only explains results.
 - **Migrations are append-only once merged.** Fix mistakes with a new migration. Every new table gets RLS enabled and policies keyed on `auth.uid()`. Reference data (categories, learn modules) is inserted by migrations, not `seed.sql`.
 - **Secrets.** Never commit `.env*` files other than `.env.example`. The service-role key, the DB password and `OPENAI_API_KEY` never go in the repo, in chat, in screenshots or in client code. Share them through a password manager. Edge Function secrets live in `supabase/.env.functions` (gitignored) locally and are set in the cloud with `pnpm sb secrets set`.
-- **Privacy.** No phone numbers or raw identifiers in LLM prompts. Simulated data is labelled as simulated in the UI.
+- **Privacy.** No phone numbers or raw identifiers in LLM prompts. The app does not label simulated data; evaluators are told it is simulated.
 - **Windows login quirk.** `pnpm sb login` and `pnpm sb link` need an interactive terminal. Run them in your own terminal window, not through a tool that runs without a TTY.
 - **Ports.** The web app uses 3000. The optional local Supabase stack uses 54321 (API) and 54322 (DB); stop other local Supabase stacks first.
 - **Stop what you start.** Stop dev servers and the local stack when you are done (`pnpm sb stop`).

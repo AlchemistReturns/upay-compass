@@ -8,8 +8,10 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { PERSONAS, PERSONA_CONFIGS, generateTransactions } from "../adapters/upay-sim/src/index.ts";
 import {
   categorize,
+  dayDiff,
   detectRecurring,
   forecastCashflow,
+  roundUpAmount,
   isEssentialCategory,
 } from "../packages/shared/src/index.ts";
 
@@ -83,6 +85,15 @@ for (const persona of PERSONAS) {
     autoShare: matched / txs.length,
     billRemindersPerMonth: bills.reduce((n, b) => n + 30 / stepDays[b.cadence], 0),
     lowBalanceDays: forecast.risks.length,
+    // Outcome 1: how many days before the first dip below the safety buffer the app says so.
+    warningLeadDays: forecast.firstRiskDay ? dayDiff(END_DAY, forecast.firstRiskDay) : null,
+    // Outcome 2: change set aside per month if round-ups are on (every outgoing payment rounds up
+    // to the next Rs 10), and that change as a share of income.
+    roundUpPerMonth:
+      txs.filter((t) => t.direction === "out").reduce((n, t) => n + roundUpAmount(t.amount), 0) /
+      MONTHS,
+    incomePerMonth:
+      txs.filter((t) => t.direction === "in").reduce((n, t) => n + t.amount, 0) / MONTHS,
   });
 }
 
@@ -93,6 +104,22 @@ line(`# Impact model (reproduce with \`pnpm impact:model\`)`);
 line();
 line(
   `Simulated data only: ${DAYS} days per persona ending ${END_DAY}, fixed seed. Same numbers on every run.`,
+);
+line();
+line(`## Headline outcomes (measured from the simulated data)`);
+line();
+line(
+  `| Persona | Outcome 1: warning before the first low-balance day (days) | Outcome 2: change set aside / month with round-ups (Rs) | ... as share of income |`,
+);
+line(`|---|---|---|---|`);
+for (const r of rows) {
+  line(
+    `| ${r.persona} | ${r.warningLeadDays === null ? "no dip in the next 30 days" : r.warningLeadDays} | ${Math.round(r.roundUpPerMonth)} | ${pct(r.roundUpPerMonth / r.incomePerMonth)} |`,
+  );
+}
+line();
+line(
+  `Formulas: warning = days from today to the first forecast day below the safety buffer (0 = already below it today); round-up change = sum over outgoing payments of the gap to the next Rs 10, per month; share of income = that change / monthly income. Round-ups are an opt-in setting, so the second figure is what a person who turns them on would set aside, not what everyone does.`,
 );
 line();
 line(`## A. Measured from the simulated data`);

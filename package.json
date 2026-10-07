@@ -28,7 +28,9 @@
     "eval:forecast": "node --experimental-transform-types --disable-warning=ExperimentalWarning scripts/ml/eval-forecast.mjs",
     "train:categorizer": "node --experimental-transform-types --disable-warning=ExperimentalWarning scripts/ml/train-categorizer.mjs",
     "eval:categorize": "node --experimental-transform-types --disable-warning=ExperimentalWarning scripts/ml/eval-categorize.mjs",
-    "eval:anomaly:ml": "node --experimental-transform-types --disable-warning=ExperimentalWarning scripts/ml/eval-anomaly-ml.mjs"
+    "eval:anomaly:ml": "node --experimental-transform-types --disable-warning=ExperimentalWarning scripts/ml/eval-anomaly-ml.mjs",
+    "ux:tasks": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/ux-task-analysis.ts",
+    "ux:personas": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/ux-personas.ts"
   },
   "devDependencies": {
     "husky": "^9.1.7",

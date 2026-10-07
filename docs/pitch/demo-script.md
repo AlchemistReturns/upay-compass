@@ -9,6 +9,7 @@ Before going on stage: sign in once, open **Home**, and press the **Gig** button
 | 0:40 | "Budgets warn you before you overspend." | Budgets, add Food with a small limit (for example Rs 50), save. The alert appears in the bell |
 | 1:00 | "Goals, with round-ups: every payment rounds up to the next ten and the change goes to your goal." | Goals, create a goal, switch round-ups on |
 | 1:20 | "A health score from four simple measures, calculated by code, with the reason for each." | Home, Financial health card, show the breakdown |
+| 1:30 | "Each day it shows one tip from your own numbers, and the coach can explain it." | Home, Tip of the day card: tap Ask your coach |
 | 1:40 | "It looks ahead. This gig worker's balance will dip below the safety line before the bike payment." | Forecast: the warning and the chart |
 | 2:00 | "And a coach that answers in your language, using your real numbers." | Coach, tap I agree, ask in Bangla: "আমি কি ৫,০০০ টাকার একটি ফোন কিনতে পারি?" |
 | 2:30 | "The app computes the verdict; the AI only explains it. It will not give investment or loan advice." | Point at the answer and the disclaimer |

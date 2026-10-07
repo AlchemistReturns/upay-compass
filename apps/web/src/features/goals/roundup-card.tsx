@@ -130,7 +130,7 @@ export function RoundupCard({
           enabled ? "text-brand-ink/70" : "text-muted-foreground",
         )}
       >
-        {t("goals.roundup_body")} {t("goals.simulated")}
+        {t("goals.roundup_body")}
       </p>
       {error && (
         <p role="alert" className="text-destructive mt-2 text-sm">

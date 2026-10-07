@@ -32,4 +32,6 @@ export * from "./learn-generate.ts";
 export * from "./learn-plan.ts";
 export * from "./model-pricing.ts";
 export * from "./health-monitor.ts";
+export * from "./tips.ts";
+export * from "./feed.ts";
 export * from "./ml/index.ts";

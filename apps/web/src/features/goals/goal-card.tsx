@@ -98,7 +98,6 @@ function AddMoneyForm({
       >
         {t("goals.add")}
       </Button>
-      <p className="text-muted-foreground px-1 text-xs leading-5">{t("goals.simulated")}</p>
     </form>
   );
 }

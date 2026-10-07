@@ -34,6 +34,7 @@ import { cn } from "@/lib/utils";
 import { haptic } from "@/lib/haptics";
 import { useAuth } from "@/features/auth/auth-provider";
 import { useProfile } from "@/features/profile/use-profile";
+import { RecommendCard } from "./recommend-card";
 import { ConsentCard } from "./consent-card";
 import { useClearChat, useCoachChat, useCoachHistory, type CoachMessage } from "./use-coach";
 import { MicIcon } from "@/features/voice/mic-icon";
@@ -467,6 +468,13 @@ export function CoachView() {
                 <Bubble role="user">{chat.pending.question}</Bubble>
                 <Bubble role="assistant">{chat.pending.answer || <TypingDots />}</Bubble>
               </>
+            )}
+            {chat.afford && !chat.pending && (
+              <RecommendCard
+                amount={chat.afford.amount}
+                verdict={chat.afford.verdict}
+                onDone={chat.clearAfford}
+              />
             )}
             {chat.error && (
               <div role="alert" className="finance-card ml-10 p-4 text-sm">

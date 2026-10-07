@@ -61,12 +61,22 @@ describe.skipIf(!url || !anon)("RLS with two users", () => {
   });
 });
 
-describe.skipIf(!url || !anon)("server-side PIN", () => {
-  let u: TestUser;
+const service = process.env.RLS_TEST_SERVICE_KEY;
 
-  // 5 wrong attempts clear any existing PIN, giving every run a clean start and end.
-  async function clearPin() {
-    for (let i = 0; i < 5; i++) await u.client.rpc("verify_pin", { pin: "000000" });
+describe.skipIf(!url || !anon || !service)("server-side PIN", () => {
+  let u: TestUser;
+  const admin = () => createClient(url!, service!, { auth: { persistSession: false } });
+
+  // The PIN table is closed to clients, so tests reset it with the service key.
+  async function clearPin(userId = u.id) {
+    await admin().from("user_pins").delete().eq("user_id", userId);
+  }
+  // Pretend the wait between tries has passed.
+  async function endWait() {
+    await admin()
+      .from("user_pins")
+      .update({ locked_until: new Date(Date.now() - 1000).toISOString() })
+      .eq("user_id", u.id);
   }
 
   beforeAll(async () => {
@@ -93,29 +103,62 @@ describe.skipIf(!url || !anon)("server-side PIN", () => {
     expect((await u.client.rpc("has_pin")).data).toBe(false);
   });
 
-  it("sets once, verifies, counts failures and resets after 5", async () => {
+  it("sets once, verifies, and counts failures", async () => {
     expect((await u.client.rpc("set_pin", { new_pin: "4321" })).error).toBeNull();
     expect((await u.client.rpc("has_pin")).data).toBe(true);
     expect((await u.client.rpc("set_pin", { new_pin: "1111" })).error).not.toBeNull();
 
     const wrong = await u.client.rpc("verify_pin", { pin: "9999" });
-    expect(wrong.data).toMatchObject({ ok: false, attempts_left: 4, reset: false });
+    expect(wrong.data).toMatchObject({ ok: false, attempts_left: 7, reset: false });
 
     // a correct PIN resets the counter
     expect((await u.client.rpc("verify_pin", { pin: "4321" })).data).toMatchObject({ ok: true });
     const again = await u.client.rpc("verify_pin", { pin: "9999" });
-    expect(again.data).toMatchObject({ attempts_left: 4 });
+    expect(again.data).toMatchObject({ attempts_left: 7, locked_seconds: 0 });
+  });
 
+  it("makes the person wait after repeated wrong tries, and the wait is enforced", async () => {
+    await clearPin();
+    await u.client.rpc("set_pin", { new_pin: "4321" });
+    // two free wrong tries, the third starts a 30 second wait
+    expect((await u.client.rpc("verify_pin", { pin: "9999" })).data).toMatchObject({
+      locked_seconds: 0,
+    });
+    expect((await u.client.rpc("verify_pin", { pin: "9999" })).data).toMatchObject({
+      locked_seconds: 0,
+    });
+    const third = await u.client.rpc("verify_pin", { pin: "9999" });
+    expect(third.data).toMatchObject({ ok: false, attempts_left: 5, reset: false });
+    expect((third.data as { locked_seconds: number }).locked_seconds).toBe(30);
+
+    // during the wait even the right PIN is refused, and the try is not counted
+    const during = await u.client.rpc("verify_pin", { pin: "4321" });
+    expect(during.data).toMatchObject({ ok: false, attempts_left: 5, reset: false });
+    expect((during.data as { locked_seconds: number }).locked_seconds).toBeGreaterThan(0);
+
+    // after the wait the right PIN works and clears the counter
+    await endWait();
+    expect((await u.client.rpc("verify_pin", { pin: "4321" })).data).toMatchObject({ ok: true });
+    expect((await u.client.rpc("verify_pin", { pin: "9999" })).data).toMatchObject({
+      attempts_left: 7,
+    });
+  });
+
+  it("clears the PIN on the 8th wrong try, so the next login must set a new one", async () => {
+    await clearPin();
+    await u.client.rpc("set_pin", { new_pin: "4321" });
     let last: unknown;
-    for (let i = 0; i < 4; i++) last = (await u.client.rpc("verify_pin", { pin: "9999" })).data;
+    for (let i = 0; i < 8; i++) {
+      last = (await u.client.rpc("verify_pin", { pin: "9999" })).data;
+      await endWait();
+    }
     expect(last).toMatchObject({ ok: false, attempts_left: 0, reset: true });
     expect((await u.client.rpc("has_pin")).data).toBe(false);
   });
 
   it("users cannot see each other's PIN state", { timeout: 20_000 }, async () => {
     const other = await signIn("+8801700000001");
-    // Start the other user from "no PIN" (five wrong attempts clear any existing one).
-    for (let i = 0; i < 5; i++) await other.client.rpc("verify_pin", { pin: "000000" });
+    await clearPin(other.id);
     expect((await u.client.rpc("set_pin", { new_pin: "2468" })).error).toBeNull();
     expect((await other.client.rpc("has_pin")).data).toBe(false);
     await clearPin();

@@ -1,12 +1,18 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  FEED_ERROR_STATUS,
+  FeedError,
+  addDays,
   categorizeInStages,
+  dhakaDay,
   isCategoryKey,
   mlMode,
   normalizeKeyword,
   transactionSchema,
   type CategoryKey,
+  type FeedContext,
   type Transaction,
+  type TransactionFeed,
   type UserRule,
 } from "@compass/shared";
 import { SimulatedFeed } from "@compass/upay-sim";
@@ -20,6 +26,7 @@ import { refreshReadiness } from "./readiness.ts";
 const BATCH_SIZE = 200;
 
 export type IngestSummary = {
+  source: string;
   received: number;
   rejected: number;
   inserted: number;
@@ -36,26 +43,75 @@ export type IngestResult =
   | { ok: true; summary: IngestSummary; healthScore: number | null }
   | { ok: false; status: number; error: string; detail?: string };
 
+/** Overlap, in days, when syncing a live feed, so late-posting transactions are not missed. */
+const SYNC_OVERLAP_DAYS = 3;
+
 /**
- * Loads a persona's simulated upay history for one user: validate, categorize (rules, then AI for
- * unknown merchants), insert idempotently, then refresh the health score and forecast.
- * An optional `seed` gives a different (still deterministic) history, used for the demo cohort.
- * `client` must act as that user (their JWT), so row level security applies.
+ * Where a live feed should resume: shortly before the newest transaction already imported from it.
+ * Re-pulling the overlap is harmless because external_id makes inserts idempotent.
  */
-export async function ingestForUser(
+async function lastSyncSince(
+  client: SupabaseClient,
+  userId: string,
+  prefix: string,
+): Promise<Date> {
+  const { data } = await client
+    .from("transactions")
+    .select("occurred_at")
+    .eq("user_id", userId)
+    .like("external_id", `${prefix}%`)
+    .order("occurred_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!data) return new Date(0);
+  return new Date(`${addDays(dhakaDay(data.occurred_at as string), -SYNC_OVERLAP_DAYS)}T00:00:00Z`);
+}
+
+/** Demo path: loads a persona's simulated history (an optional `seed` gives a different one). */
+export function ingestForUser(
   client: SupabaseClient,
   userId: string,
   persona: "student" | "gig" | "salaried",
   seed?: string,
 ): Promise<IngestResult> {
-  // 1. Pull from the feed (the simulated upay adapter; a real feed implements the same interface).
   const feed = new SimulatedFeed(persona, seed ? { seed } : {});
-  const raw = await feed.getTransactions(userId, new Date(0));
+  return ingestFromFeed(client, { userId, phone: null }, feed, { persona });
+}
+
+/**
+ * Loads one person's transactions from any TransactionFeed: validate, categorize (rules, then AI
+ * for unknown merchants), insert idempotently, then refresh the health score and forecast. The
+ * pipeline knows nothing about where the records came from; the feed contract is the only seam.
+ * `client` must act as that user (their JWT), so row level security applies.
+ */
+export async function ingestFromFeed(
+  client: SupabaseClient,
+  ctx: FeedContext,
+  feed: TransactionFeed,
+  meta: Record<string, unknown> = {},
+): Promise<IngestResult> {
+  const userId = ctx.userId;
+
+  // 1. Pull from the feed. A live API resumes where the last sync stopped; everything else is a full pull.
+  let raw: unknown[];
+  let openingBalance: number | null;
+  try {
+    const since =
+      feed.id === "upay_api" ? await lastSyncSince(client, userId, "upay-") : new Date(0);
+    const batch = await feed.pull(ctx, since);
+    raw = batch.records;
+    openingBalance = batch.openingBalance;
+  } catch (e) {
+    if (e instanceof FeedError) {
+      return { ok: false, status: FEED_ERROR_STATUS[e.code], error: e.code, detail: e.message };
+    }
+    throw e;
+  }
 
   // 2. Validate. Malformed records are rejected, logged to audit_log, and skipped.
   const valid: Transaction[] = [];
   const rejected: { id: unknown; issues: string[] }[] = [];
-  for (const item of raw as unknown[]) {
+  for (const item of raw) {
     const parsed = transactionSchema.safeParse(item);
     if (parsed.success) valid.push(parsed.data);
     else {
@@ -161,7 +217,7 @@ export async function ingestForUser(
     category_id: idByKey.get(category) ?? idByKey.get("other"),
     category_source: source,
     needs_review: review,
-    is_simulated: true,
+    is_simulated: feed.simulated,
     occurred_at: tx.occurred_at,
   }));
 
@@ -179,13 +235,17 @@ export async function ingestForUser(
   }
 
   // Server-controlled column: written with the service role, after the caller was verified.
-  await adminClient()
-    .from("profiles")
-    .update({ opening_balance: feed.openingBalance })
-    .eq("id", userId);
+  // Only when the source knows it: a feed that does not (null) leaves the stored balance alone.
+  if (openingBalance !== null) {
+    await adminClient()
+      .from("profiles")
+      .update({ opening_balance: openingBalance })
+      .eq("id", userId);
+  }
 
   modelCall?.end();
-  const summary = {
+  const summary: IngestSummary = {
+    source: feed.id,
     received: raw.length,
     rejected: rejected.length,
     inserted,
@@ -199,7 +259,7 @@ export async function ingestForUser(
     user_id: userId,
     action: "ingest",
     entity: "transaction",
-    detail: { persona: persona, ...summary },
+    detail: { ...meta, ...summary },
   });
 
   // Best effort: a failed score refresh must not fail the ingestion itself.

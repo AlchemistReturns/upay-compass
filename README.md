@@ -14,7 +14,7 @@ For the full design (decisions, data model, security, evaluation results) see [s
 
 ![Compass loop](docs/img/loop.png)
 
-**Purpose.** Help a person understand their money, build a saving habit and move toward financial independence, while keeping every number auditable and the person in control. There is no live upay system, so the app runs on **simulated or user-entered data** behind a swappable adapter (`adapters/upay-sim`); a real upay feed could replace it later. No real money moves, and simulated data is labelled as simulated.
+**Purpose.** Help a person understand their money, build a saving habit and move toward financial independence, while keeping every number auditable and the person in control. There is no live upay system available, so the app runs on **simulated or user-entered data** behind a pluggable `TransactionFeed` contract: the simulator (`adapters/upay-sim`), a CSV statement import (`adapters/upay-statement`) and a partner-API adapter (`adapters/upay-api`, built against an assumed API) all plug into the same pipeline, so real upay data can be connected without changing the app (see [docs/integration/upay-adapter.md](docs/integration/upay-adapter.md)). No real money moves.
 
 **Guiding rule: AI for language, code for numbers.** Language models write explanations and understand speech. Every figure (balance, scores, forecast, "can I afford this?", amounts from a spoken command) is computed or checked by deterministic, unit-tested code.
 
@@ -22,7 +22,7 @@ For the full design (decisions, data model, security, evaluation results) see [s
 
 | Area | What it does |
 |---|---|
-| **Sign-in and lock** | Phone number + OTP, then a 4 to 6 digit app PIN (stored hashed on the server, 5 wrong tries clear it). Auto-lock after 2 minutes in the background. |
+| **Sign-in and lock** | Phone number + OTP, then a 4 to 6 digit app PIN (stored hashed on the server; wrong tries back off from 30 s to 15 min and the 8th clears it), with optional fingerprint / face unlock (passkeys). Auto-lock after 2 minutes in the background. |
 | **Dashboard and transactions** | Wallet balance, income and spending by period, category breakdown, weekly chart, searchable payment list, add/edit/delete with Undo, "repeat a recent payment". |
 | **Auto-categorization** | Rules first (your own corrections, then a channel and keyword map), an LLM only for merchants the rules cannot place. Corrections teach the app. |
 | **Budgets and goals** | Monthly category budgets with alerts at your chosen level, savings goals with projected finish dates, optional round-up saving. |
@@ -127,7 +127,7 @@ pnpm sb link --project-ref <project-ref>
 pnpm sb db push                      # applies every migration in supabase/migrations
 for f in categorize-transaction coach-chat compute-health-score compute-readiness-score \
          forecast-cashflow generate-nudges ingest-transactions reset-demo seed-demo \
-         voice-command voice-speak voice-transcribe; do
+         voice-command voice-speak voice-transcribe passkey; do
   pnpm sb functions deploy $f --use-api
 done
 pnpm sb secrets set OPENAI_API_KEY=<your OpenAI key>
@@ -151,6 +151,9 @@ The functions are configured with `verify_jwt = false` in `supabase/config.toml`
 | Variable | Required | Purpose |
 |---|---|---|
 | `OPENAI_API_KEY` | For AI features | Key used by every OpenAI call. Server-side only. |
+| `PASSKEY_ORIGINS` | For fingerprint / face unlock (`http://localhost:3000`) | Comma-separated list of web origins allowed to register and use passkeys, for example `https://compass.example.com`. The host name of the origin is the passkey's relying-party id, so changing it makes old passkeys unusable. |
+| `UPAY_API_BASE_URL`, `UPAY_API_KEY` | For the live upay feed | Partner API address and Bearer key. When both are set, the import screen shows a "Sync from upay" button. Server-side only. |
+| `UPAY_API_FIELD_MAP`, `UPAY_API_SERVICE_MAP` | No | JSON overrides for upay's field names and service-to-channel mapping, so a different API shape needs configuration, not code. See the integration guide. |
 | `OPENAI_COACH_MODEL` | No (`gpt-5-mini`) | Model for the coach. |
 | `OPENAI_CATEGORIZE_MODEL` | No (`gpt-4o-mini`) | Model for the categorization fallback. |
 | `OPENAI_VOICE_MODEL` | No (`gpt-4.1-mini`) | Model that parses voice commands. |
@@ -245,6 +248,8 @@ Without those two variables the integration tests are skipped. Add `RLS_TEST_SEE
 - `apps/web`: Next.js (App Router) PWA
 - `packages/shared`: types, zod schemas and pure logic (score, forecast, categorizer, voice command validation)
 - `adapters/upay-sim`: simulated upay transaction feed
+- `adapters/upay-statement`: CSV statement import (tolerant parser)
+- `adapters/upay-api`: upay partner-API feed (assumed contract, configurable field map)
 - `supabase/`: migrations, Edge Functions, config
 - `scripts/`: evaluations and audits
 - `docs/pitch/`: architecture, demo script, fairness report, impact model, fallback plan, voice checklist

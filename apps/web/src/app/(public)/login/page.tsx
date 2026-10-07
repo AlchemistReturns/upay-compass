@@ -91,14 +91,9 @@ export default function LoginPage() {
           <h2 className="text-[1.75rem] leading-tight font-extrabold tracking-tight sm:text-3xl">
             {t("login.title")}
           </h2>
-          <p className="text-muted-foreground mt-2 mb-7 text-sm leading-6">
-            {t("login.demo_note")}
-          </p>
-          <LoginForm />
-          <p className="text-muted-foreground mt-7 flex items-start justify-center gap-1.5 text-center text-xs leading-5">
-            <ShieldCheck className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-            {t("login.continue_note")}
-          </p>
+          <div className="mt-7">
+            <LoginForm />
+          </div>
         </div>
       </div>
     </section>

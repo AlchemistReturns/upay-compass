@@ -18,6 +18,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { useAuth } from "@/features/auth/auth-provider";
 import { OfflineNote } from "@/features/pwa/offline-note";
 import { useOnline } from "@/features/pwa/use-online";
+import { PasskeyCard } from "@/features/auth/passkey-card";
 import { AiActivityCard } from "./ai-activity-card";
 import { Avatar, formatPhone } from "./avatar";
 import { useProfile, useUpdateProfile, type Profile } from "./use-profile";
@@ -198,13 +199,14 @@ export function ProfileView() {
             <ThemeSwitch />
           </section>
 
+          <PasskeyCard />
+
           <AiActivityCard profile={p} />
 
           <Button variant="destructive" className="w-full" onClick={() => void signOut()}>
             <LogOut className="ic-forward size-4" aria-hidden />
             {t("common.logout")}
           </Button>
-          <p className="text-muted-foreground text-center text-xs">{t("common.simulated_note")}</p>
         </div>
       )}
     </>

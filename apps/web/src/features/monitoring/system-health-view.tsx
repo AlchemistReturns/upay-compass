@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   Coins,
   Eye,
-  FlaskConical,
   Gauge,
   Hourglass,
   LineChart,
@@ -28,12 +27,10 @@ import {
 import { PageHeader } from "@/components/page-header";
 import { Pill, EmptyState, ErrorState, LoadingCards } from "@/components/compass";
 import { Segmented } from "@/components/segmented";
-import { Switch } from "@/components/switch";
 import { formatNumber, formatShortDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { Trends } from "./trends";
+import { UsabilityEvidence } from "@/features/admin/usability-evidence";
 import { METRIC_ORDER, buildCards, type CardModel } from "./present";
-import { simulateSnapshot, type Scenario } from "./sample-data";
 import { Sparkline } from "./sparkline";
 import { useSystemHealth, type HealthWindow } from "./use-system-health";
 
@@ -142,17 +139,9 @@ export function SystemHealthView() {
   const lang = i18n.language;
 
   const [hours, setHours] = useState<HealthWindow>(24);
-  const [sample, setSample] = useState(false);
-  const [scenario, setScenario] = useState<Scenario>("normal");
-  const [simNow] = useState(() => Date.now());
 
-  const live = useSystemHealth(hours, !sample);
-  // simulated traffic only ever appears when the person turns the switch on
-  const simulated = sample;
-  const snapshot = useMemo(
-    () => (simulated ? simulateSnapshot(scenario, hours, simNow) : live.data),
-    [simulated, scenario, hours, simNow, live.data],
-  );
+  const live = useSystemHealth(hours, true);
+  const snapshot = live.data;
   const evaluated = useMemo(() => (snapshot ? evaluateHealth(snapshot) : null), [snapshot]);
   const cards = useMemo(
     () => (snapshot && evaluated ? buildCards(snapshot, evaluated.metrics, lang, MINIMUMS) : []),
@@ -200,7 +189,7 @@ export function SystemHealthView() {
             className="sm:w-60"
           />
           <div className="flex items-center gap-1">
-            {!sample && (
+            {
               <button
                 type="button"
                 onClick={() => void live.refetch()}
@@ -214,39 +203,12 @@ export function SystemHealthView() {
                   aria-hidden
                 />
               </button>
-            )}
-            <label className="flex min-h-11 cursor-pointer items-center gap-2 ps-2 text-sm font-medium">
-              <FlaskConical className="text-primary size-[18px]" aria-hidden />
-              <span>{t("monitor.sample_label")}</span>
-              <Switch checked={sample} onChange={setSample} label={t("monitor.sample_label")} />
-            </label>
+            }
           </div>
         </div>
 
-        {simulated && (
-          <div className="space-y-3">
-            <p className="callout" role="note">
-              <FlaskConical className="mt-0.5 size-4 shrink-0" aria-hidden />
-              <span>
-                <strong>{t("monitor.sample_banner")}</strong> {t("monitor.sample_hint")}
-              </span>
-            </p>
-            <Segmented
-              label={t("monitor.scenario_label")}
-              value={scenario}
-              onSelect={setScenario}
-              size="sm"
-              options={[
-                { value: "normal", label: t("monitor.scenario_normal") },
-                { value: "outage", label: t("monitor.scenario_outage") },
-              ]}
-              className="sm:w-80"
-            />
-          </div>
-        )}
-
-        {!sample && live.isPending && <LoadingCards hero rows={4} />}
-        {!sample && live.isError && <ErrorState onRetry={() => void live.refetch()} />}
+        {live.isPending && <LoadingCards hero rows={4} />}
+        {live.isError && <ErrorState onRetry={() => void live.refetch()} />}
 
         {snapshot && evaluated && (
           <>
@@ -282,20 +244,11 @@ export function SystemHealthView() {
               </div>
             </section>
 
-            {allUnknown && !simulated ? (
+            {allUnknown ? (
               <EmptyState
                 icon={Activity}
                 title={t("monitor.empty_title")}
                 body={t("monitor.empty_body")}
-                action={
-                  <button
-                    type="button"
-                    onClick={() => setSample(true)}
-                    className="text-primary hover:bg-secondary tap inline-flex min-h-11 items-center rounded-full px-4 text-sm font-semibold"
-                  >
-                    {t("monitor.empty_action")}
-                  </button>
-                }
               />
             ) : (
               <div className="grid gap-4 sm:grid-cols-2">
@@ -305,18 +258,13 @@ export function SystemHealthView() {
               </div>
             )}
 
-            {!allUnknown && (
-              <>
-                <h2 className="section-title px-1 pt-2">{t("monitor.panels.trends")}</h2>
-                <Trends snapshot={snapshot} />
-              </>
-            )}
-
             <p className="text-muted-foreground px-1 text-center text-xs leading-5">
               {t("monitor.privacy")}
             </p>
           </>
         )}
+
+        <UsabilityEvidence />
       </div>
     </>
   );

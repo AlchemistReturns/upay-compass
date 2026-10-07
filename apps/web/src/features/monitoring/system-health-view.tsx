@@ -251,7 +251,7 @@ export function SystemHealthView() {
                 body={t("monitor.empty_body")}
               />
             ) : (
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {cards.map((card, i) => (
                   <MetricCard key={card.id} card={card} index={i} range={range} />
                 ))}

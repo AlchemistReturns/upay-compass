@@ -170,8 +170,8 @@ export function ForecastChart({ snapshot }: { snapshot: ForecastSnapshot }) {
             <AreaChart data={rows} margin={{ top: 8, right: 6, bottom: 0, left: 0 }}>
               <defs>
                 <linearGradient id="forecast-fill" x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0%" stopColor="#79bf57" stopOpacity={0.45} />
-                  <stop offset="100%" stopColor="#79bf57" stopOpacity={0.02} />
+                  <stop offset="0%" stopColor="#17479e" stopOpacity={0.4} />
+                  <stop offset="100%" stopColor="#17479e" stopOpacity={0.02} />
                 </linearGradient>
               </defs>
               <CartesianGrid vertical={false} stroke="var(--chart-grid)" strokeDasharray="3 4" />

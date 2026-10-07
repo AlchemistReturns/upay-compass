@@ -34,17 +34,17 @@ export function BrandMark({ className }: { className?: string }) {
     <svg viewBox="0 0 48 48" className={cn("size-9 shrink-0 rounded-[31%]", className)} aria-hidden>
       <defs>
         <linearGradient id={`${id}-bg`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#13696a" />
-          <stop offset="1" stopColor="#0e2f6b" />
+          <stop offset="0" stopColor="#1f55b3" />
+          <stop offset="1" stopColor="#091d4a" />
         </linearGradient>
       </defs>
       <rect width="48" height="48" rx="15" fill={`url(#${id}-bg)`} />
-      <circle cx="24" cy="24" r="14.5" fill="none" stroke="#ffc20e" strokeOpacity=".28" />
+      <circle cx="24" cy="24" r="14.5" fill="none" stroke="#ffffff" strokeOpacity=".3" />
       <g className="brand-needle">
         <path d="M24 24 L34.2 13.8 L27.2 27.2 Z" fill="#ffc20e" />
         <path d="M24 24 L13.8 34.2 L20.8 20.8 Z" fill="#ffffff" fillOpacity=".9" />
       </g>
-      <circle cx="24" cy="24" r="2.4" fill="#0e2f6b" stroke="#ffc20e" strokeWidth="1.4" />
+      <circle cx="24" cy="24" r="2.4" fill="#091d4a" stroke="#ffc20e" strokeWidth="1.4" />
     </svg>
   );
 }

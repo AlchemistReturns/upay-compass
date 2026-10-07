@@ -200,22 +200,22 @@
   --card-foreground: #14181f;
   --popover: #ffffff;
   --popover-foreground: #14181f;
-  --primary: #1e57b8;
+  --primary: #17479e;
   --primary-foreground: #ffffff;
   --secondary: #e8f0fc;
-  --secondary-foreground: #1e57b8;
+  --secondary-foreground: #17479e;
   --muted: #eef2f8;
   /* 5.2:1 on the page, 5.6:1 on cards */
   --muted-foreground: #5b6575;
   --accent: #e8f0fc;
-  --accent-foreground: #1e57b8;
+  --accent-foreground: #17479e;
   --destructive: #b83a26;
   --border: #e3e8f0;
   --input: #d5ddea;
   --ring: #5b8fe0;
 
-  --brand-ink: #0e2f6b;
-  --brand-deep: #1e57b8;
+  --brand-ink: #091d4a;
+  --brand-deep: #17479e;
   --lime: #ffc20e;
   --lime-soft: #fff4cc;
   --leaf: #79bf57;
@@ -236,24 +236,24 @@
 
   --gradient-teal:
     radial-gradient(120% 90% at 100% 0%, rgba(255, 194, 14, 0.16) 0%, transparent 46%),
-    linear-gradient(155deg, #2a66cc 0%, #1e57b8 52%, #0e2f6b 100%);
+    linear-gradient(155deg, #1f55b3 0%, #143c8c 50%, #091d4a 100%);
   --gradient-lime: linear-gradient(135deg, #ffd75e 0%, #ffc20e 100%);
 
-  --shadow-card: 0 1px 2px rgba(18, 58, 128, 0.04), 0 10px 28px -14px rgba(18, 58, 128, 0.14);
-  --shadow-card-hover: 0 1px 2px rgba(18, 58, 128, 0.05), 0 18px 36px -16px rgba(18, 58, 128, 0.22);
-  --shadow-raised: 0 28px 50px -26px rgba(18, 58, 128, 0.6), 0 2px 6px rgba(18, 58, 128, 0.12);
-  --shadow-float: 0 18px 40px -12px rgba(18, 58, 128, 0.45), 0 2px 8px rgba(18, 58, 128, 0.12);
-  --shadow-pop: 0 24px 60px -20px rgba(18, 58, 128, 0.55);
-  --shadow-thumb: 0 1px 2px rgba(18, 58, 128, 0.1), 0 4px 12px -4px rgba(18, 58, 128, 0.22);
+  --shadow-card: 0 1px 2px rgba(9, 29, 74, 0.04), 0 10px 28px -14px rgba(9, 29, 74, 0.14);
+  --shadow-card-hover: 0 1px 2px rgba(9, 29, 74, 0.05), 0 18px 36px -16px rgba(9, 29, 74, 0.22);
+  --shadow-raised: 0 28px 50px -26px rgba(9, 29, 74, 0.6), 0 2px 6px rgba(9, 29, 74, 0.12);
+  --shadow-float: 0 18px 40px -12px rgba(9, 29, 74, 0.45), 0 2px 8px rgba(9, 29, 74, 0.12);
+  --shadow-pop: 0 24px 60px -20px rgba(9, 29, 74, 0.55);
+  --shadow-thumb: 0 1px 2px rgba(9, 29, 74, 0.1), 0 4px 12px -4px rgba(9, 29, 74, 0.22);
 
   /* hairlines, fields and other quiet surfaces that change character between themes */
-  --hairline: rgba(30, 87, 184, 0.07);
-  --hairline-strong: rgba(30, 87, 184, 0.12);
+  --hairline: rgba(23, 71, 158, 0.07);
+  --hairline-strong: rgba(23, 71, 158, 0.12);
   --field: #fbfcfe;
   --segment: #e3e8f0;
   --row-hover: #f5f8fc;
   --elevated: #ffffff;
-  --scrim: #0e2f6b;
+  --scrim: #091d4a;
   --scrim-opacity: 0.42;
   --switch-off: #c9d2e0;
   --thumb: #ffffff;
@@ -276,13 +276,13 @@
   );
   --liquid-glow: radial-gradient(120% 70% at 50% 0%, rgba(255, 255, 255, 0.7), transparent 62%);
   --liquid-shadow:
-    0 0 0 0.5px rgba(30, 87, 184, 0.1), 0 1px 2px rgba(18, 58, 128, 0.06),
-    0 10px 28px -14px rgba(18, 58, 128, 0.3);
-  --liquid-divider: rgba(30, 87, 184, 0.1);
-  --liquid-press: rgba(30, 87, 184, 0.07);
+    0 0 0 0.5px rgba(23, 71, 158, 0.1), 0 1px 2px rgba(9, 29, 74, 0.06),
+    0 10px 28px -14px rgba(9, 29, 74, 0.3);
+  --liquid-divider: rgba(23, 71, 158, 0.1);
+  --liquid-press: rgba(23, 71, 158, 0.07);
   --bar-tint: rgba(244, 246, 250, 0.82);
 
-  --chart-1: #1e57b8;
+  --chart-1: #17479e;
   --chart-2: #79bf57;
   --chart-3: #ffc20e;
   --chart-4: #5b6575;
@@ -290,10 +290,10 @@
   --radius: 0.875rem;
   --sidebar: #ffffff;
   --sidebar-foreground: #14181f;
-  --sidebar-primary: #1e57b8;
+  --sidebar-primary: #17479e;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #e8f0fc;
-  --sidebar-accent-foreground: #1e57b8;
+  --sidebar-accent-foreground: #17479e;
   --sidebar-border: #e3e8f0;
   --sidebar-ring: #5b8fe0;
 
@@ -306,11 +306,11 @@
 /* Charts: teal for spending, leaf green for income (3.1:1 on white, and a clear lightness gap from teal). */
 :root {
   --chart-income: #4f9e3a;
-  --chart-expense: #1e57b8;
-  --chart-bar: #1e57b8;
+  --chart-expense: #17479e;
+  --chart-bar: #17479e;
   --chart-grid: #e6ecf4;
   --chart-axis: #6b7585;
-  --chart-cursor: rgba(30, 87, 184, 0.06);
+  --chart-cursor: rgba(23, 71, 158, 0.06);
 }
 
 /* Status colors always ship with an icon and a label, never color alone. */
@@ -347,8 +347,8 @@
   --input: rgba(255, 255, 255, 0.11);
   --ring: #8fb5f2;
 
-  --brand-ink: #0e2f6b;
-  --brand-deep: #1e57b8;
+  --brand-ink: #091d4a;
+  --brand-deep: #17479e;
   --lime: #ffc20e;
   --lime-soft: rgba(255, 194, 14, 0.14);
   --leaf: #8fd06b;
@@ -367,7 +367,7 @@
 
   --gradient-teal:
     radial-gradient(120% 90% at 100% 0%, rgba(255, 194, 14, 0.13) 0%, transparent 46%),
-    linear-gradient(155deg, #2a66cc 0%, #1b4fa6 52%, #0e2f6b 100%);
+    linear-gradient(155deg, #1f55b3 0%, #102f6e 52%, #091d4a 100%);
   --gradient-lime: linear-gradient(135deg, #ffd75e 0%, #f2b300 100%);
 
   --shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.035), 0 12px 30px -18px rgba(0, 0, 0, 0.8);
@@ -536,7 +536,7 @@
     backdrop-filter: blur(24px) saturate(180%);
     box-shadow:
       0 1px 0 rgba(255, 255, 255, 0.8) inset,
-      0 16px 40px -18px rgba(18, 58, 128, 0.35);
+      0 16px 40px -18px rgba(9, 29, 74, 0.35);
   }
   .dark .glass {
     border-color: rgba(255, 255, 255, 0.09);
@@ -715,9 +715,9 @@
     --foreground: var(--brand-ink);
     --muted-foreground: #3b4a63;
     --card: #ffffff;
-    --input: rgba(18, 58, 128, 0.14);
+    --input: rgba(9, 29, 74, 0.14);
     --field: rgba(255, 255, 255, 0.72);
-    --primary: #1e57b8;
+    --primary: #17479e;
     --primary-foreground: #ffffff;
   }
 

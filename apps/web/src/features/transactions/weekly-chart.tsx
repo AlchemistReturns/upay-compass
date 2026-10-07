@@ -25,7 +25,7 @@ type TooltipProps = {
 
 export function ChartTooltip({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-brand-ink text-on-dark dark:bg-elevated dark:text-foreground min-w-36 dark:ring-1 dark:ring-white/10 rounded-2xl px-3 py-2.5 text-xs shadow-[0_12px_30px_-10px_rgba(18, 58, 128,.6)]">
+    <div className="bg-brand-ink text-on-dark dark:bg-elevated dark:text-foreground min-w-36 dark:ring-1 dark:ring-white/10 rounded-2xl px-3 py-2.5 text-xs shadow-[0_12px_30px_-10px_rgba(9, 29, 74,.6)]">
       <div className="text-on-dark-muted mb-1.5 font-semibold">{title}</div>
       {children}
     </div>
@@ -44,7 +44,7 @@ function WeekTooltip({
     <ChartTooltip title={label ?? ""}>
       {payload.map((p) => (
         <div key={p.dataKey} className="flex items-center gap-2 py-0.5">
-          <Swatch color={p.dataKey === "income" ? "#a8d878" : "#7fb3b0"} />
+          <Swatch color={p.dataKey === "income" ? "#a8d878" : "#7fa6e3"} />
           <span className="text-on-dark-muted">{t(`dashboard.${p.dataKey}`)}</span>
           <span className="num ml-auto pl-3 font-bold">{formatMoney(p.value, lang)}</span>
         </div>

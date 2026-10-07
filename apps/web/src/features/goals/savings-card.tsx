@@ -151,13 +151,13 @@ export function SavingsCard() {
         </dl>
       )}
       <div className="flex gap-2">
-        <Button className="flex-1" onClick={() => setMode("deposit")} disabled={!data}>
+        <Button className="min-w-0 flex-1 px-3" onClick={() => setMode("deposit")} disabled={!data}>
           <ArrowDownToLine aria-hidden />
           {t("savings.add")}
         </Button>
         <Button
           variant="secondary"
-          className="flex-1"
+          className="min-w-0 flex-1 px-3"
           onClick={() => setMode("withdraw")}
           disabled={!data || data.free <= 0}
         >

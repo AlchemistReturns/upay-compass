@@ -31,7 +31,6 @@ import { cn } from "@/lib/utils";
 import { formatMoney } from "@/lib/format";
 import { useAuth } from "@/features/auth/auth-provider";
 import { useProfile } from "@/features/profile/use-profile";
-import { BAND_COLOR } from "@/features/health/health-card";
 import { useHealthSnapshots } from "@/features/health/use-health";
 import { useReadinessSnapshots } from "@/features/readiness/use-readiness";
 import { useRealtimeInvalidate } from "@/features/realtime/use-realtime-invalidate";
@@ -96,7 +95,7 @@ function QuickAction({
         className={cn(
           "grid size-[3.25rem] place-items-center rounded-full transition-[background-color,scale] duration-500 ease-[var(--ease-spring)] group-active:scale-90 group-active:duration-100",
           primary
-            ? "bg-lime text-brand-ink shadow-[0_10px_22px_-10px_rgba(255, 194, 14,.9)] group-hover:bg-[#cff09e]"
+            ? "bg-lime text-brand-ink shadow-[0_10px_22px_-10px_rgba(255, 194, 14,.9)] group-hover:bg-[#ffd75e]"
             : "bg-white/10 ring-1 ring-white/15 group-hover:bg-white/18",
         )}
       >
@@ -138,16 +137,17 @@ function ScoreStat({
         size={42}
         stroke={5}
         track="rgba(255,255,255,.14)"
-        color={band ? BAND_COLOR[band] : "transparent"}
+        // the panel is blue: one yellow arc for every band, the band is written out beside it
+        color={band ? "var(--lime)" : "transparent"}
       >
         <span className="num text-[14px] font-extrabold">{score ?? "–"}</span>
       </Ring>
       <div className="min-w-0 flex-1">
-        <div className="text-on-dark-muted truncate text-[12px] font-semibold">{label}</div>
+        <div className="text-on-dark-muted text-[12px] leading-tight font-semibold">{label}</div>
         <div className="mt-0.5 truncate text-[14px] font-bold">
           {band ? t(`score.band_${band}`) : t("dashboard.score_pending")}
         </div>
-        {note && <div className="text-on-dark-muted truncate text-[11px]">{note}</div>}
+        {note && <div className="text-on-dark-muted text-[11px] leading-tight">{note}</div>}
       </div>
       <ChevronRight
         className="ic-forward text-on-dark-muted hidden size-4 shrink-0 group-hover:text-white sm:block"
@@ -226,7 +226,7 @@ function BalancePanel({
             <div className="mt-3">
               <div className="h-2 overflow-hidden rounded-full bg-white/12" aria-hidden>
                 <div
-                  className="h-full origin-left rounded-full bg-[linear-gradient(90deg,#a8d878,#ffc20e)] [animation:grow-x_1s_var(--ease-out-soft)_.2s_both]"
+                  className="h-full origin-left rounded-full bg-[linear-gradient(90deg,#ffd75e,#ffc20e)] [animation:grow-x_1s_var(--ease-out-soft)_.2s_both]"
                   style={{ width: `${Math.max(spentPct, 2)}%` }}
                 />
               </div>
@@ -292,10 +292,10 @@ function AskCoach() {
   return (
     <Link
       href="/coach"
-      className="surface-lime group rise relative flex items-center gap-3.5 overflow-hidden rounded-[1.75rem] p-4 pr-3.5 shadow-[0_14px_30px_-18px_rgba(79,158,58,.8)] tap-soft"
+      className="surface-lime group rise relative flex items-center gap-3.5 overflow-hidden rounded-[1.75rem] p-4 pr-3.5 shadow-[0_14px_30px_-18px_rgba(255, 194, 14,.8)] tap-soft"
       style={{ "--i": 1 } as React.CSSProperties}
     >
-      <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[image:var(--gradient-teal)] text-lime shadow-[0_8px_18px_-10px_rgba(18, 58, 128,.8)]">
+      <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[image:var(--gradient-teal)] text-lime shadow-[0_8px_18px_-10px_rgba(9, 29, 74,.8)]">
         <Sparkles className="ic-spark size-[22px]" aria-hidden />
       </span>
       <span className="min-w-0 flex-1">
@@ -373,8 +373,9 @@ export function Dashboard() {
               expense={month.data?.expense}
             />
             <ForecastCard />
-            <DailyTip />
-            <div className="grid gap-3.5 lg:grid-cols-2">
+            {/* the forecast card above already says if the balance will dip, so the tip says something else */}
+            <DailyTip skipForecast />
+            <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-2">
               <AskCoach />
               <CommunityLink />
               <InstallPrompt />

@@ -28,7 +28,7 @@ export function DemoLoader({ suggested }: { suggested: IncomeType | null }) {
         <p className="text-on-dark-muted mt-2 max-w-md text-sm leading-6">{t("demo.body")}</p>
       </div>
 
-      <div className="grid gap-2.5 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
         {INCOME_TYPES.map((p, i) => {
           const Icon = PERSONA_ICON[p];
           const isSuggested = p === suggested;

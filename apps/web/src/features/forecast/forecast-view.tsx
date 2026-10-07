@@ -206,7 +206,7 @@ export function ForecastView() {
                     bills: formatMoney(d.expectedBills, lang),
                   })}
                 />
-                <div className="grid gap-3 md:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                   {[
                     { title: t("forecast.expect_income"), list: income, incoming: true },
                     { title: t("forecast.expect_payments"), list: payments, incoming: false },

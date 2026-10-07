@@ -312,7 +312,7 @@ function AskCoach() {
 }
 
 export function Dashboard() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { userId } = useAuth();
   const profile = useProfile(userId);
   const { month, balance } = useDashboard("month");

@@ -314,7 +314,9 @@
     "wrong_one": "Wrong PIN. 1 attempt left.",
     "signed_out": "Too many wrong attempts. Please sign in again.",
     "wrong_other": "Wrong PIN. {{count}} attempts left.",
-    "wait": "Too many wrong tries. Try again in {{time}}."
+    "wait": "Too many wrong tries. Try again in {{time}}.",
+    "passkey": "Use fingerprint or face",
+    "passkey_failed": "Could not unlock with fingerprint or face. Use your PIN."
   },
   "onboarding": {
     "title": "Let's set you up",
@@ -919,5 +921,15 @@
     "generic_5": "Round-ups add up. Small amounts saved every day beat large amounts saved rarely.",
     "generic_6": "Never share your PIN or OTP with anyone, even someone who says they are from support.",
     "generic_7": "Cash out only what you need. Paying digitally keeps a record you can learn from."
+  },
+  "passkey": {
+    "title": "Fingerprint or face unlock",
+    "hint": "Unlock the app with your fingerprint, face or screen lock instead of typing the PIN. Your biometric never leaves this phone, and the PIN still works.",
+    "add": "Turn on for this device",
+    "this_device": "This device",
+    "added": "Added {{date}}",
+    "remove": "Remove",
+    "unsupported": "This browser or device does not support fingerprint or face unlock.",
+    "failed": "Could not set this up. Please try again."
   }
 }

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Loader2, LockKeyhole } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Fingerprint, Loader2, LockKeyhole } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { pinSchema } from "@compass/shared";
 import { BrandMark } from "@/components/compass";
@@ -147,7 +147,7 @@ function formatWait(seconds: number) {
 
 export function LockScreen() {
   const { t } = useTranslation();
-  const { unlock } = useLock();
+  const { unlock, hasPasskey, unlockWithPasskey } = useLock();
   const { signOut } = useAuth();
   const [pin, setPin] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -170,6 +170,23 @@ export function LockScreen() {
     }, 500);
     return () => clearInterval(id);
   }, [waitUntil]);
+
+  // Offer fingerprint / face as soon as the screen shows (once); the PIN stays as the fallback.
+  const [bioBusy, setBioBusy] = useState(false);
+  const bioTried = useRef(false);
+  async function tryBiometric() {
+    setBioBusy(true);
+    setError(null);
+    const r = await unlockWithPasskey();
+    setBioBusy(false);
+    if (r === "error") setError(t("lock.passkey_failed"));
+  }
+  useEffect(() => {
+    if (!hasPasskey || bioTried.current) return;
+    bioTried.current = true;
+    void tryBiometric();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasPasskey]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -234,6 +251,22 @@ export function LockScreen() {
             {busy && <Loader2 className="animate-spin" aria-hidden />}
             {t("lock.unlock")}
           </Button>
+          {hasPasskey && (
+            <Button
+              type="button"
+              variant="darkGhost"
+              className="w-full"
+              disabled={bioBusy}
+              onClick={() => void tryBiometric()}
+            >
+              {bioBusy ? (
+                <Loader2 className="animate-spin" aria-hidden />
+              ) : (
+                <Fingerprint aria-hidden />
+              )}
+              {t("lock.passkey")}
+            </Button>
+          )}
           <Button
             type="button"
             variant="darkGhost"

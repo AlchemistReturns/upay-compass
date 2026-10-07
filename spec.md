@@ -149,7 +149,7 @@ upay is phone-centric, so login mirrors that.
 4. User sets a 4–6 digit **app PIN once**. It is stored **on the server** (bcrypt hash plus a failed-attempt counter in `user_pins`) and verified by the server, so it survives logout and follows the user to any device. The Supabase JWT stays the real session; the PIN is a UI lock on top of it. The OTP proves the phone; a returning user with a PIN must still enter it after every login, so the PIN is the last step of signing in.
 5. Session persisted and auto-refreshed; PIN lock after 2 minutes in the background, and in any brand-new browser session.
 
-> Design note: this is a competition prototype with simulated data and test accounts, so a server-side PIN is acceptable. The PIN does not protect data (RLS and the JWT do); it only locks the screen. A 4–6 digit PIN is weak by nature, which is why attempts are counted on the server and the 5th failure clears it.
+> Design note: this is a competition prototype with simulated data and test accounts, so a server-side PIN is acceptable. The PIN does not protect data (RLS and the JWT do); it only locks the screen. A 4–6 digit PIN is weak by nature, which is why attempts are counted on the server, wrong tries back off (30 s up to 15 min) and the 8th failure clears it. Fingerprint / face unlock (passkeys) is offered on top of the PIN.
 
 **Roles**
 
@@ -161,7 +161,7 @@ upay is phone-centric, so login mirrors that.
 **Rules**
 - RLS on every table, policies keyed on `auth.uid() = user_id`.
 - No service-role key in the client or the repo; `.env.example` only.
-- OTP rate limiting. 5 wrong PIN attempts clear the PIN, sign the user out, and require an OTP login plus a new PIN. Attempts are counted in the database, not in the browser.
+- OTP rate limiting. Wrong PIN attempts 3 to 7 each start a longer wait (30 s, 1, 2, 5, 15 min) that `verify_pin` enforces; the 8th clears the PIN, signs the user out, and requires an OTP login plus a new PIN. Attempts and waits are kept in the database, not in the browser.
 - Logout clears the session, the query cache and the unlock flag. The PIN is kept on the server.
 - PIN storage is only reachable through the `has_pin`, `set_pin` and `verify_pin` functions (Section 7); clients cannot read or write `user_pins`.
 
@@ -447,7 +447,8 @@ Reference data (the 12 categories, and later the learn modules) is inserted by m
 3. **Profile creation:** the `handle_new_user` trigger inserts the `profiles` row; client then redirects to onboarding if `onboarded = false`.
 4. **PIN lock:**
    - A user without a PIN is sent to `/set-pin` after login and sets a 4–6 digit PIN through the `set_pin` RPC (bcrypt via pgcrypto, set once; the raw PIN is never stored). A user who already has one enters it after the OTP on every login (the OTP does not unlock the session).
-   - `verify_pin` returns `{ok, attempts_left, reset}`; it counts failures per user in the database and, on the 5th wrong attempt, deletes the PIN (`reset: true`). The client then signs the user out, so the next login sets a new PIN.
+   - `verify_pin` returns `{ok, attempts_left, reset, locked_seconds}`; it counts failures per user in the database, refuses to check anything while a wait is running (the try is not counted), and on the 8th wrong attempt deletes the PIN (`reset: true`). The client then signs the user out, so the next login sets a new PIN. Migration `20261011090000_pin_cooldown.sql` replaced the earlier 5-try rule.
+   - **Passkeys (WebAuthn).** On the lock screen a fingerprint / face / screen-lock button replaces typing the PIN (it also prompts once when the screen shows). The `passkey` Edge Function does registration and sign-in (`register_options`, `register_verify`, `auth_options`, `auth_verify`) with SimpleWebAuthn: user verification is required, the challenge is stored server-side and used once (5-minute life), and the request origin must be on `PASSKEY_ORIGINS`. Only the public key and a counter are stored (`user_passkeys`, closed to clients); people list and remove their own through `list_passkeys` / `delete_passkey`. A passkey does not replace the OTP login, and the PIN still works.
    - `LockProvider` tracks `visibilitychange`; after 2 minutes hidden, show the PIN screen. A brand-new browser session (new tab or restart) also asks for the PIN; a plain reload does not (flag kept in `sessionStorage`).
 5. **Route guard:** a single `useAuthStatus` hook derives `signed-out | needs-pin | locked | needs-onboarding | ready`, and `<Guard own="…">` redirects each route group to where that state belongs (a locked app shows the PIN screen on every route); `onAuthStateChange` keeps session in sync; logout clears the session, the Query cache and the unlock flag (the PIN stays on the server).
 6. **Onboarding wizard (3 steps):** language → income type & monthly income → first goal (optional). Writes to `goals` (if filled in) and `profiles`, then sets `onboarded = true`. The `goals` table is created in Phase 1 (migration `20260102000000_goals.sql`) with column-level grants so clients cannot write `saved_amount`; Phase 3 adds contributions and the RPCs. The saved language on `profiles.language` is adopted on login and kept in sync by the language toggle.

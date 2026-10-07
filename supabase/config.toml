@@ -460,3 +460,6 @@ verify_jwt = false
 
 [functions.generate-learn-modules]
 verify_jwt = false
+
+[functions.passkey]
+verify_jwt = false

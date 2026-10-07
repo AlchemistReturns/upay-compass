@@ -48,6 +48,9 @@ importers:
       '@compass/upay-sim':
         specifier: workspace:*
         version: link:../../adapters/upay-sim
+      '@simplewebauthn/browser':
+        specifier: ^13.3.0
+        version: 13.3.0
       '@supabase/supabase-js':
         specifier: ^2.117.2
         version: 2.117.2
@@ -1019,6 +1022,9 @@ packages:
   '@shadcn/registry@0.1.0':
     resolution: {integrity: sha512-eMF6tPNi9SWZgPvqBvPQFhJN7gV9PcjRdF3kPiiWo5yZJocWqVgxFuspCHrOij3bIJ797NIGZ+j/v7AiXfA6qg==}
     engines: {node: '>=20.18.1'}
+
+  '@simplewebauthn/browser@13.3.0':
+    resolution: {integrity: sha512-BE/UWv6FOToAdVk0EokzkqQQDOWtNydYlY6+OrmiZ5SCNmb41VehttboTetUM3T/fr6EAFYVXjz4My2wg230rQ==}
 
   '@sindresorhus/merge-streams@4.0.0':
     resolution: {integrity: sha512-tlqY9xq5ukxTUZBmoOp+m61cqwQD5pHJtFY3Mn8CA8ps6yghLH/Hw8UPdqg4OLmFW3IFlcXnQNmo/dh8HzXYIQ==}
@@ -4618,6 +4624,8 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
       - typescript
+
+  '@simplewebauthn/browser@13.3.0': {}
 
   '@sindresorhus/merge-streams@4.0.0': {}
 

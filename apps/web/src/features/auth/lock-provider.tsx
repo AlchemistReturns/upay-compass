@@ -13,6 +13,8 @@ import { LOCK_AFTER_HIDDEN_MS } from "@compass/shared";
 import { supabase } from "@/lib/supabase";
 import { readPinFlag, readUnlockFlag, writePinFlag, writeUnlockFlag } from "@/lib/unlock-flag";
 import { useAuth } from "./auth-provider";
+import { authenticateWithPasskey, type PasskeyResult } from "./passkey";
+import { usePasskeys } from "./use-passkeys";
 
 export type UnlockResult =
   | { ok: true }
@@ -29,6 +31,10 @@ type LockContextValue = {
   locked: boolean;
   setPin: (pin: string) => Promise<void>;
   unlock: (pin: string) => Promise<UnlockResult>;
+  /** Whether this person has at least one passkey (fingerprint / face unlock) registered. */
+  hasPasskey: boolean;
+  /** Unlock with fingerprint, face or screen lock instead of the PIN. */
+  unlockWithPasskey: () => Promise<PasskeyResult>;
   /** Re-read the PIN state after an error. */
   reload: () => void;
 };
@@ -135,11 +141,23 @@ export function LockProvider({ children }: { children: React.ReactNode }) {
     [signOut],
   );
 
+  const passkeys = usePasskeys();
+  const hasPasskey = (passkeys.data?.length ?? 0) > 0;
+
+  const unlockWithPasskey = useCallback(async (): Promise<PasskeyResult> => {
+    const result = await authenticateWithPasskey();
+    if (result === "ok") {
+      writeUnlockFlag(true);
+      setLocked(false);
+    }
+    return result;
+  }, []);
+
   const reload = useCallback(() => setReloadKey((k) => k + 1), []);
 
   const value = useMemo(
-    () => ({ pinState, locked, setPin, unlock, reload }),
-    [pinState, locked, setPin, unlock, reload],
+    () => ({ pinState, locked, setPin, unlock, hasPasskey, unlockWithPasskey, reload }),
+    [pinState, locked, setPin, unlock, hasPasskey, unlockWithPasskey, reload],
   );
 
   return <LockContext.Provider value={value}>{children}</LockContext.Provider>;

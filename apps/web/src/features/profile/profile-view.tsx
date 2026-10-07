@@ -18,6 +18,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { useAuth } from "@/features/auth/auth-provider";
 import { OfflineNote } from "@/features/pwa/offline-note";
 import { useOnline } from "@/features/pwa/use-online";
+import { PasskeyCard } from "@/features/auth/passkey-card";
 import { AiActivityCard } from "./ai-activity-card";
 import { Avatar, formatPhone } from "./avatar";
 import { useProfile, useUpdateProfile, type Profile } from "./use-profile";
@@ -197,6 +198,8 @@ export function ProfileView() {
             </h2>
             <ThemeSwitch />
           </section>
+
+          <PasskeyCard />
 
           <AiActivityCard profile={p} />
 

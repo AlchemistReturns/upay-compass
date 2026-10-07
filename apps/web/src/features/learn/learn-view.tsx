@@ -12,7 +12,6 @@ import { cn } from "@/lib/utils";
 import { useCompletedModules, useModules } from "./use-learn";
 import { useRecommendations } from "./use-recommendations";
 import { ForYouSection } from "./for-you-section";
-import { CoachTabs } from "@/features/coach/coach-tabs";
 import { NAV_FORWARD } from "@/components/page-transition";
 
 export function LearnView({ embedded = false }: { embedded?: boolean } = {}) {
@@ -37,7 +36,6 @@ export function LearnView({ embedded = false }: { embedded?: boolean } = {}) {
       ) : (
         <PageHeader title={t("learn.title")} subtitle={t("learn.disclaimer")} />
       )}
-      <CoachTabs active="learn" />
       <div className="space-y-7 pb-4">
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           <section className="balance-panel rise flex items-center gap-5 p-5 sm:p-6">

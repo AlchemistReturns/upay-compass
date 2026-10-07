@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { Home, MessageCircle, ReceiptText, Target } from "lucide-react";
+import { BookOpen, Home, MessageCircle, ReceiptText, Target } from "lucide-react";
 import { NAV_TAB } from "@/components/page-transition";
 import { haptic } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
@@ -14,15 +14,12 @@ export const NAV_ITEMS = [
   { href: "/transactions", key: "activity", icon: ReceiptText },
   { href: "/plan", key: "plan", icon: Target },
   { href: "/coach", key: "coach", icon: MessageCircle },
+  { href: "/learn", key: "learn", icon: BookOpen },
 ] as const;
-
-/** Screens that belong to a tab without living under its path (Learn sits under Coach). */
-const ALSO_UNDER: Record<string, readonly string[]> = { "/coach": ["/learn"] };
 
 export function isActivePath(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
-  const prefixes = [href, ...(ALSO_UNDER[href] ?? [])];
-  return prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 const TYPING =
@@ -71,7 +68,7 @@ export function BottomNav() {
         <span
           aria-hidden
           className={cn(
-            "bg-secondary absolute top-1.5 bottom-1.5 left-1.5 w-[calc((100%-0.75rem)/4)] rounded-[1.35rem] transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]",
+            "bg-secondary absolute top-1.5 bottom-1.5 left-1.5 w-[calc((100%-0.75rem)/5)] rounded-[1.35rem] transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]",
             index < 0 && "opacity-0",
           )}
           style={{ transform: `translateX(${Math.max(index, 0) * 100}%)` }}

@@ -2,6 +2,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { BottomNav } from "@/components/bottom-nav";
 import { PageTransition } from "@/components/page-transition";
 import { Guard } from "@/features/auth/guard";
+import { DemoTimer } from "@/features/demo/demo-timer";
 import { VoiceFab } from "@/features/voice/voice-command-button";
 import { GamificationProvider } from "@/features/gamification/gamification-provider";
 
@@ -17,6 +18,7 @@ export default function ProtectedLayout({ children }: LayoutProps<"/">) {
           </main>
         </div>
         <VoiceFab />
+        <DemoTimer />
         <BottomNav />
       </GamificationProvider>
     </Guard>

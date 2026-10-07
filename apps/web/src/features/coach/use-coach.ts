@@ -1,7 +1,9 @@
 import { useCallback, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { detectAffordIntent } from "@compass/shared";
 import { useAuth } from "@/features/auth/auth-provider";
+import { demoMark } from "@/features/demo/demo-timer";
 
 export type CoachMessage = {
   id: string;
@@ -65,6 +67,8 @@ export function useCoachChat() {
   const [error, setError] = useState<ChatError>(null);
   const [pending, setPending] = useState<{ question: string; answer: string } | null>(null);
   const lastQuestion = useRef("");
+  /** Set when the answer was a "can I afford X?" verdict: the amount asked about. */
+  const [afford, setAfford] = useState<{ amount: number; verdict: string } | null>(null);
 
   const send = useCallback(
     async (question: string) => {
@@ -72,6 +76,7 @@ export function useCoachChat() {
       if (!text || status !== "idle") return;
       lastQuestion.current = text;
       setError(null);
+      setAfford(null);
       setStatus("waiting");
       setPending({ question: text, answer: "" });
 
@@ -106,8 +111,17 @@ export function useCoachChat() {
           for (const event of events) {
             if (!event.startsWith("data:")) continue;
             try {
-              const payload = JSON.parse(event.slice(5)) as { delta?: string };
+              const payload = JSON.parse(event.slice(5)) as {
+                delta?: string;
+                done?: boolean;
+                affordability?: string | null;
+              };
+              if (payload.done && payload.affordability) {
+                const intent = detectAffordIntent(text);
+                if (intent) setAfford({ amount: intent.amount, verdict: payload.affordability });
+              }
               if (payload.delta) {
+                demoMark("explained");
                 setStatus("streaming");
                 setPending((p) => (p ? { ...p, answer: p.answer + payload.delta } : p));
               }
@@ -132,5 +146,14 @@ export function useCoachChat() {
   );
 
   const retry = useCallback(() => void send(lastQuestion.current), [send]);
-  return { send, retry, status, error, pending, dismissError: () => setError(null) };
+  return {
+    send,
+    retry,
+    status,
+    error,
+    pending,
+    afford,
+    clearAfford: () => setAfford(null),
+    dismissError: () => setError(null),
+  };
 }

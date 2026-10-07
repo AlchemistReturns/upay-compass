@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { FeedError, type TransactionFeed } from "@compass/shared";
+import { CHANNELS, FeedError, type Channel, type TransactionFeed } from "@compass/shared";
 import { SimulatedFeed } from "@compass/upay-sim";
 import { MAX_STATEMENT_BYTES, StatementFeed } from "@compass/upay-statement";
 import { UpayApiFeed, type FieldMap, type ServiceMap } from "@compass/upay-api";
@@ -38,6 +38,20 @@ function jsonEnv<T>(name: string): Partial<T> | undefined {
   }
 }
 
+/** A service map from the environment, keeping only entries that name a real Compass channel. */
+function serviceMapEnv(): ServiceMap | undefined {
+  const raw = jsonEnv<Record<string, unknown>>("UPAY_API_SERVICE_MAP");
+  if (!raw) return undefined;
+  const map: ServiceMap = {};
+  for (const [service, channel] of Object.entries(raw)) {
+    if (typeof channel === "string" && (CHANNELS as readonly string[]).includes(channel)) {
+      map[service.toUpperCase()] = channel as Channel;
+    } else
+      console.error(`UPAY_API_SERVICE_MAP: "${service}" does not map to a channel; ignoring it`);
+  }
+  return map;
+}
+
 /** Whether the live upay feed has credentials (the UI uses this to show or hide the option). */
 export function upayApiConfigured(): boolean {
   return Boolean(Deno.env.get("UPAY_API_BASE_URL") && Deno.env.get("UPAY_API_KEY"));
@@ -59,7 +73,7 @@ export function buildFeed(request: FeedRequest, opts: { seed?: string } = {}): T
         baseUrl,
         apiKey,
         fields: jsonEnv<FieldMap>("UPAY_API_FIELD_MAP"),
-        services: jsonEnv<ServiceMap>("UPAY_API_SERVICE_MAP"),
+        services: serviceMapEnv(),
       });
     }
   }

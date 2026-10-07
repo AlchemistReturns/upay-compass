@@ -106,7 +106,7 @@ function QuickAction({
         className={cn(
           "grid size-[3.25rem] place-items-center rounded-full transition-[background-color,scale] duration-500 ease-[var(--ease-spring)] group-active:scale-90 group-active:duration-100",
           primary
-            ? "bg-lime text-brand-ink shadow-[0_10px_22px_-10px_rgba(195,234,140,.9)] group-hover:bg-[#cff09e]"
+            ? "bg-lime text-brand-ink shadow-[0_10px_22px_-10px_rgba(255, 194, 14,.9)] group-hover:bg-[#cff09e]"
             : "bg-white/10 ring-1 ring-white/15 group-hover:bg-white/18",
         )}
       >
@@ -236,7 +236,7 @@ function BalancePanel({
             <div className="mt-3">
               <div className="h-2 overflow-hidden rounded-full bg-white/12" aria-hidden>
                 <div
-                  className="h-full origin-left rounded-full bg-[linear-gradient(90deg,#a8d878,#c3ea8c)] [animation:grow-x_1s_var(--ease-out-soft)_.2s_both]"
+                  className="h-full origin-left rounded-full bg-[linear-gradient(90deg,#a8d878,#ffc20e)] [animation:grow-x_1s_var(--ease-out-soft)_.2s_both]"
                   style={{ width: `${Math.max(spentPct, 2)}%` }}
                 />
               </div>
@@ -305,7 +305,7 @@ function AskCoach() {
       className="surface-lime group rise relative flex items-center gap-3.5 overflow-hidden rounded-[1.75rem] p-4 pr-3.5 shadow-[0_14px_30px_-18px_rgba(79,158,58,.8)] tap-soft"
       style={{ "--i": 1 } as React.CSSProperties}
     >
-      <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[image:var(--gradient-teal)] text-lime shadow-[0_8px_18px_-10px_rgba(6,47,49,.8)]">
+      <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[image:var(--gradient-teal)] text-lime shadow-[0_8px_18px_-10px_rgba(18, 58, 128,.8)]">
         <Sparkles className="ic-spark size-[22px]" aria-hidden />
       </span>
       <span className="min-w-0 flex-1">

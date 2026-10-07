@@ -34,7 +34,7 @@ export default function LoginPage() {
   const benefits = [t("login.benefit_spend"), t("login.benefit_goals"), t("login.benefit_coach")];
 
   return (
-    <section className="grid min-h-dvh grid-rows-[auto_1fr] overflow-hidden md:grid-rows-1 sm:min-h-0 sm:rounded-[2.25rem] sm:shadow-[0_40px_100px_-40px_rgba(6,47,49,.45)] md:min-h-[min(740px,calc(100dvh-4rem))] md:grid-cols-[1.05fr_.95fr]">
+    <section className="grid min-h-dvh grid-rows-[auto_1fr] overflow-hidden md:grid-rows-1 sm:min-h-0 sm:rounded-[2.25rem] sm:shadow-[0_40px_100px_-40px_rgba(18, 58, 128,.45)] md:min-h-[min(740px,calc(100dvh-4rem))] md:grid-cols-[1.05fr_.95fr]">
       {/* Brand panel: a compact header on phones, the full story from md up */}
       <div className="auth-showcase relative flex flex-col justify-between gap-6 px-6 pt-[calc(env(safe-area-inset-top)+1.25rem)] pb-14 sm:p-10 md:pb-10 lg:p-12">
         <div className="flex items-center justify-between gap-3">
@@ -82,7 +82,7 @@ export default function LoginPage() {
       </div>
 
       {/* Form: a sheet rising over the brand panel on phones, its own column from md up */}
-      <div className="bg-card relative z-[1] -mt-8 flex items-start justify-center rounded-t-[2rem] px-6 pt-8 pb-[calc(env(safe-area-inset-bottom)+2rem)] shadow-[0_-20px_40px_-24px_rgba(6,47,49,.5)] sm:p-12 md:mt-0 md:items-center md:rounded-none md:shadow-none lg:p-16">
+      <div className="bg-card relative z-[1] -mt-8 flex items-start justify-center rounded-t-[2rem] px-6 pt-8 pb-[calc(env(safe-area-inset-bottom)+2rem)] shadow-[0_-20px_40px_-24px_rgba(18, 58, 128,.5)] sm:p-12 md:mt-0 md:items-center md:rounded-none md:shadow-none lg:p-16">
         <div className="absolute top-6 right-6 hidden md:block">
           <LanguageToggle />
         </div>

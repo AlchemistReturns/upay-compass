@@ -162,7 +162,7 @@ export default function TransactionsPage() {
                   className={cn(
                     "tap h-11 rounded-full px-4 text-[13px] font-semibold",
                     filter === id
-                      ? "bg-primary text-primary-foreground shadow-[0_6px_14px_-8px_rgba(13,75,76,.8)]"
+                      ? "bg-primary text-primary-foreground shadow-[0_6px_14px_-8px_rgba(30, 87, 184,.8)]"
                       : "bg-card text-muted-foreground hover:text-foreground border border-hairline-strong",
                   )}
                 >

@@ -35,7 +35,7 @@ function Item({
       className={cn(
         "tap-soft flex min-h-11 items-center gap-3 rounded-2xl px-3.5 text-[14px] font-semibold",
         active
-          ? "text-on-dark bg-[image:var(--gradient-teal)] shadow-[0_10px_24px_-14px_rgba(6,47,49,.8)]"
+          ? "text-on-dark bg-[image:var(--gradient-teal)] shadow-[0_10px_24px_-14px_rgba(18, 58, 128,.8)]"
           : "text-muted-foreground hover:text-foreground hover:bg-white/80 dark:hover:bg-white/5",
       )}
     >

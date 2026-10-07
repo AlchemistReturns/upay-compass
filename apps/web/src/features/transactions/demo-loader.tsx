@@ -19,7 +19,7 @@ export function DemoLoader({ suggested }: { suggested: IncomeType | null }) {
   return (
     <section className="rise space-y-3">
       <div className="balance-panel p-6 sm:p-8">
-        <span className="bg-lime text-brand-ink mb-5 grid size-14 place-items-center rounded-[1.25rem] shadow-[0_10px_24px_-10px_rgba(195,234,140,.8)]">
+        <span className="bg-lime text-brand-ink mb-5 grid size-14 place-items-center rounded-[1.25rem] shadow-[0_10px_24px_-10px_rgba(255, 194, 14,.8)]">
           <Sparkles className="size-6" aria-hidden />
         </span>
         <h2 className="max-w-md text-2xl leading-tight font-extrabold tracking-tight">

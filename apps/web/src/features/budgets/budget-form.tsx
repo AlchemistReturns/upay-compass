@@ -145,7 +145,7 @@ export function BudgetForm({
                 className={cn(
                   "flex min-h-[5.25rem] flex-col items-center justify-center gap-1.5 rounded-2xl border px-1.5 py-2.5 text-center text-[12px] leading-tight font-semibold tap disabled:cursor-default",
                   selected
-                    ? "border-primary bg-secondary shadow-[0_0_0_3px_rgba(195,234,140,.7)]"
+                    ? "border-primary bg-secondary shadow-[0_0_0_3px_rgba(255, 194, 14,.7)]"
                     : "bg-card border-hairline-strong hover:border-primary/30",
                 )}
               >

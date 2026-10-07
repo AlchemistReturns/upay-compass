@@ -9,7 +9,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-[0_1px_2px_rgba(6,47,49,.18),0_8px_18px_-8px_rgba(13,75,76,.6)] hover:bg-[color-mix(in_oklch,var(--primary),var(--foreground)_16%)] dark:shadow-[0_8px_20px_-10px_rgba(147,216,194,.35)]",
+          "bg-primary text-primary-foreground shadow-[0_1px_2px_rgba(18, 58, 128,.18),0_8px_18px_-8px_rgba(30, 87, 184,.6)] hover:bg-[color-mix(in_oklch,var(--primary),var(--foreground)_16%)] dark:shadow-[0_8px_20px_-10px_rgba(147,216,194,.35)]",
         lime: "bg-lime text-brand-ink shadow-[0_8px_18px_-10px_rgba(79,158,58,.7)] hover:bg-[#b4e176]",
         outline: "border-border bg-card text-foreground hover:bg-muted aria-expanded:bg-muted",
         secondary:
@@ -17,7 +17,7 @@ const buttonVariants = cva(
         ghost: "text-foreground hover:bg-muted aria-expanded:bg-muted",
         destructive:
           "bg-negative-soft text-destructive hover:bg-[color-mix(in_oklch,var(--negative-soft),var(--destructive)_10%)] focus-visible:ring-destructive/25",
-        onDark: "bg-white text-brand-ink hover:bg-[#ecf8da]",
+        onDark: "bg-white text-brand-ink hover:bg-[#fff4cc]",
         darkGhost: "bg-white/10 text-on-dark ring-1 ring-white/20 hover:bg-white/16",
         link: "text-primary underline-offset-4 hover:underline",
       },

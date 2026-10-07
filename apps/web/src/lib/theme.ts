@@ -9,7 +9,7 @@ import { THEME_STORAGE_KEY } from "./theme-script";
  */
 export type ThemePreference = "system" | "light" | "dark";
 
-const THEME_COLOR = { light: "#f1f6ee", dark: "#060d0e" } as const;
+const THEME_COLOR = { light: "#f4f6fa", dark: "#060c1a" } as const;
 
 const listeners = new Set<() => void>();
 

@@ -261,7 +261,7 @@ export function PageHeader({
               aria-label="upay Compass"
               className="brand-link tap shrink-0 rounded-[15px] lg:hidden"
             >
-              <BrandMark className="size-11 shadow-[0_8px_18px_-10px_rgba(6,47,49,.7)]" />
+              <BrandMark className="size-11 shadow-[0_8px_18px_-10px_rgba(18, 58, 128,.7)]" />
             </Link>
           )}
           <div

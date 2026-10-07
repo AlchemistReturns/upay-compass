@@ -67,7 +67,7 @@ export function BottomNav() {
         <span
           aria-hidden
           className={cn(
-            "bg-lime absolute top-1.5 bottom-1.5 left-1.5 w-[calc((100%-0.75rem)/5)] rounded-[1.35rem] shadow-[0_6px_16px_-6px_rgba(195,234,140,.7)] transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]",
+            "bg-lime absolute top-1.5 bottom-1.5 left-1.5 w-[calc((100%-0.75rem)/5)] rounded-[1.35rem] shadow-[0_6px_16px_-6px_rgba(255, 194, 14,.7)] transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]",
             index < 0 && "opacity-0",
           )}
           style={{ transform: `translateX(${Math.max(index, 0) * 100}%)` }}

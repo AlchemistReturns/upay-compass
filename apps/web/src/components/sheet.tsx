@@ -33,7 +33,7 @@ export function Sheet({
           <Drawer.Viewport className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6">
             <Drawer.Popup
               className={cn(
-                "bg-elevated text-card-foreground relative flex max-h-[calc(100dvh-1.5rem)] w-full flex-col overflow-hidden rounded-t-[2rem] shadow-[0_-12px_48px_-12px_rgba(6,47,49,.35)] outline-none sm:max-w-lg sm:rounded-[2rem] sm:shadow-[var(--shadow-pop)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,.08),0_-20px_60px_-10px_rgba(0,0,0,.8)]",
+                "bg-elevated text-card-foreground relative flex max-h-[calc(100dvh-1.5rem)] w-full flex-col overflow-hidden rounded-t-[2rem] shadow-[0_-12px_48px_-12px_rgba(18, 58, 128,.35)] outline-none sm:max-w-lg sm:rounded-[2rem] sm:shadow-[var(--shadow-pop)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,.08),0_-20px_60px_-10px_rgba(0,0,0,.8)]",
                 "[transform:translateY(var(--drawer-swipe-movement-y))] transition-transform duration-[450ms] ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform data-swiping:select-none",
                 "data-starting-style:[transform:translateY(100%)] data-ending-style:[transform:translateY(100%)] data-ending-style:duration-[calc(var(--drawer-swipe-strength)*400ms)]",
                 "sm:data-starting-style:[transform:translateY(2.5rem)_scale(.97)] sm:data-starting-style:opacity-0 sm:data-ending-style:[transform:translateY(2.5rem)_scale(.97)] sm:data-ending-style:opacity-0 sm:transition-[transform,opacity]",

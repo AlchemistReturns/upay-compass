@@ -93,7 +93,7 @@ export function NudgesView() {
                       className={cn(
                         "finance-card relative flex min-h-16 items-start gap-3.5 p-4",
                         !n.read &&
-                          "border-leaf/40 shadow-[0_0_0_3px_rgba(195,234,140,.45),var(--shadow-card)]",
+                          "border-leaf/40 shadow-[0_0_0_3px_rgba(255, 194, 14,.45),var(--shadow-card)]",
                       )}
                     >
                       <span

@@ -69,7 +69,7 @@ export function VoiceFab() {
         aria-label={t("voice.open")}
         aria-haspopup="dialog"
         onClick={() => setOpen(true)}
-        className="tab-bar bg-lime text-primary fixed right-4 bottom-[calc(env(safe-area-inset-bottom)+var(--nav-gap)+var(--nav-h)+0.75rem)] z-30 grid size-14 place-items-center rounded-full shadow-[var(--shadow-float)] transition-transform active:scale-95 lg:right-8 lg:bottom-8"
+        className="tab-bar bg-lime text-brand-ink ring-background/90 fixed right-4 bottom-[calc(env(safe-area-inset-bottom)+var(--nav-gap)+var(--nav-h)+0.75rem)] z-30 grid size-14 place-items-center rounded-full shadow-[0_14px_28px_-10px_rgba(255,194,14,.75),var(--shadow-float)] ring-4 transition-transform active:scale-95 lg:right-8 lg:bottom-8"
       >
         <MicIcon className="size-7" />
       </button>

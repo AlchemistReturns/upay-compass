@@ -31,7 +31,6 @@ import { cn } from "@/lib/utils";
 import { formatMoney } from "@/lib/format";
 import { useAuth } from "@/features/auth/auth-provider";
 import { useProfile } from "@/features/profile/use-profile";
-import { BAND_COLOR } from "@/features/health/health-card";
 import { useHealthSnapshots } from "@/features/health/use-health";
 import { useReadinessSnapshots } from "@/features/readiness/use-readiness";
 import { useRealtimeInvalidate } from "@/features/realtime/use-realtime-invalidate";
@@ -138,7 +137,8 @@ function ScoreStat({
         size={42}
         stroke={5}
         track="rgba(255,255,255,.14)"
-        color={band ? BAND_COLOR[band] : "transparent"}
+        // the panel is blue: one yellow arc for every band, the band is written out beside it
+        color={band ? "var(--lime)" : "transparent"}
       >
         <span className="num text-[14px] font-extrabold">{score ?? "–"}</span>
       </Ring>
@@ -226,7 +226,7 @@ function BalancePanel({
             <div className="mt-3">
               <div className="h-2 overflow-hidden rounded-full bg-white/12" aria-hidden>
                 <div
-                  className="h-full origin-left rounded-full bg-[linear-gradient(90deg,#a8d878,#ffc20e)] [animation:grow-x_1s_var(--ease-out-soft)_.2s_both]"
+                  className="h-full origin-left rounded-full bg-[linear-gradient(90deg,#ffd75e,#ffc20e)] [animation:grow-x_1s_var(--ease-out-soft)_.2s_both]"
                   style={{ width: `${Math.max(spentPct, 2)}%` }}
                 />
               </div>

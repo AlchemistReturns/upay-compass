@@ -48,7 +48,7 @@ export function Switch({
             : "left-0.5",
         )}
       >
-        {checked && <span className="bg-lime pop-spring size-2 rounded-full dark:bg-[#4f9e3a]" />}
+        {checked && <span className="bg-lime pop-spring size-2 rounded-full dark:bg-[#17479e]" />}
       </span>
     </button>
   );

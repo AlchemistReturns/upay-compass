@@ -44,7 +44,7 @@ function WeekTooltip({
     <ChartTooltip title={label ?? ""}>
       {payload.map((p) => (
         <div key={p.dataKey} className="flex items-center gap-2 py-0.5">
-          <Swatch color={p.dataKey === "income" ? "#a8d878" : "#7fb3b0"} />
+          <Swatch color={p.dataKey === "income" ? "#a8d878" : "#7fa6e3"} />
           <span className="text-on-dark-muted">{t(`dashboard.${p.dataKey}`)}</span>
           <span className="num ml-auto pl-3 font-bold">{formatMoney(p.value, lang)}</span>
         </div>

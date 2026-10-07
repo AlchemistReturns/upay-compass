@@ -22,7 +22,7 @@ For the full design (decisions, data model, security, evaluation results) see [s
 
 | Area | What it does |
 |---|---|
-| **Sign-in and lock** | Phone number + OTP, then a 4 to 6 digit app PIN (stored hashed on the server, 5 wrong tries clear it). Auto-lock after 2 minutes in the background. |
+| **Sign-in and lock** | Phone number + OTP, then a 4 to 6 digit app PIN (stored hashed on the server; wrong tries back off from 30 s to 15 min and the 8th clears it), with optional fingerprint / face unlock (passkeys). Auto-lock after 2 minutes in the background. |
 | **Dashboard and transactions** | Wallet balance, income and spending by period, category breakdown, weekly chart, searchable payment list, add/edit/delete with Undo, "repeat a recent payment". |
 | **Auto-categorization** | Rules first (your own corrections, then a channel and keyword map), an LLM only for merchants the rules cannot place. Corrections teach the app. |
 | **Budgets and goals** | Monthly category budgets with alerts at your chosen level, savings goals with projected finish dates, optional round-up saving. |
@@ -127,7 +127,7 @@ pnpm sb link --project-ref <project-ref>
 pnpm sb db push                      # applies every migration in supabase/migrations
 for f in categorize-transaction coach-chat compute-health-score compute-readiness-score \
          forecast-cashflow generate-nudges ingest-transactions reset-demo seed-demo \
-         voice-command voice-speak voice-transcribe; do
+         voice-command voice-speak voice-transcribe passkey; do
   pnpm sb functions deploy $f --use-api
 done
 pnpm sb secrets set OPENAI_API_KEY=<your OpenAI key>
@@ -151,6 +151,7 @@ The functions are configured with `verify_jwt = false` in `supabase/config.toml`
 | Variable | Required | Purpose |
 |---|---|---|
 | `OPENAI_API_KEY` | For AI features | Key used by every OpenAI call. Server-side only. |
+| `PASSKEY_ORIGINS` | For fingerprint / face unlock (`http://localhost:3000`) | Comma-separated list of web origins allowed to register and use passkeys, for example `https://compass.example.com`. The host name of the origin is the passkey's relying-party id, so changing it makes old passkeys unusable. |
 | `OPENAI_COACH_MODEL` | No (`gpt-5-mini`) | Model for the coach. |
 | `OPENAI_CATEGORIZE_MODEL` | No (`gpt-4o-mini`) | Model for the categorization fallback. |
 | `OPENAI_VOICE_MODEL` | No (`gpt-4.1-mini`) | Model that parses voice commands. |

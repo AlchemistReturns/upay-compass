@@ -19,6 +19,7 @@
     "coach:eval": "node scripts/coach-eval.mjs",
     "audit:rls": "node scripts/audit-rls.mjs",
     "audit:bundle": "node scripts/audit-bundle.mjs",
+    "load:test": "node scripts/load-test.mjs",
     "security:probe": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/security-probe.ts",
     "impact:model": "node --experimental-transform-types --disable-warning=ExperimentalWarning scripts/impact-model.mjs",
     "audit:fairness": "node --experimental-transform-types --disable-warning=ExperimentalWarning scripts/audit-fairness.mjs",

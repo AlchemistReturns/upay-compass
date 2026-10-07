@@ -463,3 +463,9 @@ verify_jwt = false
 
 [functions.passkey]
 verify_jwt = false
+
+[functions.export-my-data]
+verify_jwt = false
+
+[functions.delete-account]
+verify_jwt = false

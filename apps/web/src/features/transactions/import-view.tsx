@@ -9,6 +9,8 @@ import { PageHeader } from "@/components/page-header";
 import { MoneyInput } from "@/components/money-input";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { useAuth } from "@/features/auth/auth-provider";
+import { useProfile } from "@/features/profile/use-profile";
 import { useOnline } from "@/features/pwa/use-online";
 import {
   ImportError,
@@ -43,6 +45,10 @@ function useImportMessage() {
 
 function Result({ summary }: { summary: ImportSummary }) {
   const { t } = useTranslation();
+  const { userId } = useAuth();
+  const profile = useProfile(userId);
+  // payments the rules could not place are only sent to the AI with the person's agreement
+  const askConsent = summary.needs_review > 0 && profile.data && !profile.data.coach_consent_at;
   return (
     <section className="finance-card rise space-y-2 p-5" role="status">
       <h2 className="flex items-center gap-2 text-[17px] font-bold">
@@ -57,6 +63,13 @@ function Result({ summary }: { summary: ImportSummary }) {
         {summary.rejected > 0 && <li>{t("import.r_rejected", { count: summary.rejected })}</li>}
         {summary.needs_review > 0 && (
           <li>{t("import.r_review", { count: summary.needs_review })}</li>
+        )}
+        {askConsent && (
+          <li>
+            <Link href="/coach" className="text-primary font-semibold underline">
+              {t("import.r_review_consent")}
+            </Link>
+          </li>
         )}
       </ul>
       <Link href="/transactions" className={buttonVariants({ variant: "outline" })}>

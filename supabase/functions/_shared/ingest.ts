@@ -16,7 +16,7 @@ import {
   type UserRule,
 } from "@compass/shared";
 import { SimulatedFeed } from "@compass/upay-sim";
-import { aiCategorize, type AiItem } from "./ai-categorize.ts";
+import { aiCategorize, hasAiConsent, type AiItem } from "./ai-categorize.ts";
 import { adminClient } from "./http.ts";
 import { startCall } from "./monitor.ts";
 import { refreshHealthScore } from "./health.ts";
@@ -185,7 +185,11 @@ export async function ingestFromFeed(
       });
     }
   }
-  const aiLabels = await aiCategorize([...aiItems.values()]);
+  // Without the person's consent nothing is sent to the model: rules only, the rest goes to review.
+  const aiLabels =
+    aiItems.size > 0 && (await hasAiConsent(client, userId))
+      ? await aiCategorize([...aiItems.values()])
+      : new Map<string, CategoryKey>();
   let aiCount = 0;
   const shadow = { compared: 0, agreed: 0 };
   for (const tx of unknown) {

@@ -78,12 +78,13 @@ for (const table of NO_CLIENT_ACCESS) {
   else if (policies !== "0") fail(`${table} has ${policies} policies, expected none`);
   else console.log(`✓ ${table}: no policies and no anon/authenticated grants`);
 }
-const purge = psql(
-  "select has_function_privilege('anon','public.purge_model_events()','execute'), has_function_privilege('authenticated','public.purge_model_events()','execute')",
-)[0];
-if (purge && purge.some((v) => v === "t"))
-  fail("purge_model_events() is callable by browser roles");
-else console.log("✓ purge_model_events() is not callable by browser roles");
+for (const fnName of ["purge_model_events", "purge_expired_data"]) {
+  const purge = psql(
+    `select has_function_privilege('anon','public.${fnName}()','execute'), has_function_privilege('authenticated','public.${fnName}()','execute')`,
+  )[0];
+  if (purge && purge.some((v) => v === "t")) fail(`${fnName}() is callable by browser roles`);
+  else console.log(`✓ ${fnName}() is not callable by browser roles`);
+}
 
 // Column-level: users must not be able to write server-controlled profile columns.
 const profileCols = psql(

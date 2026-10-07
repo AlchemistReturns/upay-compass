@@ -4,10 +4,11 @@ import {
   isCategoryKey,
   mlMode,
   normalizeKeyword,
+  type CategoryKey,
   type Channel,
   type UserRule,
 } from "@compass/shared";
-import { aiCategorize, type AiItem } from "../_shared/ai-categorize.ts";
+import { aiCategorize, hasAiConsent, type AiItem } from "../_shared/ai-categorize.ts";
 import { authenticate, corsHeaders, json } from "../_shared/http.ts";
 import { takeSlot } from "../_shared/limits.ts";
 import { startCall } from "../_shared/monitor.ts";
@@ -114,8 +115,12 @@ Deno.serve(async (req) => {
   }
   // one monitoring event per request that reaches the model; a request whose items were not all
   // labelled still succeeded for the person (they go to review), so it is a fallback, not an error
-  const call = items.size > 0 ? startCall("categorize-transaction") : null;
-  const labels = await aiCategorize([...items.values()], call ?? undefined);
+  // Without the person's consent nothing is sent to the model: rules only, the rest goes to review.
+  const consented = items.size > 0 && (await hasAiConsent(client, user.id));
+  const call = consented ? startCall("categorize-transaction") : null;
+  const labels = consented
+    ? await aiCategorize([...items.values()], call ?? undefined)
+    : new Map<string, CategoryKey>();
   if (call) {
     if (labels.size < items.size) call.fallback();
     call.end();

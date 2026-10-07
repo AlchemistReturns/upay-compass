@@ -24,7 +24,7 @@ For the full design (decisions, data model, security, evaluation results) see [s
 |---|---|
 | **Sign-in and lock** | Phone number + OTP, then a 4 to 6 digit app PIN (stored hashed on the server; wrong tries back off from 30 s to 15 min and the 8th clears it), with optional fingerprint / face unlock (passkeys). Auto-lock after 2 minutes in the background. |
 | **Dashboard and transactions** | Wallet balance, income and spending by period, category breakdown, weekly chart, searchable payment list, add/edit/delete with Undo, "repeat a recent payment". |
-| **Auto-categorization** | Rules first (your own corrections, then a channel and keyword map), an LLM only for merchants the rules cannot place. Corrections teach the app. |
+| **Auto-categorization** | Rules first (your own corrections, then a channel and keyword map), an LLM only for merchants the rules cannot place, and only if you have agreed to share data with the AI (otherwise they go to "Other, needs review"). Corrections teach the app. |
 | **Budgets and goals** | Monthly category budgets with alerts at your chosen level, savings goals with projected finish dates, optional round-up saving. |
 | **Financial health score** | 0 to 100 from savings rate, budget adherence, cash buffer and income stability, with plain "what to improve" actions. |
 | **Credit readiness** | An informational scorecard (not a credit decision) with the steps that would raise it. |
@@ -127,7 +127,8 @@ pnpm sb link --project-ref <project-ref>
 pnpm sb db push                      # applies every migration in supabase/migrations
 for f in categorize-transaction coach-chat compute-health-score compute-readiness-score \
          forecast-cashflow generate-nudges ingest-transactions reset-demo seed-demo \
-         voice-command voice-speak voice-transcribe passkey; do
+         voice-command voice-speak voice-transcribe passkey \
+         export-my-data delete-account; do
   pnpm sb functions deploy $f --use-api
 done
 pnpm sb secrets set OPENAI_API_KEY=<your OpenAI key>
@@ -230,6 +231,7 @@ Without those two variables the integration tests are skipped. Add `RLS_TEST_SEE
 | `pnpm eval:anomaly` | Unusual-payment detection against the old flat rule (deterministic, no backend). |
 | `pnpm audit:rls` | Security audit of the local database (RLS, anon grants, security-definer functions). |
 | `pnpm audit:bundle` | Scans the production build for secrets (`pnpm build` first). |
+| `pnpm security:probe` | 170 black-box security checks against the local stack (function auth, cross-user access, PIN lockout, rate limits, malformed bodies). Needs `RLS_TEST_URL`, `RLS_TEST_ANON_KEY` and `RLS_TEST_SERVICE_KEY` from `pnpm sb status -o env`; refuses any host but localhost. Results: `docs/pitch/security-report.md`. |
 | `pnpm audit:fairness` | Score fairness across the three simulated personas. |
 | `pnpm impact:model` | Prints the unit-economics model. |
 
@@ -240,6 +242,9 @@ Without those two variables the integration tests are skipped. Add `RLS_TEST_SEE
 - **Edge Functions** live in `supabase/functions`; shared server code is in `supabase/functions/_shared`.
 - **Data.** All transaction data is simulated or entered by the user. `adapters/upay-sim` generates the simulated personas (student, gig worker, salaried) used by the evaluations and tests.
 - **Access roles.** Everyone signs in with a phone number. The admin view needs the `admin` role on the profile, set directly in the database.
+- **Your data (export and deletion).** Profile → Your data has *Download my data* (`export-my-data` Edge Function: one JSON file of everything the app holds about the person, never the PIN hash) and *Delete my account* (`delete-account`: needs the current PIN and a typed confirmation, removes every row and the sign-in account). Both are rate limited and leave an audit entry with no content.
+- **Data retention.** `purge_expired_data()` (migration `20261012090000_retention.sql`, scheduled daily with pg_cron, or run `select public.purge_expired_data();` by hand) removes rate-limit rows after 1 day, AI request events after 30 days, and activity-log entries and coach chat text after 90 days. People's own payments, budgets and goals are kept until they delete them. See `docs/pitch/data-retention.md`.
+- **Security documents.** `docs/pitch/threat-model.md` (assets, trust boundaries, threats and mitigations, residual risks) and `docs/pitch/security-report.md` (what was run and what was found).
 - **Costs and limits.** AI calls are rate limited per person (coach 20, voice 60, categorizer 20, each per 10 minutes). Set a spending cap on your OpenAI project.
 - **Browser support for voice.** Microphone access needs HTTPS or `localhost`. Bangla read-aloud uses an on-device voice when the device has one, otherwise the server voice.
 

@@ -120,7 +120,37 @@
     "toast_deleted": "Goal deleted",
     "toast_undone": "Contribution undone",
     "toast_roundup_on": "Round-ups are on",
-    "toast_roundup_off": "Round-ups are off"
+    "toast_roundup_off": "Round-ups are off",
+    "dps": {
+      "start": "Start a DPS",
+      "title": "Start a monthly savings plan (DPS)",
+      "monthly": "Set aside each month",
+      "for_months": "for {{months}} months",
+      "months_chip": "{{months}} mo",
+      "tenure": "Plan length",
+      "total": "You would set aside in total",
+      "maturity": "Projected value at the end",
+      "afford_yes": "Fits your forecast: your balance stays above your safety buffer.",
+      "afford_tight": "Tight: the first deposit would take your balance below your safety buffer. Consider a longer plan.",
+      "afford_no": "Not affordable now: your balance would go below zero. Choose a longer plan.",
+      "afford_insufficient": "Not enough history yet to check this against your forecast.",
+      "afford_unknown": "Open the Forecast tab once to check this against your balance.",
+      "short": "At this amount the plan falls {{amount}} short of your goal.",
+      "after_date": "This plan ends after your goal date.",
+      "minimum": "Raised to {{amount}}, the smallest monthly amount we suggest.",
+      "disclaimer": "This is a plan and a request, not a deposit. No money moves and nothing is opened with upay. The {{rate}}% yearly rate is an illustration, not an offer or a quote. Educational guidance, not financial advice.",
+      "confirm": "Confirm plan request",
+      "done_title": "Plan request saved",
+      "done_body": "It is stored in Compass as a request. No deposit was opened and no money moved.",
+      "reference": "Reference",
+      "close": "Done",
+      "goal_reached": "This goal is already reached, so there is nothing to plan for.",
+      "toast_cancelled": "Plan request cancelled",
+      "list_title": "Savings plans",
+      "plan_line": "{{amount}} a month for {{months}} months",
+      "status_requested": "Requested",
+      "status_cancelled": "Cancelled"
+    }
   },
   "coach": {
     "rec_title": "Suggested next step",
@@ -989,7 +1019,8 @@
       "askCoach": "Ask coach: can I afford X?",
       "setBudget": "Set a budget",
       "createGoal": "Create a goal",
-      "addToGoal": "Add money to a goal"
+      "addToGoal": "Add money to a goal",
+      "startDps": "Start a DPS from a goal"
     },
     "persona": {
       "low_literacy_farmer": "Low-literacy farmer",

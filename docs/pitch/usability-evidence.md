@@ -18,6 +18,9 @@ Step counts are read from the real UI code. A step is a tap, a typed field, a sp
 | Create a goal | voice | 1 | 3 | 7 | 57% |
 | Add money to a goal | tap | 2 | 4 | 6 | 33% |
 | Add money to a goal | voice | 1 | 3 | 6 | 50% |
+| Start a DPS from a goal | tap | 2 | 3 | 7 | 57% |
+
+The last row is the one-tap savings-plan flow (see `action-flow.md`): Goals tab, tap Start a DPS, Confirm, with amount and length pre-filled. It has no voice flow and is not part of the persona evaluation below.
 
 ## 2. Persona-based evaluation (`pnpm ux:personas`)
 

@@ -7,6 +7,7 @@ Scope: the web app, the Supabase project (Auth, Postgres, Edge Functions) and th
 | Asset | Where it lives | Why it matters |
 |---|---|---|
 | Payments, balances, budgets, goals, savings | Postgres (`transactions`, `budgets`, `goals`, `savings_entries` …) | Personal financial record |
+| Savings plan requests (monthly amount, length, reference; no real deposit behind them) | Postgres (`savings_plans`): own rows only, insert and read; Undo only through `cancel_savings_plan()` | Personal financial intent; the figures are illustrative and written by the browser, so they are display only and never move money |
 | Phone number, name, income type | `profiles`, Supabase Auth | Identity |
 | PIN hash, passkey public keys | `user_pins`, `user_passkeys` (closed to browsers) | App lock |
 | Coach chat text, consents | `coach_messages`, `profiles` | Personal; consent is a promise made to the person |

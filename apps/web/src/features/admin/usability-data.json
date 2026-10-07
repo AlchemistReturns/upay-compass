@@ -1,6 +1,6 @@
 {
   "tasks": {
-    "generatedAt": "2026-10-07T04:25:56.976Z",
+    "generatedAt": "2026-10-07T06:39:09.708Z",
     "rows": [
       {
         "task": "addPayment",
@@ -71,6 +71,13 @@
         "total": 3,
         "reference": 6,
         "fewerPct": 50
+      },
+      {
+        "task": "startDps",
+        "mode": "tap",
+        "total": 3,
+        "reference": 7,
+        "fewerPct": 57
       }
     ]
   },

@@ -18,7 +18,9 @@ console.log("|---|---|---|---|---|---|---|---|---|---|");
 const rows: object[] = [];
 for (const key of TASK_KEYS) {
   for (const mode of MODES) {
-    const c = countFlow(TASKS[key].flows[mode]);
+    const flow = TASKS[key].flows[mode];
+    if (!flow) continue;
+    const c = countFlow(flow);
     const ref = REFERENCE_STEPS[key];
     const fewer = Math.round(((ref - c.total) / ref) * 100);
     rows.push({ task: key, mode, total: c.total, reference: ref, fewerPct: fewer });

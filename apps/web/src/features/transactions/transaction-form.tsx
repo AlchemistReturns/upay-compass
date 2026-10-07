@@ -282,10 +282,6 @@ export function TransactionForm({ existing }: { existing?: TransactionRow }) {
         )}
       </section>
 
-      {existing?.is_simulated && (
-        <p className="text-muted-foreground px-1 text-xs">{t("common.simulated_note")}</p>
-      )}
-
       {error && (
         <p role="alert" className="text-destructive text-sm font-medium">
           {error}

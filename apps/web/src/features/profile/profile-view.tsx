@@ -204,7 +204,6 @@ export function ProfileView() {
             <LogOut className="ic-forward size-4" aria-hidden />
             {t("common.logout")}
           </Button>
-          <p className="text-muted-foreground text-center text-xs">{t("common.simulated_note")}</p>
         </div>
       )}
     </>

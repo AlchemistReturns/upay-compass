@@ -85,7 +85,6 @@ export function DemoLoader({ suggested }: { suggested: IncomeType | null }) {
           {t("common.error")}
         </p>
       )}
-      <p className="text-muted-foreground px-1 text-xs">{t("common.simulated_note")}</p>
     </section>
   );
 }

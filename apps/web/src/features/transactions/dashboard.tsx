@@ -10,14 +10,13 @@ import {
   LineChart,
   type LucideIcon,
   Plus,
-  Scale,
   Sparkles,
+  Upload,
   Target,
   Users,
   Wallet,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { Period } from "@compass/shared";
 import { PageHeader } from "@/components/page-header";
 import {
   AnimatedNumber,
@@ -29,7 +28,7 @@ import {
 } from "@/components/compass";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { formatMoney, formatSignedMoney } from "@/lib/format";
+import { formatMoney } from "@/lib/format";
 import { useAuth } from "@/features/auth/auth-provider";
 import { useProfile } from "@/features/profile/use-profile";
 import { BAND_COLOR } from "@/features/health/health-card";
@@ -40,22 +39,13 @@ import { useSavings } from "@/features/goals/use-savings";
 import { GetStarted } from "@/features/onboarding/get-started";
 import { VoiceTryButton } from "@/features/voice/voice-command-button";
 import { DailyTip } from "@/features/tips/daily-tip";
+import { ForecastCard } from "@/features/forecast/forecast-card";
 import { InstallPrompt } from "@/features/pwa/install-prompt";
 import { useAutoNudges } from "@/features/nudges/use-auto-nudges";
-import { CategoryBars } from "./category-bars";
-import { PeriodTabs } from "./period-tabs";
 import { TransactionList } from "./transaction-list";
 import { useDashboard } from "./use-dashboard";
 import { useTransactionList, useTransactionsRealtime } from "./use-transactions";
-import dynamic from "next/dynamic";
-import { Skeleton } from "@/components/skeleton";
 import { NAV_FORWARD } from "@/components/page-transition";
-
-// Recharts is large; load it after the first paint instead of with the page.
-const WeeklyChart = dynamic(() => import("./weekly-chart").then((m) => m.WeeklyChart), {
-  ssr: false,
-  loading: () => <Skeleton className="h-72 rounded-3xl" />,
-});
 
 /** Greeting for the hour in Bangladesh, plus today's date for the eyebrow. Client-only. */
 function useGreeting() {
@@ -269,9 +259,9 @@ function BalancePanel({
           icon={Plus}
           primary
         />
+        <QuickAction href="/transactions/import" label={t("dashboard.qa_import")} icon={Upload} />
         <QuickAction href="/forecast" label={t("dashboard.qa_forecast")} icon={LineChart} />
-        <QuickAction href="/goals" label={t("nav.goals")} icon={Target} />
-        <QuickAction href="/budgets" label={t("nav.budgets")} icon={Wallet} />
+        <QuickAction href="/plan" label={t("nav.plan")} icon={Target} />
       </nav>
     </section>
   );
@@ -321,86 +311,12 @@ function AskCoach() {
   );
 }
 
-function Totals({
-  income,
-  expense,
-  lang,
-  stale,
-}: {
-  income: number;
-  expense: number;
-  lang: string;
-  /** the next period is still loading; the old figures stay, slightly dimmed */
-  stale: boolean;
-}) {
-  const { t } = useTranslation();
-  const net = income - expense;
-  const cells: {
-    label: string;
-    value: number;
-    format: (n: number) => string;
-    icon: LucideIcon;
-    tone: string;
-  }[] = [
-    {
-      label: t("dashboard.income"),
-      value: income,
-      format: (n) => formatMoney(n, lang),
-      icon: ArrowDownLeft,
-      tone: "bg-positive-soft text-positive",
-    },
-    {
-      label: t("dashboard.expense"),
-      value: expense,
-      format: (n) => formatMoney(n, lang),
-      icon: ArrowUpRight,
-      tone: "bg-negative-soft text-destructive",
-    },
-    {
-      label: t("dashboard.net"),
-      value: net,
-      format: (n) => formatSignedMoney(Math.round(n), lang),
-      icon: Scale,
-      tone: "bg-secondary text-primary",
-    },
-  ];
-  return (
-    <div
-      aria-busy={stale || undefined}
-      className={cn(
-        "finance-card grid grid-cols-3 divide-x divide-hairline py-4 transition-opacity duration-300",
-        stale && "opacity-60",
-      )}
-    >
-      {cells.map(({ label, value, format, icon: Icon, tone }) => (
-        <div key={label} className="min-w-0 px-3 sm:px-5">
-          <div className="flex items-center gap-1.5">
-            <span className={cn("grid size-6 shrink-0 place-items-center rounded-full", tone)}>
-              <Icon className="size-3.5" strokeWidth={2.4} aria-hidden />
-            </span>
-            <span className="text-muted-foreground truncate text-[12px] font-semibold">
-              {label}
-            </span>
-          </div>
-          <AnimatedNumber
-            value={value}
-            format={format}
-            className="mt-2 block truncate text-[15px] font-bold sm:text-xl"
-          />
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export function Dashboard() {
   const { t, i18n } = useTranslation();
   const { userId } = useAuth();
   const profile = useProfile(userId);
-  const [period, setPeriod] = useState<Period>("month");
-  const { summary, month, byCategory, trend, balance } = useDashboard(period);
+  const { month, balance } = useDashboard("month");
   const recent = useTransactionList(8);
-  const lang = i18n.language;
   const { greeting, date } = useGreeting();
 
   useTransactionsRealtime();
@@ -456,49 +372,14 @@ export function Dashboard() {
               income={month.data?.income}
               expense={month.data?.expense}
             />
+            <ForecastCard />
+            <DailyTip />
             <div className="grid gap-3.5 lg:grid-cols-2">
               <AskCoach />
               <CommunityLink />
               <InstallPrompt />
             </div>
-            <DailyTip />
           </div>
-
-          <section
-            aria-labelledby="period-heading"
-            className="rise"
-            style={{ "--i": 3 } as React.CSSProperties}
-          >
-            <SectionHeader
-              id="period-heading"
-              title={t("dashboard.overview")}
-              className="items-center"
-            />
-            <div className="space-y-3">
-              <PeriodTabs value={period} onChange={setPeriod} />
-              <Totals
-                income={summary.data?.income ?? 0}
-                expense={summary.data?.expense ?? 0}
-                lang={lang}
-                stale={summary.isPlaceholderData}
-              />
-              <div className="grid items-start gap-3 lg:grid-cols-2">
-                {trend.data ? (
-                  <WeeklyChart data={trend.data} />
-                ) : (
-                  <Skeleton className="h-72 rounded-3xl" />
-                )}
-                <div
-                  className={cn(
-                    "transition-opacity duration-300",
-                    byCategory.isPlaceholderData && "opacity-60",
-                  )}
-                >
-                  <CategoryBars data={byCategory.data ?? []} />
-                </div>
-              </div>
-            </div>
-          </section>
 
           <section aria-labelledby="recent-heading">
             <SectionHeader

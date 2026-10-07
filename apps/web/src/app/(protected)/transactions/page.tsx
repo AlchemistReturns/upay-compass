@@ -10,6 +10,7 @@ import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { haptic } from "@/lib/haptics";
 import { useCategories } from "@/features/categories/use-categories";
+import { Overview } from "@/features/transactions/overview";
 import { TransactionList, dhakaDay } from "@/features/transactions/transaction-list";
 import type { TransactionRow } from "@/features/transactions/types";
 import { useTransactionList } from "@/features/transactions/use-transactions";
@@ -123,6 +124,7 @@ export default function TransactionsPage() {
 
       {list.isSuccess && list.data.length > 0 && (
         <div className="space-y-5 pb-4">
+          <Overview />
           <div className="rise space-y-3">
             <label className="finance-card group/search focus-within:ring-ring/25 flex h-12 items-center gap-2.5 rounded-full px-4 transition-shadow focus-within:ring-4">
               {/* the lens tints and leans in while you type */}

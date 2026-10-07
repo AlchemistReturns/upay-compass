@@ -374,7 +374,8 @@
     "in_amount": "{{amount}} in",
     "out_amount": "{{amount}} out",
     "spent_share": "You have spent {{pct}}% of this month’s income.",
-    "savings_line": "Plus {{amount}} in savings"
+    "savings_line": "Plus {{amount}} in savings",
+    "qa_import": "Import"
   },
   "transactions": {
     "recent": "Recent transactions",

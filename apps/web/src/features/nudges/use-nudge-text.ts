@@ -29,7 +29,7 @@ export function useNudgeText() {
             spent: formatMoney(spent, lang),
             limit: formatMoney(limit, lang),
           }),
-          href: "/budgets",
+          href: "/plan?tab=budgets",
         };
       case "budget_exceeded":
         return {
@@ -39,7 +39,7 @@ export function useNudgeText() {
             over: formatMoney(Math.max(0, spent - limit), lang),
             limit: formatMoney(limit, lang),
           }),
-          href: "/budgets",
+          href: "/plan?tab=budgets",
         };
       case "overspend":
         return {
@@ -56,7 +56,7 @@ export function useNudgeText() {
                 date: date(d.target_date),
               })
             : t("nudges.goal_behind_body_none"),
-          href: "/goals",
+          href: "/plan?tab=goals",
         };
       case "bill_due": {
         const days = Number(d.days ?? 0);

@@ -374,7 +374,8 @@
     "in_amount": "{{amount}} এসেছে",
     "out_amount": "{{amount}} খরচ",
     "spent_share": "এই মাসের আয়ের {{pct}}% খরচ হয়েছে।",
-    "savings_line": "এর সঙ্গে সঞ্চয়ে {{amount}}"
+    "savings_line": "এর সঙ্গে সঞ্চয়ে {{amount}}",
+    "qa_import": "ইমপোর্ট"
   },
   "transactions": {
     "recent": "সাম্প্রতিক লেনদেন",

@@ -3,7 +3,14 @@
 import { useTranslation } from "react-i18next";
 import data from "./usability-data.json";
 
-const TASK_KEYS = ["addPayment", "askCoach", "setBudget", "createGoal", "addToGoal"] as const;
+const TASK_KEYS = [
+  "addPayment",
+  "askCoach",
+  "setBudget",
+  "createGoal",
+  "addToGoal",
+  "startDps",
+] as const;
 
 function Card({
   title,

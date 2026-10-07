@@ -21,6 +21,7 @@ const USER_TABLES = [
   "gamification",
   "goal_contributions",
   "goals",
+  "savings_plans",
   "health_scores",
   "nudges",
   "passkey_challenges",
@@ -206,6 +207,16 @@ describe.skipIf(!url || !anon || !service)("export and account deletion", () => 
         .insert(own({ action: "test_note", entity: "test", detail: { secret: "x" } }))
         .select("id")
         .single();
+      await db.from("savings_plans").insert(
+        own({
+          goal_id: goal.data!.id,
+          monthly_amount: 100,
+          tenure_months: 6,
+          illustrative_rate: 0.07,
+          projected_maturity: 610,
+          reference: `DPS-DEL${victim.id.slice(0, 8)}`,
+        }),
+      );
       const otherGoals = await b.client.from("goals").select("id");
 
       // the seeds really landed, so "nothing left" below means something

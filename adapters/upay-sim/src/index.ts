@@ -8,6 +8,7 @@ export type { GenerateOptions } from "./generate.ts";
 export { PERSONAS, PERSONA_CONFIGS } from "./personas.ts";
 export type { Persona } from "./personas.ts";
 export { todayInDhaka, addDays } from "./dates.ts";
+export { UpaySimPlanProvider } from "./plan.ts";
 
 /**
  * Starting wallet balance for a generated history: the persona's usual figure, raised when needed so

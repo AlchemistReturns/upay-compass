@@ -388,7 +388,11 @@ export type Affordability = {
  * yes: balance stays at or above the safety buffer; tight: stays at or above zero but dips under
  * the buffer; no: would go below zero (or the amount exceeds today's balance).
  */
-export function canAfford(amount: number, balance: number, forecast: Forecast): Affordability {
+export function canAfford(
+  amount: number,
+  balance: number,
+  forecast: Pick<Forecast, "insufficient" | "series" | "safetyBuffer">,
+): Affordability {
   const base = {
     amount,
     balanceNow: round2(balance),

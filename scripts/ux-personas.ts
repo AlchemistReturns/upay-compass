@@ -1,7 +1,14 @@
 // Persona-based evaluation: each persona runs every task in tap and voice mode, using the step
 // lists measured in ux-tasks.ts and the parameters in ux-persona-params.ts. Seeded, so repeatable.
 // Run: pnpm ux:personas
-import { MODES, TASKS, TASK_KEYS, slug, writeUsabilityData, type StepKind } from "./ux-tasks.ts";
+import {
+  MODES,
+  PAIRED_TASK_KEYS as TASK_KEYS,
+  TASKS,
+  slug,
+  writeUsabilityData,
+  type StepKind,
+} from "./ux-tasks.ts";
 import {
   PERSONAS,
   RUNS,
@@ -49,7 +56,7 @@ function get(m: Map<string, Tally>, k: string) {
 for (const p of PERSONAS) {
   for (const task of TASK_KEYS) {
     for (const mode of MODES) {
-      const steps = TASKS[task].flows[mode].steps;
+      const steps = TASKS[task].flows[mode]!.steps;
       for (let r = 0; r < RUNS; r++) {
         let attempts = 0;
         let errors = 0;
@@ -106,7 +113,7 @@ console.log("|---|---|---|---|---|---|---|");
 for (const k of TASK_KEYS)
   for (const m of MODES)
     console.log(
-      `| ${TASKS[k].label} | ${m} | ${TASKS[k].flows[m].steps.length} | ${row(byTaskMode.get(`${k}|${m}`)!)} |`,
+      `| ${TASKS[k].label} | ${m} | ${TASKS[k].flows[m]!.steps.length} | ${row(byTaskMode.get(`${k}|${m}`)!)} |`,
     );
 
 console.log("\nTap vs voice (all personas, all tasks) [persona-based]\n");

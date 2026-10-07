@@ -44,6 +44,12 @@ Record ids must be stable across calls. They become `external_id`, which is what
 
 Nothing else changes: the pipeline, the audit log and the screens that read transactions are source-agnostic.
 
+## Savings plans (DPS)
+
+The one-tap "Start a DPS" flow (see `docs/pitch/action-flow.md`) goes through a second, separate interface in `packages/shared/src/savings-plan.ts`: `SavingsPlanProvider.createSavingsPlan(request)` returns `{ reference, status: "requested" }`. It is separate from `TransactionFeed` because that interface only reads data and three adapters already implement it.
+
+`adapters/upay-sim` implements it by returning a reference, so nothing is sent to upay and no money moves. To use a real upay product API, implement `SavingsPlanProvider` against it (map the request to its fields, return its reference and status) and create it in place of `UpaySimPlanProvider` in `apps/web/src/features/goals/use-savings-plans.ts`. Nothing else changes. The status values stored today are `requested` and `cancelled`; a real provider that reports more would need `savings_plans.status` extended in a new migration.
+
 ## Request format
 
 `POST /functions/v1/ingest-transactions`, signed in as the person:

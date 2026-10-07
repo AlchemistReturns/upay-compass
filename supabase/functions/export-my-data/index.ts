@@ -20,6 +20,7 @@ const OWN_TABLES: { key: string; table: string; orderBy: string }[] = [
   { key: "budgets", table: "budgets", orderBy: "id" },
   { key: "goals", table: "goals", orderBy: "id" },
   { key: "goal_contributions", table: "goal_contributions", orderBy: "id" },
+  { key: "savings_plans", table: "savings_plans", orderBy: "id" },
   { key: "savings_entries", table: "savings_entries", orderBy: "id" },
   { key: "alerts", table: "nudges", orderBy: "id" },
   { key: "streak_and_badges", table: "gamification", orderBy: "user_id" },
@@ -33,7 +34,7 @@ const OWN_TABLES: { key: string; table: string; orderBy: string }[] = [
 
 /**
  * Downloads everything the app holds about the caller as one JSON document: profile, payments,
- * budgets, goals, alerts, streaks and badges, consents, coach history, corrections, scores and
+ * budgets, goals, savings plans, alerts, streaks and badges, consents, coach history, corrections, scores and
  * forecasts, the list of registered passkey devices and their own activity log. Never the PIN
  * hash, passkey keys, other people's rows or server secrets. Writes one audit entry (counts only).
  */

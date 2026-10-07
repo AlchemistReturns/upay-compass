@@ -4,7 +4,7 @@ How long upay Compass keeps each kind of data, why, and how it goes away. The pe
 
 | Data | Why it is kept | Retention | How it is deleted |
 |---|---|---|---|
-| Profile, payments, budgets, goals, goal contributions, savings entries, alerts, streaks and badges, learning progress, personalized lessons, health and readiness scores, forecasts, category corrections | It is the person's own record; the app cannot work without it | Until the person deletes it or deletes their account. **Never purged automatically.** | Account deletion (below). Some rows can also be removed in the app (a payment, a goal, a budget). |
+| Profile, payments, budgets, goals, goal contributions, savings plans (DPS requests), savings entries, alerts, streaks and badges, learning progress, personalized lessons, health and readiness scores, forecasts, category corrections | It is the person's own record; the app cannot work without it | Until the person deletes it or deletes their account. **Never purged automatically.** | Account deletion (below). Some rows can also be removed in the app (a payment, a goal, a budget). A savings plan is kept until the person deletes it: deleting its goal removes it, and it is never purged by `purge_expired_data()`. |
 | Coach chat text (`coach_messages`) | Shows the conversation history | 90 days | Daily purge; the person can also clear the chat; removed with the account |
 | Activity log (`audit_log`, what happened and when, never content) | Rate-limit counts, "My AI activity", abuse review | 90 days | Daily purge. On account deletion the person's rows lose their detail and their user id, then follow the 90-day rule |
 | Rate-limit slots (rows in `audit_log` with entity `limit`) | Enforce per-person limits (the longest window is 60 minutes) | 1 day | Daily purge |
@@ -20,7 +20,7 @@ How long upay Compass keeps each kind of data, why, and how it goes away. The pe
 
 ## Download or delete your data
 
-- **Download:** Profile → Your data → *Download my data*. The `export-my-data` function returns one JSON file with the person's own profile, payments, budgets, goals, goal contributions, savings, alerts, streaks and badges, consents, coach chat, category corrections, scores, forecasts, passkey device names and activity log. It never contains the PIN hash, passkey keys, other people's rows or server secrets. Limit: 5 downloads per hour.
+- **Download:** Profile → Your data → *Download my data*. The `export-my-data` function returns one JSON file with the person's own profile, payments, budgets, goals, goal contributions, savings plans, savings, alerts, streaks and badges, consents, coach chat, category corrections, scores, forecasts, passkey device names and activity log. It never contains the PIN hash, passkey keys, other people's rows or server secrets. Limit: 5 downloads per hour.
 - **Delete:** Profile → Your data → *Delete my account*. The person types `DELETE` and enters their current PIN. The `delete-account` function checks the PIN with the same function and attempt limit as the lock screen, then deletes the sign-in account; every table with a person's rows is linked to it with `ON DELETE CASCADE`, so all of their rows go with it. The activity log is the only table kept (for aggregate counts): its rows lose their detail and user id. One final entry `account_deleted` is written with no user id and no content. Limit: 5 attempts per hour.
 
 ## Not covered by this app

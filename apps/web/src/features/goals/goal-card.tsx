@@ -1,7 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, CircleCheck, Plus, Target, Trash2, TriangleAlert, Undo2 } from "lucide-react";
+import {
+  ChevronDown,
+  CircleCheck,
+  PiggyBank,
+  Plus,
+  Target,
+  Trash2,
+  TriangleAlert,
+  Undo2,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { OfflineNote } from "@/features/pwa/offline-note";
 import { useOnline } from "@/features/pwa/use-online";
@@ -23,6 +32,7 @@ import {
   type GoalContribution,
 } from "./use-goals";
 import { moneyMoveErrorKey } from "./use-savings";
+import { DpsSheet, SavingsPlansList } from "./dps-sheet";
 
 const QUICK_AMOUNTS = [100, 500, 1000] as const;
 
@@ -119,6 +129,8 @@ export function GoalCard({
   const confirm = useConfirm();
   const [adding, setAdding] = useState(false);
   const [opens, setOpens] = useState(0);
+  const [dpsOpen, setDpsOpen] = useState(false);
+  const [dpsOpens, setDpsOpens] = useState(0);
   const [showHistory, setShowHistory] = useState(false);
   // bumps on each contribution, so the ring can glow once to acknowledge it
   const [cheer, setCheer] = useState(0);
@@ -308,6 +320,22 @@ export function GoalCard({
         </Button>
       </div>
 
+      {!done && goal.saved_amount < goal.target_amount && (
+        <Button
+          variant="outline"
+          className="mt-2 w-full"
+          onClick={() => {
+            setDpsOpens((n) => n + 1);
+            setDpsOpen(true);
+          }}
+        >
+          <PiggyBank aria-hidden />
+          <span className="truncate">{t("goals.dps.start")}</span>
+        </Button>
+      )}
+
+      <SavingsPlansList goalId={goal.id} />
+
       {/* grid-rows 0fr → 1fr animates the history open to its natural height */}
       <div
         className={cn(
@@ -347,6 +375,8 @@ export function GoalCard({
           </ul>
         </div>
       </div>
+
+      <DpsSheet goal={goal} open={dpsOpen} onOpenChange={setDpsOpen} opens={dpsOpens} />
 
       <Sheet
         open={adding}

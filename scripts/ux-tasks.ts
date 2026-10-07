@@ -9,7 +9,8 @@ import { readFileSync, writeFileSync } from "node:fs";
 
 export type StepKind = "tap" | "field" | "speak" | "confirm";
 export type Mode = "tap" | "voice";
-export type TaskKey = "addPayment" | "askCoach" | "setBudget" | "createGoal" | "addToGoal";
+export type TaskKey =
+  "addPayment" | "askCoach" | "setBudget" | "createGoal" | "addToGoal" | "startDps";
 
 export type Flow = {
   /** screens or sheets the person lands on, counting the starting screen */
@@ -23,7 +24,8 @@ const confirmCard = { kind: "confirm", what: "confirm on the card" } as const;
 /** voice flows for the four commands: command-card.tsx, voice-sheet.tsx (one sheet, one card) */
 const voiceCommand: Flow = { screens: 1, steps: [fab, speak, confirmCard] };
 
-export const TASKS: Record<TaskKey, { label: string; flows: Record<Mode, Flow> }> = {
+/** A task may have only some modes: startDps has no voice flow (the voice commands do not cover it). */
+export const TASKS: Record<TaskKey, { label: string; flows: Partial<Record<Mode, Flow>> }> = {
   addPayment: {
     label: "Add a payment",
     flows: {
@@ -106,6 +108,21 @@ export const TASKS: Record<TaskKey, { label: string; flows: Record<Mode, Flow> }
       voice: voiceCommand,
     },
   },
+  startDps: {
+    label: "Start a DPS from a goal",
+    flows: {
+      // bottom-nav.tsx -> goal-card.tsx "Start a DPS" -> dps-sheet.tsx (amount and tenure come
+      // pre-filled from the goal; changing the tenure chip is optional and not counted)
+      tap: {
+        screens: 2,
+        steps: [
+          { kind: "tap", what: "Goals tab" },
+          { kind: "tap", what: "Start a DPS on the goal" },
+          { kind: "confirm", what: "Confirm plan request" },
+        ],
+      },
+    },
+  },
 };
 
 /**
@@ -119,10 +136,15 @@ export const REFERENCE_STEPS: Record<TaskKey, number> = {
   setBudget: 7,
   createGoal: 7,
   addToGoal: 6,
+  // open the app and sign in, find the savings products, pick DPS, enter amount, pick tenure,
+  // review, confirm
+  startDps: 7,
 };
 
 export const TASK_KEYS = Object.keys(TASKS) as TaskKey[];
 export const MODES: Mode[] = ["tap", "voice"];
+/** Tasks that have both a tap and a voice flow: the persona evaluation compares the two on these. */
+export const PAIRED_TASK_KEYS = TASK_KEYS.filter((k) => MODES.every((m) => TASKS[k].flows[m]));
 
 export function countFlow(flow: Flow) {
   const n = (k: StepKind) => flow.steps.filter((s) => s.kind === k).length;

@@ -122,6 +122,11 @@
     "toast_roundup_off": "Round-ups are off"
   },
   "coach": {
+    "rec_title": "Suggested next step",
+    "rec_body": "Start a goal to save {{amount}} for this, so it does not catch you short.",
+    "rec_confirm": "Create the goal",
+    "rec_skip": "Not now",
+    "rec_goal_title": "Save for this purchase",
     "title": "Coach",
     "assistant_tagline": "Personal finance, made clearer",
     "try_prompt": "Try asking",
@@ -423,7 +428,8 @@
     "reset_confirm": "Delete all your data in this account and start the demo again?",
     "resetting": "Resetting… this can take a few seconds.",
     "reset_done": "Done. Your demo account is fresh.",
-    "reset": "Start over"
+    "reset": "Start over",
+    "timer": "Demo timer"
   },
   "score": {
     "title": "Financial health",
@@ -796,7 +802,7 @@
     "trend": "Trend over the last {{range}}.",
     "hidden": "Hidden: fewer than {{count}} people.",
     "empty_title": "No AI activity yet",
-    "empty_body": "Health shows up here once the coach, voice or smart filing are used. To see how it looks right now, turn on sample data.",
+    "empty_body": "Health shows up here once the coach, voice or smart filing are used.",
     "empty_action": "Show sample data",
     "show_details": "Show details",
     "hide_details": "Hide details",
@@ -918,5 +924,68 @@
     "generic_5": "Round-ups add up. Small amounts saved every day beat large amounts saved rarely.",
     "generic_6": "Never share your PIN or OTP with anyone, even someone who says they are from support.",
     "generic_7": "Cash out only what you need. Paying digitally keeps a record you can learn from."
+  },
+  "usability": {
+    "title": "Usability evidence",
+    "tasks_title": "Steps per task",
+    "tasks_note": "Step counts are measured from the app's code; reference steps are estimates for a typical wallet app.",
+    "personas_title": "Tap vs voice, by persona",
+    "personas_note": "Persona-based evaluation: 8 personas, parameters in scripts/ux-persona-params.ts.",
+    "generated": "Last generated {{date}}.",
+    "col_task": "Task",
+    "col_mode": "Mode",
+    "col_steps": "Total steps",
+    "col_reference": "Estimated reference steps",
+    "col_fewer": "% fewer steps",
+    "mode_tap": "Tap",
+    "mode_voice": "Voice",
+    "col_persona": "Persona",
+    "col_tap_done": "Tap completion",
+    "col_voice_done": "Voice completion",
+    "col_tap_steps": "Tap avg steps",
+    "col_voice_steps": "Voice avg steps",
+    "col_tap_errors": "Tap avg errors",
+    "col_voice_errors": "Voice avg errors",
+    "all": "All personas",
+    "task": {
+      "addPayment": "Add a payment",
+      "askCoach": "Ask coach: can I afford X?",
+      "setBudget": "Set a budget",
+      "createGoal": "Create a goal",
+      "addToGoal": "Add money to a goal"
+    },
+    "persona": {
+      "low_literacy_farmer": "Low-literacy farmer",
+      "rural_homemaker": "Rural homemaker",
+      "gig_worker": "Gig worker",
+      "village_shopkeeper": "Village shopkeeper",
+      "older_adult": "Older adult",
+      "student": "Student",
+      "salaried_employee": "Salaried employee",
+      "small_business_owner": "Small-business owner"
+    }
+  },
+  "community": {
+    "title": "People like you",
+    "subtitle": "How you compare with everyone using Compass",
+    "privacy": "Only group figures are shown, never anyone's own data. A figure from fewer than {{count}} people is hidden.",
+    "hidden": "Not enough people yet to show this safely (needs {{count}}).",
+    "you": "You",
+    "everyone": "Everyone",
+    "same_income": "Same income type",
+    "spending_title": "Where people spend",
+    "spending_hint": "Share of spending by category, last 30 days. Yours next to everyone's.",
+    "you_vs": "You {{mine}} · everyone {{all}}",
+    "health_title": "Money health score",
+    "health_hint": "Your latest score against the average.",
+    "goals_title": "Goals reached",
+    "goals_hint": "Share of goals completed.",
+    "goals_mine": "{{done}} of {{total}}",
+    "roundups_title": "Saved by round-ups",
+    "roundups_hint": "Average saved per person who uses round-ups.",
+    "learning_title": "Lessons completed",
+    "learning_hint": "Average number of lessons finished.",
+    "open": "See how you compare",
+    "open_hint": "Spending, savings and score, next to everyone's"
   }
 }

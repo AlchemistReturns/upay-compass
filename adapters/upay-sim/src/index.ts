@@ -60,3 +60,6 @@ export class SimulatedFeed implements TransactionFeed {
     return all.filter((t) => new Date(t.occurred_at) >= since);
   }
 }
+export { makePopulation, buildUser, POPULATION_BASE_DAY, POPULATION_DAYS } from "./population.ts";
+export type { Split, UserSpec, PopulationUser } from "./population.ts";
+export * from "./anomaly-ml-eval.ts";

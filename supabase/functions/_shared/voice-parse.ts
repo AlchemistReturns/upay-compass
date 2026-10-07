@@ -1,5 +1,6 @@
 import { RAW_COMMAND_JSON_SCHEMA, voiceParsePrompt, type GoalRef } from "@compass/shared";
 import { reasonFromError, type CallMeter } from "./monitor.ts";
+import { openaiUrl } from "./openai.ts";
 
 const DEFAULT_MODEL = "gpt-4.1-mini";
 const TIMEOUT_MS = 20_000;
@@ -20,7 +21,7 @@ export async function parseVoiceCommand(
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    const res = await fetch(openaiUrl("chat/completions"), {
       method: "POST",
       signal: controller.signal,
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },

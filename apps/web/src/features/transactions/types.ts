@@ -8,7 +8,7 @@ export type TransactionRow = {
   counterparty: string;
   note: string;
   category_id: number | null;
-  category_source: "rule" | "ai" | "user";
+  category_source: "rule" | "ai" | "user" | "model";
   needs_review: boolean;
   is_simulated: boolean;
   occurred_at: string;

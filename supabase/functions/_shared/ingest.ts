@@ -1,7 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
-  categorize,
+  categorizeInStages,
   isCategoryKey,
+  mlMode,
   normalizeKeyword,
   transactionSchema,
   type CategoryKey,
@@ -11,6 +12,7 @@ import {
 import { SimulatedFeed } from "@compass/upay-sim";
 import { aiCategorize, type AiItem } from "./ai-categorize.ts";
 import { adminClient } from "./http.ts";
+import { startCall } from "./monitor.ts";
 import { refreshHealthScore } from "./health.ts";
 import { refreshForecast } from "./flow.ts";
 import { refreshReadiness } from "./readiness.ts";
@@ -24,6 +26,10 @@ export type IngestSummary = {
   duplicates: number;
   ai_categorized: number;
   needs_review: number;
+  /** Labelled by the on-device pattern model (ML_CATEGORIZE=on). */
+  model_categorized?: number;
+  /** Shadow mode: payments sent to the AI that the model also had an answer for, and how often they agreed. */
+  model_shadow?: { compared: number; agreed: number };
 };
 
 export type IngestResult =
@@ -86,16 +92,27 @@ export async function ingestForUser(
   type Labelled = {
     tx: Transaction;
     category: CategoryKey;
-    source: "rule" | "user" | "ai";
+    source: "rule" | "user" | "ai" | "model";
     review: boolean;
   };
   const labelled: Labelled[] = [];
   const unknown: Transaction[] = [];
+  // ML_CATEGORIZE = on (default) | shadow | off. Off leaves the order rules, then AI, as it was.
+  const modelMode = mlMode("categorize", { ML_CATEGORIZE: Deno.env.get("ML_CATEGORIZE") });
+  const shadowGuess = new Map<string, string>();
+  let modelCount = 0;
+  const modelCall = modelMode === "off" ? null : startCall("ml-categorize");
+  modelCall?.model("name_patterns");
   for (const tx of valid) {
-    const result = categorize(tx, userRules);
-    if (result)
-      labelled.push({ tx, category: result.category, source: result.source, review: false });
-    else unknown.push(tx);
+    const staged = categorizeInStages(tx, userRules, modelMode);
+    if (staged.labelled) {
+      const { category, source, review } = staged.labelled;
+      labelled.push({ tx, category, source, review });
+      if (source === "model") modelCount++;
+    } else {
+      unknown.push(tx);
+      if (staged.shadow) shadowGuess.set(tx.id, staged.shadow);
+    }
   }
 
   // One AI question per distinct merchant, not per transaction.
@@ -114,17 +131,21 @@ export async function ingestForUser(
   }
   const aiLabels = await aiCategorize([...aiItems.values()]);
   let aiCount = 0;
-  let reviewCount = 0;
+  const shadow = { compared: 0, agreed: 0 };
   for (const tx of unknown) {
     const id = normalizeKeyword(tx.counterparty) || `${tx.channel}:${tx.direction}`;
     const label = aiLabels.get(id);
+    const guess = shadowGuess.get(tx.id);
+    if (label && guess) {
+      shadow.compared++;
+      if (guess === label) shadow.agreed++;
+    }
     if (label) {
       labelled.push({ tx, category: label, source: "ai", review: false });
       aiCount++;
     } else {
       // AI unavailable or unsure: file under Other and queue for the user to review.
       labelled.push({ tx, category: "other", source: "rule", review: true });
-      reviewCount++;
     }
   }
 
@@ -163,13 +184,16 @@ export async function ingestForUser(
     .update({ opening_balance: feed.openingBalance })
     .eq("id", userId);
 
+  modelCall?.end();
   const summary = {
     received: raw.length,
     rejected: rejected.length,
     inserted,
     duplicates: rows.length - inserted,
     ai_categorized: aiCount,
-    needs_review: reviewCount,
+    needs_review: labelled.filter((l) => l.review).length,
+    ...(modelMode === "on" ? { model_categorized: modelCount } : {}),
+    ...(modelMode === "shadow" ? { model_shadow: shadow } : {}),
   };
   await client.from("audit_log").insert({
     user_id: userId,

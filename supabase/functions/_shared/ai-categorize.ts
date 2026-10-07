@@ -1,5 +1,6 @@
 import { CATEGORY_KEYS, isCategoryKey, type CategoryKey } from "@compass/shared";
 import { reasonFromError, type CallMeter } from "./monitor.ts";
+import { openaiUrl } from "./openai.ts";
 
 export type AiItem = {
   /** Caller's key for this item; echoed back in the result map. */
@@ -41,7 +42,7 @@ export async function aiCategorize(
     try {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      const res = await fetch(openaiUrl("chat/completions"), {
         method: "POST",
         signal: controller.signal,
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },

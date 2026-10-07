@@ -10,6 +10,7 @@ import {
   type RiskFlag,
 } from "@compass/shared";
 import { reasonFromError, type CallMeter } from "./monitor.ts";
+import { openaiUrl } from "./openai.ts";
 
 const DEFAULT_MODEL = "gpt-5-mini";
 const TIMEOUT_MS = 45_000;
@@ -36,7 +37,7 @@ export const makeOpenAiLearnClient =
     const request = (withEffort: boolean) => {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-      return fetch("https://api.openai.com/v1/chat/completions", {
+      return fetch(openaiUrl("chat/completions"), {
         method: "POST",
         signal: controller.signal,
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },

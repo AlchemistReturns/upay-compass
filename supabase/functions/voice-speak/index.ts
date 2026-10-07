@@ -3,6 +3,7 @@ import { VOICE_SPEAK_MAX_CHARS, prepareSpeech } from "@compass/shared";
 import { authenticate, corsHeaders, json } from "../_shared/http.ts";
 import { auditVoice, guardVoice } from "../_shared/voice.ts";
 import { reasonFromError, startCall } from "../_shared/monitor.ts";
+import { openaiUrl } from "../_shared/openai.ts";
 
 const DEFAULT_MODEL = "tts-1";
 const TIMEOUT_MS = 30_000;
@@ -57,7 +58,7 @@ Deno.serve(async (req) => {
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-    const res = await fetch("https://api.openai.com/v1/audio/speech", {
+    const res = await fetch(openaiUrl("audio/speech"), {
       method: "POST",
       signal: controller.signal,
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },

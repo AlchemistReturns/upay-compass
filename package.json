@@ -23,7 +23,12 @@
     "audit:fairness": "node --experimental-transform-types --disable-warning=ExperimentalWarning scripts/audit-fairness.mjs",
     "eval:anomaly": "node --experimental-transform-types --disable-warning=ExperimentalWarning scripts/eval-anomaly.mjs",
     "eval:voice": "node --experimental-transform-types --disable-warning=ExperimentalWarning scripts/eval-voice.mjs",
-    "eval:learn": "node scripts/eval-learn.mjs"
+    "eval:learn": "node scripts/eval-learn.mjs",
+    "train:forecast": "node --experimental-transform-types --disable-warning=ExperimentalWarning scripts/ml/train-forecast.mjs",
+    "eval:forecast": "node --experimental-transform-types --disable-warning=ExperimentalWarning scripts/ml/eval-forecast.mjs",
+    "train:categorizer": "node --experimental-transform-types --disable-warning=ExperimentalWarning scripts/ml/train-categorizer.mjs",
+    "eval:categorize": "node --experimental-transform-types --disable-warning=ExperimentalWarning scripts/ml/eval-categorize.mjs",
+    "eval:anomaly:ml": "node --experimental-transform-types --disable-warning=ExperimentalWarning scripts/ml/eval-anomaly-ml.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7",

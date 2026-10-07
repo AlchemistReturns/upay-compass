@@ -518,6 +518,9 @@
     "chart_hint": "Based on your regular income and payments plus your usual daily spending.",
     "legend_balance": "Projected balance",
     "legend_buffer": "Safety buffer (1 week of essentials)",
+    "legend_range": "Likely range (about 80% of the time)",
+    "range": "Likely range",
+    "method_model": "This forecast uses a model learned from your own spending habits (your weekly pattern and recent trend). The shaded area is where your balance is likely to stay. The low-balance warning is calculated more cautiously than the line, so it can appear even when the line stays above the buffer.",
     "below_buffer": "Below safety buffer",
     "date": "Date",
     "balance": "Balance",
@@ -662,7 +665,7 @@
   },
   "explain": {
     "title": "Why this decision",
-    "how": "Explanations come from fixed rules and simple statistics on your own payments, not from an AI model.",
+    "how": "Explanations come from fixed rules, simple statistics on your own payments and a small pattern model that recognises shop names. None of it is written by a chat AI.",
     "channel_recharge": "phone recharges",
     "channel_bill": "bill payments",
     "channel_send_money": "money sent to a person",
@@ -674,6 +677,9 @@
     "cat_channel_default": "No keyword matched, so {{channel}} are filed under {{category}}.",
     "cat_ai": "No rule matched this payment, so the AI suggested {{category}}. If it is wrong, change it below and the app will remember.",
     "cat_unmatched": "No rule matched and the AI was not sure, so this is filed under {{category}} for you to check. Change it below and the app will remember.",
+    "cat_model": "No keyword matched, but a small pattern model recognised parts of the name (“{{factors}}”) and filed this under {{category}}. If it is wrong, change it below and the app will remember.",
+    "cat_model_plain": "No keyword matched, but a small pattern model recognised the kind of name and filed this under {{category}}. If it is wrong, change it below and the app will remember.",
+    "cat_keyword_doubt": "Filed under {{category}} because “{{keyword}}” appears in the name, but a pattern model thinks it looks more like {{suggested}}, so it is queued for you to check. Change it below if needed.",
     "cat_rule": "An automatic rule filed this under {{category}}.",
     "anomaly_title": "Flagged as unusual",
     "anomaly_merchant": "You paid {{amount}}. Your {{observations}} earlier payments to {{merchant}} are typically about {{typical}}, and this is far above that (score {{z}}; we flag anything above 3.5).",
@@ -861,7 +867,9 @@
       "voice_command": "Voice commands",
       "voice_transcribe": "Voice to text",
       "voice_speak": "Read aloud",
-      "generate_learn_modules": "Made-for-you lessons"
+      "generate_learn_modules": "Made-for-you lessons",
+      "ml_forecast": "Forecast model (on our server)",
+      "ml_categorize": "Name-pattern model (on our server)"
     },
     "details": {
       "requests_title": "Requests over time",

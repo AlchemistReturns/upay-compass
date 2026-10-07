@@ -20,6 +20,8 @@ Before going on stage: sign in once, open **Home**, and press the **Gig** button
 - **Voice:** in the coach tap the microphone and speak a question in English, then tap Listen on the answer. Only where the browser supports it; Bangla listening depends on the device (see `voice-checklist.md`).
 - **Voice commands:** tap the mic in the header, say "add 500 taka for tea", show the card (amount, category, date), Confirm, then Undo. Then say "can I afford a 5000 taka phone" to hand off to the coach. Needs internet and the one-time voice consent.
 - **Unusual payment:** add a payment about ten times the usual at a place you use often. The alert appears; open it and show "Why this decision" (the score against the threshold).
+- **Forecast model:** open Forecast (the model is on by default) and point at the shaded range around the line and the note under the chart that says a learned model was used. The low-balance warning is calculated more cautiously than the line, so it can show even when the line stays above the safety line.
+- **Name-pattern filing:** add a payment to a merchant such as "Rahim Pharmasy" (misspelled on purpose). It is filed under Health by the pattern model; open "Why this decision" to see the parts of the name it recognised. Add "Car Rental" and note that it is filed under Bills because of the word "rent" but queued for review, because the model thinks it is Transport.
 - **Credit readiness:** open it from Home. Point at the "informational only" banner first, then the four components.
 
 ## If something goes wrong

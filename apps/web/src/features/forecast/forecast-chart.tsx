@@ -17,7 +17,14 @@ import { ChartToggle } from "@/features/transactions/chart-toggle";
 import { ChartTooltip } from "@/features/transactions/weekly-chart";
 import type { ForecastSnapshot } from "./use-forecast";
 
-type Row = { day: string; label: string; balance: number; risk: boolean };
+type Row = {
+  day: string;
+  label: string;
+  balance: number;
+  risk: boolean;
+  /** Likely range [low, high], when the forecast has one. */
+  range?: [number, number];
+};
 
 type TooltipProps = { active?: boolean; payload?: { payload: Row }[] };
 
@@ -32,6 +39,11 @@ function ForecastTooltip({
   return (
     <ChartTooltip title={row.label}>
       <div className="num text-sm font-bold">{formatMoney(row.balance, lang)}</div>
+      {row.range && (
+        <div className="num mt-0.5 text-xs opacity-80">
+          {formatMoney(row.range[0], lang)} – {formatMoney(row.range[1], lang)}
+        </div>
+      )}
       {row.risk && (
         <div className="mt-0.5 font-semibold text-[#ffb59e]">{t("forecast.below_buffer")}</div>
       )}
@@ -46,12 +58,20 @@ export function ForecastChart({ snapshot }: { snapshot: ForecastSnapshot }) {
   const lang = i18n.language;
   const buffer = snapshot.details.safetyBuffer;
   const riskDays = new Set(snapshot.risk_flags.map((r) => r.day));
-  const rows: Row[] = snapshot.projected_balance.map((p) => ({
-    day: p.day,
-    label: formatShortDate(p.day, lang),
-    balance: p.balance,
-    risk: riskDays.has(p.day),
-  }));
+  const band = snapshot.details.band;
+  const rows: Row[] = snapshot.projected_balance.map((p, i) => {
+    const lo = band?.lower[i]?.balance;
+    const hi = band?.upper[i]?.balance;
+    return {
+      day: p.day,
+      label: formatShortDate(p.day, lang),
+      balance: p.balance,
+      risk: riskDays.has(p.day),
+      range: lo !== undefined && hi !== undefined ? [lo, hi] : undefined,
+    };
+  });
+  const hasRange = rows.some((r) => r.range);
+  const usesModel = Boolean(snapshot.details.method) && snapshot.details.method !== "heuristic";
   const hasNegative = rows.some((r) => r.balance < 0);
 
   return (
@@ -78,6 +98,16 @@ export function ForecastChart({ snapshot }: { snapshot: ForecastSnapshot }) {
           />
           {t("forecast.legend_balance")}
         </li>
+        {hasRange && (
+          <li className="flex items-center gap-1.5">
+            <span
+              aria-hidden
+              className="inline-block h-2.5 w-4 rounded-sm"
+              style={{ background: "var(--chart-expense)", opacity: 0.2 }}
+            />
+            {t("forecast.legend_range")}
+          </li>
+        )}
         <li className="flex items-center gap-1.5">
           <span
             aria-hidden
@@ -105,6 +135,9 @@ export function ForecastChart({ snapshot }: { snapshot: ForecastSnapshot }) {
               <tr>
                 <th className="py-1.5 font-semibold">{t("forecast.date")}</th>
                 <th className="py-1.5 text-right font-semibold">{t("forecast.balance")}</th>
+                {hasRange && (
+                  <th className="py-1.5 text-right font-semibold">{t("forecast.range")}</th>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -119,6 +152,13 @@ export function ForecastChart({ snapshot }: { snapshot: ForecastSnapshot }) {
                     )}
                   </td>
                   <td className="num py-2 text-right">{formatMoney(r.balance, lang)}</td>
+                  {hasRange && (
+                    <td className="num text-muted-foreground py-2 text-right">
+                      {r.range
+                        ? `${formatMoney(r.range[0], lang)} – ${formatMoney(r.range[1], lang)}`
+                        : ""}
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -168,6 +208,18 @@ export function ForecastChart({ snapshot }: { snapshot: ForecastSnapshot }) {
                   />
                 )}
               />
+              {hasRange && (
+                <Area
+                  type="monotone"
+                  dataKey="range"
+                  stroke="none"
+                  fill="var(--chart-expense)"
+                  fillOpacity={0.14}
+                  isAnimationActive={false}
+                  activeDot={false}
+                  legendType="none"
+                />
+              )}
               <Area
                 type="monotone"
                 dataKey="balance"
@@ -202,6 +254,9 @@ export function ForecastChart({ snapshot }: { snapshot: ForecastSnapshot }) {
             </AreaChart>
           </ResponsiveContainer>
         </div>
+      )}
+      {usesModel && (
+        <p className="text-muted-foreground mt-3 text-xs leading-5">{t("forecast.method_model")}</p>
       )}
     </section>
   );

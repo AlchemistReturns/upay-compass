@@ -2,13 +2,15 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   RECURRING_LOOKBACK_DAYS,
   backtestForecast,
-  forecastCashflow,
+  forecastForMode,
+  mlMode,
   addDays,
   dhakaDay,
   type Forecast,
   type FlowTx,
 } from "@compass/shared";
 import { adminClient } from "./http.ts";
+import { startCall } from "./monitor.ts";
 import { canonical, roundDeep } from "./snapshot.ts";
 
 export type Flow = { balance: number; transactions: FlowTx[] };
@@ -59,9 +61,21 @@ export async function refreshForecast(
   preloaded?: Flow,
 ): Promise<ForecastSnapshot> {
   const flow = preloaded ?? (await loadFlow(userClient));
-  const forecast = roundDeep(
-    forecastCashflow({ balance: flow.balance, transactions: flow.transactions }),
-  );
+  // ML_FORECAST = on (default) | shadow | off. Off leaves the stored snapshot exactly as it was.
+  const mode = mlMode("forecast", { ML_FORECAST: Deno.env.get("ML_FORECAST") });
+  const picked = forecastForMode({ balance: flow.balance, transactions: flow.transactions }, mode);
+  const forecast = roundDeep(picked.forecast);
+  const shadow = picked.shadow;
+  if (mode !== "off" && !forecast.insufficient) {
+    // One monitoring event per model run: which method answered, and whether it declined (fallback).
+    const call = startCall("ml-forecast");
+    const method =
+      mode === "shadow" ? (shadow?.method ?? "heuristic") : (forecast.method ?? "heuristic");
+    call.model(method === "heuristic" ? "weekday_median" : method);
+    if (method === "heuristic") call.fallback();
+    call.end();
+  }
+  const usesModel = forecast.method !== undefined && forecast.method !== "heuristic";
   const backtest = forecast.insufficient
     ? null
     : backtestForecast({ balance: flow.balance, transactions: flow.transactions }, 30);
@@ -91,6 +105,8 @@ export async function refreshForecast(
         nextDay: r.nextDay,
       })),
       backtest,
+      ...(usesModel ? { method: forecast.method, band: forecast.band } : {}),
+      ...(shadow ? { shadow } : {}),
     }),
   };
 

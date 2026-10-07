@@ -1,7 +1,8 @@
 import { z } from "zod";
 import {
-  categorize,
+  categorizeInStages,
   isCategoryKey,
+  mlMode,
   normalizeKeyword,
   type Channel,
   type UserRule,
@@ -72,20 +73,29 @@ Deno.serve(async (req) => {
   const unknown: Row[] = [];
   let updated = 0;
 
+  // ML_CATEGORIZE = on (default) | shadow | off. Off leaves the order rules, then AI, as it was.
+  const modelMode = mlMode("categorize", { ML_CATEGORIZE: Deno.env.get("ML_CATEGORIZE") });
+  const shadowGuess = new Map<string, string>();
+  let modelLabelled = 0;
+  const modelCall = modelMode === "off" ? null : startCall("ml-categorize");
+  modelCall?.model("name_patterns");
   for (const row of rows) {
-    const result = categorize(row, userRules);
-    if (result) {
+    const staged = categorizeInStages(row, userRules, modelMode);
+    if (staged.labelled) {
+      const { category, source, review } = staged.labelled;
       await client
         .from("transactions")
         .update({
-          category_id: idByKey.get(result.category),
-          category_source: result.source,
-          needs_review: false,
+          category_id: idByKey.get(category),
+          category_source: source,
+          needs_review: review,
         })
         .eq("id", row.id);
       updated++;
+      if (source === "model") modelLabelled++;
     } else {
       unknown.push(row);
+      if (staged.shadow) shadowGuess.set(row.id, staged.shadow);
     }
   }
 
@@ -111,8 +121,14 @@ Deno.serve(async (req) => {
     call.end();
   }
 
+  const shadow = { compared: 0, agreed: 0 };
   for (const row of unknown) {
     const label = labels.get(normalizeKeyword(row.counterparty) || row.id);
+    const guess = shadowGuess.get(row.id);
+    if (label && guess) {
+      shadow.compared++;
+      if (guess === label) shadow.agreed++;
+    }
     await client
       .from("transactions")
       .update(
@@ -124,5 +140,11 @@ Deno.serve(async (req) => {
     updated++;
   }
 
-  return json({ updated, ai_labelled: labels.size });
+  modelCall?.end();
+  return json({
+    updated,
+    ai_labelled: labels.size,
+    ...(modelMode === "on" ? { model_labelled: modelLabelled } : {}),
+    ...(modelMode === "shadow" ? { model_shadow: shadow } : {}),
+  });
 });

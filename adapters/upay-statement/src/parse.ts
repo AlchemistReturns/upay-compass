@@ -1,8 +1,8 @@
-import { CHANNELS, type Channel } from "@compass/shared";
+import { CHANNELS, MAX_STATEMENT_BYTES, type Channel } from "@compass/shared";
 import { parseCsv } from "./csv.ts";
 
 export const MAX_STATEMENT_ROWS = 5000;
-export const MAX_STATEMENT_BYTES = 1_000_000;
+export { MAX_STATEMENT_BYTES };
 
 const HEADER_ALIASES = {
   date: ["date", "datetime", "date time", "time", "timestamp", "occurred_at", "transaction date"],

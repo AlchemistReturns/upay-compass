@@ -7,6 +7,9 @@
  */
 import { transactionSchema } from "./types.ts";
 
+/** Largest statement file we accept (bytes); the browser checks it too. */
+export const MAX_STATEMENT_BYTES = 1_000_000;
+
 /** Which source a batch came from. Stored in the audit log; `simulated` also marks the rows. */
 export type FeedSourceId = "simulated" | "statement_csv" | "upay_api";
 

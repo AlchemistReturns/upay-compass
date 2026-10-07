@@ -1,7 +1,13 @@
 import { z } from "zod";
-import { CHANNELS, FeedError, type Channel, type TransactionFeed } from "@compass/shared";
+import {
+  CHANNELS,
+  FeedError,
+  MAX_STATEMENT_BYTES,
+  type Channel,
+  type TransactionFeed,
+} from "@compass/shared";
 import { SimulatedFeed } from "@compass/upay-sim";
-import { MAX_STATEMENT_BYTES, StatementFeed } from "@compass/upay-statement";
+import { StatementFeed } from "@compass/upay-statement";
 import { UpayApiFeed, type FieldMap, type ServiceMap } from "@compass/upay-api";
 
 /**

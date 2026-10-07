@@ -88,10 +88,12 @@ A smaller, explainable, working product beats a broad unfinished one.
 ### 4.1 Simulated upay transaction feed (adapter)
 
 ```
-getTransactions(userId, since) → Transaction[]
+TransactionFeed.pull(ctx { userId, phone }, since) → FeedBatch { records, openingBalance | null }
 Transaction { id, amount, direction(in|out), channel, counterparty, note, occurred_at }
 channel ∈ send_money | cash_out | merchant | recharge | bill | add_money
 ```
+
+- **Pluggable.** The ingestion pipeline depends only on the `TransactionFeed` contract (`packages/shared/src/feed.ts`); sources are `simulated` (`adapters/upay-sim`), `statement_csv` (`adapters/upay-statement`, a tolerant CSV reader with an import screen) and `upay_api` (`adapters/upay-api`, a partner-API pull by verified phone number against an **assumed** API with a configurable field map; never run against upay). A registry (`supabase/functions/_shared/feeds.ts`) selects the feed per request. Every record is validated by the pipeline whatever its source; bad records are counted and logged. See `docs/integration/upay-adapter.md`.
 
 - Seed generator produces realistic Bangladeshi patterns: rickshaw/transport, food, mobile recharge, utility bills, tuition, remittance, salary or gig inflows.
 - Three personas: **Student**, **Gig worker** (irregular income), **Salaried**.

@@ -3,6 +3,8 @@ import {
   addDays,
   dayDiff,
   detectAnomalies,
+  detectAnomaliesCombined,
+  mlMode,
   dhakaDay,
   generateNudges,
   projectGoal,
@@ -87,6 +89,23 @@ Deno.serve(async (req) => {
       }),
     );
 
+    // ML_ANOMALY = off (default) | shadow | on. The learned score did not beat the statistical rule
+    // in the benchmark (docs/ML_REPORT.md), so both shadow and on only count what it would add;
+    // no nudge is created from it.
+    let modelExtra: number | undefined;
+    if (mlMode("anomaly", { ML_ANOMALY: Deno.env.get("ML_ANOMALY") }) !== "off") {
+      try {
+        const flagged = new Set(unusual.map((u) => u.data.transaction_id));
+        modelExtra = detectAnomaliesCombined(
+          history,
+          { candidateFrom: addDays(today, -6) },
+          new Date(),
+        ).filter((c) => c.model && !c.rule && !flagged.has(c.txId)).length;
+      } catch {
+        modelExtra = undefined;
+      }
+    }
+
     const inputs: NudgeInputs = {
       today,
       // The flat "category at 2x its usual week" rule is replaced by the unusual-payment detector.
@@ -122,7 +141,11 @@ Deno.serve(async (req) => {
       if (error) throw error;
       created = data?.length ?? 0;
     }
-    return json({ candidates: nudges.length, created });
+    return json({
+      candidates: nudges.length,
+      created,
+      ...(modelExtra === undefined ? {} : { model_extra_flags: modelExtra }),
+    });
   } catch (e) {
     return json(
       { error: "nudges_failed", detail: e instanceof Error ? e.message : String(e) },

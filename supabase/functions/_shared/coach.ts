@@ -10,6 +10,7 @@ import {
   type Forecast,
   type HealthResult,
 } from "@compass/shared";
+import { openaiUrl } from "./openai.ts";
 
 /** Number of past messages (user + assistant) sent back to the model as conversation history. */
 export const HISTORY_MESSAGES = 16;
@@ -195,7 +196,7 @@ export async function streamChat(
   meter?.model(model);
 
   const request = (withEffort: boolean) =>
-    fetch("https://api.openai.com/v1/chat/completions", {
+    fetch(openaiUrl("chat/completions"), {
       method: "POST",
       signal,
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },

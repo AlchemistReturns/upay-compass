@@ -7,6 +7,8 @@ import {
   type FlowTx,
   type RecurringItem,
 } from "./recurring.ts";
+import { dailyFlowSeries } from "./ml/series.ts";
+import type { SpendPrediction, SpendPredictor } from "./ml/types.ts";
 
 export const FORECAST_HORIZON_DAYS = 30;
 /** Everyday-spending and buffer statistics use the last 90 days. */
@@ -46,6 +48,12 @@ export type Forecast = {
   weekdayIncome: number[];
   expectedIncome: number;
   expectedBills: number;
+  /** Which method set the everyday-spending path: "heuristic" (weekday medians) or a model's name. */
+  method?: string;
+  /** Everyday spending used for each forecast day, tomorrow first, taka. */
+  spendPath?: number[];
+  /** Range the balance is expected to stay inside (about 80%), when the method reports its error. */
+  band?: { lower: ForecastPoint[]; upper: ForecastPoint[] } | null;
 };
 
 export type ForecastInput = {
@@ -54,7 +62,21 @@ export type ForecastInput = {
   balance: number;
   transactions: FlowTx[];
   horizonDays?: number;
+  /**
+   * Replaces the weekday-median guess for everyday spending. If it returns null, throws, or gives
+   * anything but `horizon` finite non-negative numbers, the weekday medians are used instead.
+   */
+  spendPredictor?: SpendPredictor;
 };
+
+/**
+ * Half-width of the band is BAND_Z x (typical daily spending error) x sqrt(days ahead). 1.28 would
+ * be the 80% point if the errors were small, independent and the only uncertainty. They are not
+ * (lumpy purchases, income that does not arrive on time), so the width is scaled by 1.6, the
+ * factor at which 80% of actual balances fell inside the band on the "dev" simulated people
+ * (scripts/ml/eval-forecast.mjs, which reports the coverage on held-out people).
+ */
+export const BAND_Z = 1.28 * 1.6;
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -75,7 +97,26 @@ function emptyForecast(today: string, balance: number, horizonDays: number): For
     weekdayIncome: [0, 0, 0, 0, 0, 0, 0],
     expectedIncome: 0,
     expectedBills: 0,
+    method: "heuristic",
+    spendPath: [],
+    band: null,
   };
+}
+
+/** Runs the predictor on the history and checks what comes back; null means use the baseline. */
+function runPredictor(
+  predictor: SpendPredictor | undefined,
+  input: Parameters<SpendPredictor>[0],
+): SpendPrediction | null {
+  if (!predictor) return null;
+  try {
+    const p = predictor(input);
+    if (!p || p.spend.length !== input.horizon) return null;
+    if (!p.spend.every((v) => Number.isFinite(v) && v >= 0)) return null;
+    return p;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -85,6 +126,14 @@ function emptyForecast(today: string, balance: number, horizonDays: number): For
  * not move them and income that does not show up most weeks counts as zero (the cautious side).
  */
 export function forecastCashflow(input: ForecastInput): Forecast {
+  if (!input.spendPredictor) return forecastCore(input, false);
+  // With a model, recurring payments are found tolerating one missing occurrence. If the model
+  // then declines, redo it all the plain way, so the fallback is exactly the plain forecast.
+  const modelled = forecastCore(input, true);
+  return modelled.method === "heuristic" ? forecastCore(input, false) : modelled;
+}
+
+function forecastCore(input: ForecastInput, allowMissed: boolean): Forecast {
   const now = input.now ?? new Date();
   const horizon = input.horizonDays ?? FORECAST_HORIZON_DAYS;
   const today = dhakaDay(now);
@@ -106,7 +155,7 @@ export function forecastCashflow(input: ForecastInput): Forecast {
     return emptyForecast(today, input.balance, horizon);
   }
 
-  const recurring = detectRecurring(all, now);
+  const recurring = detectRecurring(all, now, { allowMissed });
   const txs = all.filter((t) => dhakaDay(t.occurred_at) >= statsStart);
   const statsDays = Math.min(historyDays, HISTORY_DAYS);
   const recurringKeys = new Set(recurring.map((r) => r.key));
@@ -135,18 +184,33 @@ export function forecastCashflow(input: ForecastInput): Forecast {
   const weekdaySpend = medians(spendByWeekday);
   const weekdayIncome = medians(incomeByWeekday);
 
+  // With a predictor the forecast is centred: recurring items use their typical amount, not the
+  // cautious one, and everyday income is the weekday average. The caution moves to the band and to the shortfall warning.
+  const predicted = input.spendPredictor
+    ? runPredictor(input.spendPredictor, {
+        today,
+        horizon,
+        recurring,
+        ...dailyFlowSeries(all, firstDay, today, recurringKeys),
+      })
+    : null;
+
   // Recurring items placed on the calendar.
   const net = new Map<string, number>();
+  const cautiousNet = new Map<string, number>();
   let expectedIncome = 0;
   let expectedBills = 0;
   const end = addDays(today, horizon);
   for (const item of recurring) {
     for (let d = item.nextDay; d <= end; d = stepDay(item, d)) {
       if (d <= today) continue; // today is already part of the starting balance
-      const signed = item.direction === "in" ? item.expectedAmount : -item.expectedAmount;
+      const amount = predicted ? item.typicalAmount * (item.reliability ?? 1) : item.expectedAmount;
+      const signed = item.direction === "in" ? amount : -amount;
       net.set(d, (net.get(d) ?? 0) + signed);
-      if (item.direction === "in") expectedIncome += item.expectedAmount;
-      else expectedBills += item.expectedAmount;
+      const cautious = item.direction === "in" ? item.expectedAmount : -item.expectedAmount;
+      cautiousNet.set(d, (cautiousNet.get(d) ?? 0) + cautious);
+      if (item.direction === "in") expectedIncome += amount;
+      else expectedBills += amount;
     }
   }
 
@@ -156,16 +220,45 @@ export function forecastCashflow(input: ForecastInput): Forecast {
   const safetyBuffer = Math.round((essentialTotal / statsDays) * BUFFER_DAYS);
 
   const series: ForecastPoint[] = [{ day: today, balance: round2(input.balance) }];
+  const spendPath: number[] = [];
   let balance = input.balance;
+  // The cautious path: the model's spending with the plain forecast's cautious income and bills.
+  // It decides the shortfall warning, so the warning stays as sensitive as the plain forecast's.
+  let cautiousBalance = input.balance;
+  const cautiousSeries: ForecastPoint[] = [{ day: today, balance: round2(input.balance) }];
   for (let i = 1; i <= horizon; i++) {
     const day = addDays(today, i);
     const wd = weekdayOf(day);
-    balance += (net.get(day) ?? 0) + weekdayIncome[wd]! - weekdaySpend[wd]!;
+    const spend = predicted ? predicted.spend[i - 1]! : weekdaySpend[wd]!;
+    spendPath.push(round2(spend));
+    const income = predicted?.income?.[i - 1] ?? weekdayIncome[wd]!;
+    balance += (net.get(day) ?? 0) + income - spend;
+    cautiousBalance += (cautiousNet.get(day) ?? 0) + weekdayIncome[wd]! - spend;
+    cautiousSeries.push({ day, balance: round2(cautiousBalance) });
     series.push({ day, balance: round2(balance) });
   }
 
+  // Band width: the spending error and the everyday-income error, taken as independent.
+  const sigma =
+    predicted?.sigma === undefined
+      ? undefined
+      : Math.hypot(predicted.sigma, predicted.incomeSigma ?? 0);
+  const band =
+    sigma !== undefined && Number.isFinite(sigma)
+      ? {
+          lower: series.map((p, i) => ({
+            day: p.day,
+            balance: round2(p.balance - BAND_Z * sigma * Math.sqrt(i)),
+          })),
+          upper: series.map((p, i) => ({
+            day: p.day,
+            balance: round2(p.balance + BAND_Z * sigma * Math.sqrt(i)),
+          })),
+        }
+      : null;
+
   const future = series.slice(1);
-  const risks: RiskFlag[] = future
+  const risks: RiskFlag[] = (predicted ? cautiousSeries.slice(1) : future)
     .filter((p) => p.balance < safetyBuffer)
     .map((p) => ({ day: p.day, balance: p.balance, level: p.balance < 0 ? "negative" : "low" }));
   const lowest = future.reduce((min, p) => (p.balance < min.balance ? p : min), future[0]!);
@@ -186,6 +279,9 @@ export function forecastCashflow(input: ForecastInput): Forecast {
     weekdayIncome,
     expectedIncome: round2(expectedIncome),
     expectedBills: round2(expectedBills),
+    method: predicted?.method ?? "heuristic",
+    spendPath,
+    band,
   };
 }
 

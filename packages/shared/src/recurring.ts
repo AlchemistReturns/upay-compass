@@ -35,6 +35,11 @@ export type RecurringItem = {
   lastDay: string;
   nextDay: string;
   dayOfMonth: number;
+  /**
+   * Share of expected occurrences that actually showed up (1 when none were missing). Only set when
+   * detection allowed missed occurrences; a model forecast multiplies the amount by it.
+   */
+  reliability?: number;
 };
 
 const CADENCES: { name: Cadence; days: number; tolerance: number }[] = [
@@ -71,12 +76,41 @@ export function stepDay(item: Pick<RecurringItem, "cadence" | "dayOfMonth">, fro
   return addDays(from, item.cadence === "weekly" ? 7 : 14);
 }
 
+/** The cadence whose gaps (median and 80% of them) match, or undefined. */
+function strictCadence(intervals: number[]) {
+  const med = median(intervals);
+  const cadence = CADENCES.find((c) => Math.abs(med - c.days) <= c.tolerance);
+  if (!cadence) return undefined;
+  const fits = intervals.filter((i) => Math.abs(i - cadence.days) <= cadence.tolerance).length;
+  return fits / intervals.length < INTERVAL_CONSISTENCY ? undefined : cadence;
+}
+
+/**
+ * Like strictCadence, but a gap of two cycles (one occurrence missing from the data, say a skipped
+ * salary or a payment made another way) still counts as fitting. At least half the gaps must be
+ * exactly one cycle, so a fortnightly payment is not mistaken for a weekly one with gaps skipped.
+ */
+function cadenceAllowingMissed(intervals: number[]) {
+  return CADENCES.find((c) => {
+    const exact = intervals.filter((i) => Math.abs(i - c.days) <= c.tolerance).length;
+    const doubled = intervals.filter((i) => Math.abs(i - 2 * c.days) <= 2 * c.tolerance).length;
+    return (
+      exact / intervals.length >= 0.5 &&
+      (exact + doubled) / intervals.length >= INTERVAL_CONSISTENCY
+    );
+  });
+}
+
 /**
  * Finds payments that repeat on a schedule: at least 3 occurrences, gaps matching weekly (7 +-1 days),
  * fortnightly (14 +-2) or monthly (30 +-3), income and bills alike. Items whose next date is more
  * than one cycle overdue are treated as ended.
  */
-export function detectRecurring(txs: FlowTx[], now: Date = new Date()): RecurringItem[] {
+export function detectRecurring(
+  txs: FlowTx[],
+  now: Date = new Date(),
+  options: { allowMissed?: boolean } = {},
+): RecurringItem[] {
   const today = dhakaDay(now);
   const groups = new Map<string, FlowTx[]>();
   for (const tx of txs) {
@@ -101,11 +135,10 @@ export function detectRecurring(txs: FlowTx[], now: Date = new Date()): Recurrin
     if (days.length < MIN_OCCURRENCES) continue;
 
     const intervals = days.slice(1).map((d, i) => dayDiff(days[i]!, d));
-    const med = median(intervals);
-    const cadence = CADENCES.find((c) => Math.abs(med - c.days) <= c.tolerance);
+    const cadence = options.allowMissed
+      ? cadenceAllowingMissed(intervals)
+      : strictCadence(intervals);
     if (!cadence) continue;
-    const fits = intervals.filter((i) => Math.abs(i - cadence.days) <= cadence.tolerance).length;
-    if (fits / intervals.length < INTERVAL_CONSISTENCY) continue;
 
     const amounts = days.map((d) => perDay.get(d)!);
     const typical = median(amounts);
@@ -132,6 +165,14 @@ export function detectRecurring(txs: FlowTx[], now: Date = new Date()): Recurrin
       lastDay,
       nextDay: lastDay,
       dayOfMonth,
+      ...(options.allowMissed
+        ? {
+            reliability:
+              days.length /
+              (days.length +
+                intervals.reduce((n, g) => n + Math.max(0, Math.round(g / cadence.days) - 1), 0)),
+          }
+        : {}),
     };
 
     let next = stepDay(item, lastDay);

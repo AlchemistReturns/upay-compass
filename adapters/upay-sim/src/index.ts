@@ -68,3 +68,6 @@ export class SimulatedFeed implements TransactionFeed {
     return { records, openingBalance: this.openingBalance };
   }
 }
+export { makePopulation, buildUser, POPULATION_BASE_DAY, POPULATION_DAYS } from "./population.ts";
+export type { Split, UserSpec, PopulationUser } from "./population.ts";
+export * from "./anomaly-ml-eval.ts";

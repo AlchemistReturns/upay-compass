@@ -54,13 +54,23 @@ export function ExplainCard({ tx }: { tx: TransactionRow }) {
   const c = e.categorization;
 
   const channelLabel = c.channel ? t(`explain.channel_${c.channel}`, { defaultValue: "" }) : "";
+  const suggestedCat = c.suggested ? categories?.find((x) => x.key === c.suggested) : undefined;
+  const suggested = suggestedCat
+    ? lang === "bn"
+      ? suggestedCat.name_bn
+      : suggestedCat.name_en
+    : "";
+  const categoryKeyForText =
+    c.kind === "model" && !c.factors?.length ? "explain.cat_model_plain" : `explain.cat_${c.kind}`;
   const categorySentence =
     c.kind === "channel" || c.kind === "channel_default"
       ? t(`explain.cat_${c.kind}`, { category, channel: channelLabel })
-      : t(`explain.cat_${c.kind}`, {
+      : t(categoryKeyForText, {
           category,
           merchant, // a saved correction always applies to the whole merchant name
           keyword: c.keyword,
+          factors: c.factors?.join(", "),
+          suggested,
         });
 
   const a = e.anomaly;

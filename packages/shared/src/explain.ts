@@ -1,3 +1,4 @@
+import { categorizeWithModel, disagreesWithKeywordRule } from "./ml/categorize-model.ts";
 import { categorize, type CategorizableTransaction } from "./categorize.ts";
 
 /**
@@ -19,6 +20,10 @@ export type CategorizationKind =
   | "channel_default"
   /** no rule matched and the AI suggested the category */
   | "ai"
+  /** no rule matched and the on-device pattern model recognised the name */
+  | "model"
+  /** a keyword matched, but the pattern model thinks it is something else, so it is queued for review */
+  | "keyword_doubt"
   /** nothing matched and the AI was unsure, so it is filed under Other for review */
   | "unmatched"
   /** an automatic rule decided it (the rule can no longer be traced exactly) */
@@ -30,6 +35,10 @@ export type CategorizationExplanation = {
   keyword?: string;
   /** For channel and channel_default: the channel that decided it. */
   channel?: string;
+  /** For model: the parts of the name that pointed to this category. */
+  factors?: string[];
+  /** For keyword_doubt: the category the model would have chosen. */
+  suggested?: string;
 };
 
 export type AnomalyExplanation = {
@@ -45,7 +54,7 @@ export type ExplainFacts = {
   tx: CategorizableTransaction;
   /** The category key now stored on the payment. */
   categoryKey: string | null;
-  categorySource: "rule" | "ai" | "user";
+  categorySource: "rule" | "ai" | "user" | "model";
   needsReview: boolean;
   /** The user's saved correction for this merchant, if there is one. */
   userRuleKeyword: string | null;
@@ -63,6 +72,12 @@ export function explainCategorization(f: ExplainFacts): CategorizationExplanatio
     return { kind: "user_rule", keyword: f.userRuleKeyword ?? f.tx.counterparty };
   }
   if (f.categorySource === "ai") return { kind: "ai" };
+  if (f.categorySource === "model") {
+    const m = categorizeWithModel(f.tx);
+    return m && m.category === f.categoryKey
+      ? { kind: "model", factors: m.factors }
+      : { kind: "model" };
+  }
 
   // A rule decided it (or nothing did): run the same rules again to see which one.
   const again = categorize(f.tx, []);
@@ -75,8 +90,14 @@ export function explainCategorization(f: ExplainFacts): CategorizationExplanatio
       return { kind: "income_direction" };
     case "channel":
       return { kind: "channel", channel: f.tx.channel };
-    case "keyword":
+    case "keyword": {
+      if (f.needsReview) {
+        const doubt = disagreesWithKeywordRule(f.tx, again);
+        if (doubt)
+          return { kind: "keyword_doubt", keyword: again.keyword, suggested: doubt.category };
+      }
       return { kind: "keyword", keyword: again.keyword };
+    }
     case "channel_default":
       return { kind: "channel_default", channel: f.tx.channel };
     default:
@@ -90,7 +111,7 @@ export function explainTransaction(f: ExplainFacts): Explanation {
 
 /** The `transaction_explain()` function's jsonb, as typed facts about the database side. */
 export type ExplainRpc = {
-  category_source: "rule" | "ai" | "user";
+  category_source: "rule" | "ai" | "user" | "model";
   needs_review: boolean;
   category_key: string | null;
   user_rule_keyword: string | null;
@@ -101,7 +122,7 @@ export function parseExplainRpc(raw: unknown): ExplainRpc | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
   const source = r.category_source;
-  if (source !== "rule" && source !== "ai" && source !== "user") return null;
+  if (source !== "rule" && source !== "ai" && source !== "user" && source !== "model") return null;
   const a = r.anomaly as Record<string, unknown> | null | undefined;
   return {
     category_source: source,

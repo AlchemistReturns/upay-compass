@@ -26,6 +26,10 @@ export type ForecastDetails = {
   expectedBills: number;
   recurring: RecurringSummary[];
   backtest: Backtest | null;
+  /** Set when a learned model produced this forecast (for example "ensemble"); absent otherwise. */
+  method?: string;
+  /** Range the balance is likely to stay inside, one point per day like `projected_balance`. */
+  band?: { lower: ForecastPoint[]; upper: ForecastPoint[] } | null;
 };
 
 export type ForecastSnapshot = {

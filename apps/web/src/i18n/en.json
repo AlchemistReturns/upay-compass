@@ -902,5 +902,27 @@
       "forecast_sub": "Each person's latest 30-day test",
       "forecast_text": "of {{people}} people had a forecast with less error than repeating the same days from four weeks earlier."
     }
+  },
+  "tips": {
+    "title": "Tip of the day",
+    "for_you": "From your numbers",
+    "general": "Money habit",
+    "go": "Take me there",
+    "ask": "Ask your coach",
+    "coach_question": "Explain this tip with my own numbers: {{tip}}",
+    "forecast_dip": "Your balance may dip to {{amount}} around {{day}}. Moving a bill or setting money aside now can avoid it.",
+    "health_save_more": "Set aside a small amount today, even Rs 50. Saving on purpose is the biggest part of your score.",
+    "health_set_budgets": "Pick the category you spend most on and give it a budget. It takes a minute.",
+    "health_fix_budget": "A budget is over its limit. Check it today and slow down in that category.",
+    "health_build_buffer": "Build your emergency buffer. Money for a few months of essentials keeps one bad month from hurting.",
+    "health_smooth_income": "Your income swings between months. Put part of the good weeks aside to cover the lean ones.",
+    "generic_0": "Pay yourself first: move money to savings the day income arrives, not what is left at month end.",
+    "generic_1": "Before a non-essential purchase, wait 24 hours. Many wants fade by tomorrow.",
+    "generic_2": "Pay bills a day or two early so a late fee never surprises you.",
+    "generic_3": "Review last week's spending once. Noticing is half of changing.",
+    "generic_4": "Aim for one month of essential spending in savings first, then build toward three.",
+    "generic_5": "Round-ups add up. Small amounts saved every day beat large amounts saved rarely.",
+    "generic_6": "Never share your PIN or OTP with anyone, even someone who says they are from support.",
+    "generic_7": "Cash out only what you need. Paying digitally keeps a record you can learn from."
   }
 }

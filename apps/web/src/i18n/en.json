@@ -641,7 +641,9 @@
     "ai_stop_coach": "Stop sharing numbers",
     "ai_stop_voice": "Stop sharing voice",
     "voice_stop_confirm": "Stop sending your voice to the AI? Voice features will ask for your permission again next time.",
-    "toast_voice_off": "Voice sharing is off"
+    "toast_voice_off": "Voice sharing is off",
+    "more": "Your data and tools",
+    "import_hint": "Bring in a upay statement (CSV)"
   },
   "appearance": {
     "title": "Appearance",

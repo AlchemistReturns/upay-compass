@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useOnline } from "@/features/pwa/use-online";
+import { demoMark } from "@/features/demo/demo-timer";
 import { CommandCard } from "./command-card";
 import { CommandError, parseCommand, type CommandResult } from "./use-voice-command";
 import { useRunCommand, type RunOutcome } from "./use-run-command";
@@ -54,6 +55,7 @@ export function VoiceSheet({
   async function submit(text: string) {
     const said = text.trim();
     if (!said) return;
+    demoMark("spoke");
     setStep({ kind: "parsing", text: said });
     if (!(await consent.ensure())) {
       setStep({ kind: "ask" });
@@ -64,6 +66,7 @@ export function VoiceSheet({
       if (result.status === "rejected") {
         setStep({ kind: "refused", text: said, reason: result.reason });
       } else if (result.command.intent === "ask_coach") {
+        demoMark("understood");
         try {
           sessionStorage.setItem(COACH_PREFILL_KEY, result.command.question);
         } catch {
@@ -72,6 +75,7 @@ export function VoiceSheet({
         onOpenChange(false);
         router.push("/coach");
       } else {
+        demoMark("understood");
         setStep({ kind: "review", result });
       }
     } catch (e) {
@@ -120,6 +124,7 @@ export function VoiceSheet({
             }
           : undefined,
       );
+      demoMark("confirmed");
       onOpenChange(false);
     } catch {
       toast.error(t("common.error"));

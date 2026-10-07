@@ -13,6 +13,7 @@ import {
   Scale,
   Sparkles,
   Target,
+  Users,
   Wallet,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -276,6 +277,25 @@ function BalancePanel({
   );
 }
 
+/** Entry point to the community comparison from home. */
+function CommunityLink() {
+  const { t } = useTranslation();
+  return (
+    <Link href="/community" className="finance-card tap-soft flex items-center gap-3 p-4">
+      <span className="icon-chip">
+        <Users className="size-5" aria-hidden />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[15px] font-bold">{t("community.open")}</span>
+        <span className="text-muted-foreground block truncate text-[13px]">
+          {t("community.open_hint")}
+        </span>
+      </span>
+      <ArrowRight className="ic-forward text-muted-foreground size-5" aria-hidden />
+    </Link>
+  );
+}
+
 /** Entry point to the coach from home, so asking a question is one tap from the balance. */
 function AskCoach() {
   const { t } = useTranslation();
@@ -438,6 +458,7 @@ export function Dashboard() {
             />
             <div className="grid gap-3.5 lg:grid-cols-2">
               <AskCoach />
+              <CommunityLink />
               <InstallPrompt />
             </div>
             <DailyTip />

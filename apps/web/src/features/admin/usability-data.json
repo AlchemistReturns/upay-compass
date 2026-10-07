@@ -1,0 +1,216 @@
+{
+  "tasks": {
+    "generatedAt": "2026-10-07T04:25:56.976Z",
+    "rows": [
+      {
+        "task": "addPayment",
+        "mode": "tap",
+        "total": 4,
+        "reference": 8,
+        "fewerPct": 50
+      },
+      {
+        "task": "addPayment",
+        "mode": "voice",
+        "total": 3,
+        "reference": 8,
+        "fewerPct": 63
+      },
+      {
+        "task": "askCoach",
+        "mode": "tap",
+        "total": 3,
+        "reference": 5,
+        "fewerPct": 40
+      },
+      {
+        "task": "askCoach",
+        "mode": "voice",
+        "total": 2,
+        "reference": 5,
+        "fewerPct": 60
+      },
+      {
+        "task": "setBudget",
+        "mode": "tap",
+        "total": 5,
+        "reference": 7,
+        "fewerPct": 29
+      },
+      {
+        "task": "setBudget",
+        "mode": "voice",
+        "total": 3,
+        "reference": 7,
+        "fewerPct": 57
+      },
+      {
+        "task": "createGoal",
+        "mode": "tap",
+        "total": 5,
+        "reference": 7,
+        "fewerPct": 29
+      },
+      {
+        "task": "createGoal",
+        "mode": "voice",
+        "total": 3,
+        "reference": 7,
+        "fewerPct": 57
+      },
+      {
+        "task": "addToGoal",
+        "mode": "tap",
+        "total": 4,
+        "reference": 6,
+        "fewerPct": 33
+      },
+      {
+        "task": "addToGoal",
+        "mode": "voice",
+        "total": 3,
+        "reference": 6,
+        "fewerPct": 50
+      }
+    ]
+  },
+  "personas": {
+    "generatedAt": "2026-10-07T04:25:57.969Z",
+    "runsPerCell": 2000,
+    "seed": 20261007,
+    "overall": {
+      "tap": {
+        "completionPct": 97.1,
+        "avgSteps": 4.79,
+        "avgErrors": 0.65
+      },
+      "voice": {
+        "completionPct": 98.8,
+        "avgSteps": 3.23,
+        "avgErrors": 0.45
+      }
+    },
+    "personas": [
+      {
+        "id": "low_literacy_farmer",
+        "name": "Low-literacy farmer",
+        "lang": "bn",
+        "tap": {
+          "completionPct": 91.5,
+          "avgSteps": 4.89,
+          "avgErrors": 0.86
+        },
+        "voice": {
+          "completionPct": 95.8,
+          "avgSteps": 3.34,
+          "avgErrors": 0.6
+        }
+      },
+      {
+        "id": "rural_homemaker",
+        "name": "Rural homemaker",
+        "lang": "bn",
+        "tap": {
+          "completionPct": 95.5,
+          "avgSteps": 5.17,
+          "avgErrors": 1.06
+        },
+        "voice": {
+          "completionPct": 99.2,
+          "avgSteps": 3.36,
+          "avgErrors": 0.58
+        }
+      },
+      {
+        "id": "gig_worker",
+        "name": "Gig worker",
+        "lang": "bn",
+        "tap": {
+          "completionPct": 98.7,
+          "avgSteps": 4.6,
+          "avgErrors": 0.43
+        },
+        "voice": {
+          "completionPct": 98.2,
+          "avgSteps": 3.18,
+          "avgErrors": 0.41
+        }
+      },
+      {
+        "id": "village_shopkeeper",
+        "name": "Village shopkeeper",
+        "lang": "bn",
+        "tap": {
+          "completionPct": 98.7,
+          "avgSteps": 4.9,
+          "avgErrors": 0.73
+        },
+        "voice": {
+          "completionPct": 99.5,
+          "avgSteps": 3.29,
+          "avgErrors": 0.5
+        }
+      },
+      {
+        "id": "older_adult",
+        "name": "Older adult",
+        "lang": "bn",
+        "tap": {
+          "completionPct": 93,
+          "avgSteps": 5.29,
+          "avgErrors": 1.23
+        },
+        "voice": {
+          "completionPct": 97.8,
+          "avgSteps": 3.52,
+          "avgErrors": 0.76
+        }
+      },
+      {
+        "id": "student",
+        "name": "Student",
+        "lang": "en",
+        "tap": {
+          "completionPct": 99.9,
+          "avgSteps": 4.33,
+          "avgErrors": 0.13
+        },
+        "voice": {
+          "completionPct": 99.8,
+          "avgSteps": 2.97,
+          "avgErrors": 0.18
+        }
+      },
+      {
+        "id": "salaried_employee",
+        "name": "Salaried employee",
+        "lang": "en",
+        "tap": {
+          "completionPct": 100,
+          "avgSteps": 4.42,
+          "avgErrors": 0.22
+        },
+        "voice": {
+          "completionPct": 100,
+          "avgSteps": 2.98,
+          "avgErrors": 0.18
+        }
+      },
+      {
+        "id": "small_business_owner",
+        "name": "Small-business owner",
+        "lang": "bn",
+        "tap": {
+          "completionPct": 99.5,
+          "avgSteps": 4.7,
+          "avgErrors": 0.51
+        },
+        "voice": {
+          "completionPct": 99.8,
+          "avgSteps": 3.19,
+          "avgErrors": 0.39
+        }
+      }
+    ]
+  }
+}

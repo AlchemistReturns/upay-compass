@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Menu } from "@base-ui/react/menu";
-import { Activity, Award, ChevronRight, LogOut, ShieldCheck, UserRound } from "lucide-react";
+import { Activity, Award, ChevronRight, LogOut, ShieldCheck, Timer, UserRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -10,6 +10,8 @@ import { useAuth } from "@/features/auth/auth-provider";
 import { Avatar, formatPhone } from "@/features/profile/avatar";
 import { useProfile } from "@/features/profile/use-profile";
 import { NAV_FORWARD } from "@/components/page-transition";
+import { Switch } from "@/components/switch";
+import { setDemoEnabled, useDemoEnabled } from "@/features/demo/demo-timer";
 import { ThemeSwitch } from "@/components/theme-switch";
 
 const ITEM =
@@ -28,6 +30,7 @@ export function UserMenu({
 }) {
   const { t, i18n } = useTranslation();
   const { userId, signOut } = useAuth();
+  const demoOn = useDemoEnabled();
   const profile = useProfile(userId);
   const p = profile.data;
   const name = p?.full_name?.trim() || null;
@@ -113,6 +116,15 @@ export function UserMenu({
                 <span className="flex-1">{t("admin.open")}</span>
                 <ChevronRight className="ic-forward text-muted-foreground size-4" aria-hidden />
               </Menu.LinkItem>
+            )}
+
+            {/* not a menu item: flipping the switch should not close the menu */}
+            {p?.role === "admin" && (
+              <div className="flex min-h-11 items-center gap-3 px-3 text-sm font-medium">
+                <Timer className="text-muted-foreground size-[18px]" aria-hidden />
+                <span className="flex-1">{t("demo.timer")}</span>
+                <Switch checked={demoOn} onChange={setDemoEnabled} label={t("demo.timer")} />
+              </div>
             )}
 
             <Menu.Separator className="bg-border mx-2 my-1.5 h-px" />

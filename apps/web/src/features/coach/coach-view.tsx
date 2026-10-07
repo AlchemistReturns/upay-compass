@@ -35,6 +35,7 @@ import { haptic } from "@/lib/haptics";
 import { useAuth } from "@/features/auth/auth-provider";
 import { useProfile } from "@/features/profile/use-profile";
 import { RecommendCard } from "./recommend-card";
+import { CoachTabs } from "./coach-tabs";
 import { ConsentCard } from "./consent-card";
 import { useClearChat, useCoachChat, useCoachHistory, type CoachMessage } from "./use-coach";
 import { MicIcon } from "@/features/voice/mic-icon";
@@ -427,6 +428,8 @@ export function CoachView() {
           )
         }
       />
+
+      <CoachTabs active="chat" />
 
       {profile.isPending && <LoadingCards rows={2} />}
 

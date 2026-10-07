@@ -2,19 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, Gauge, LineChart, ReceiptText, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Logo } from "@/components/compass";
 import { NAV_ITEMS, isActivePath } from "@/components/bottom-nav";
 import { NAV_TAB } from "@/components/page-transition";
 import { cn } from "@/lib/utils";
-
-const INSIGHTS = [
-  { href: "/transactions", label: "nav.activity", icon: ReceiptText },
-  { href: "/forecast", label: "forecast.title", icon: LineChart },
-  { href: "/score", label: "score.title", icon: Gauge },
-  { href: "/nudges", label: "nudges.title", icon: Bell },
-] as const;
 
 function Item({
   href,
@@ -65,18 +58,6 @@ export function AppSidebar() {
             key={href}
             href={href}
             label={t(`nav.${key}`)}
-            icon={icon}
-            active={isActivePath(pathname, href)}
-          />
-        ))}
-        <p className="text-muted-foreground mt-5 mb-1.5 px-3.5 text-[11px] font-bold tracking-[0.08em] uppercase">
-          {t("nav.insights")}
-        </p>
-        {INSIGHTS.map(({ href, label, icon }) => (
-          <Item
-            key={href}
-            href={href}
-            label={t(label)}
             icon={icon}
             active={isActivePath(pathname, href)}
           />

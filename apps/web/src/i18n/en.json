@@ -13,7 +13,8 @@
     "insights": "Insights",
     "activity": "Activity",
     "edu_title": "Educational guidance",
-    "edu_body": "Compass explains your own numbers. It is not investment, loan or insurance advice."
+    "edu_body": "Compass explains your own numbers. It is not investment, loan or insurance advice.",
+    "plan": "Plan"
   },
   "language": {
     "label": "Language",
@@ -182,7 +183,9 @@
     "voice_problem_too_short": "That was too short to hear. Try again.",
     "voice_problem_too_long": "That recording was too long. Keep it under 30 seconds.",
     "voice_problem_failed": "We could not turn that into text. Try again, or type your question.",
-    "consent_item_learn": "Personalized lessons from the Learn page use this same consent: a few counts, scores and days (never names or payments) are sent to write them."
+    "consent_item_learn": "Personalized lessons from the Learn page use this same consent: a few counts, scores and days (never names or payments) are sent to write them.",
+    "sections": "Coach sections",
+    "tab_chat": "Chat"
   },
   "learn": {
     "title": "Learn",
@@ -1042,5 +1045,12 @@
     "err_unauthorized": "upay did not accept the connection. Please try again later.",
     "err_not_found": "upay has no account for your phone number.",
     "err_unavailable": "upay is not responding right now. Please try again later."
+  },
+  "plan": {
+    "title": "Plan",
+    "subtitle": "Budgets, goals and savings in one place",
+    "sections": "Plan sections",
+    "budgets": "Budgets",
+    "goals": "Goals and savings"
   }
 }

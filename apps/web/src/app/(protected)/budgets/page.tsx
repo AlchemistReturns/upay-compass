@@ -1,5 +1,6 @@
-import { BudgetsView } from "@/features/budgets/budgets-view";
+import { redirect } from "next/navigation";
 
+// Budgets now live under Plan; old links and bookmarks still work.
 export default function Page() {
-  return <BudgetsView />;
+  redirect("/plan?tab=budgets");
 }

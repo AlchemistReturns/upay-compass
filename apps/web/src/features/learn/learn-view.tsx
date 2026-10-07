@@ -12,9 +12,10 @@ import { cn } from "@/lib/utils";
 import { useCompletedModules, useModules } from "./use-learn";
 import { useRecommendations } from "./use-recommendations";
 import { ForYouSection } from "./for-you-section";
+import { CoachTabs } from "@/features/coach/coach-tabs";
 import { NAV_FORWARD } from "@/components/page-transition";
 
-export function LearnView() {
+export function LearnView({ embedded = false }: { embedded?: boolean } = {}) {
   const { t, i18n } = useTranslation();
   const bn = i18n.language === "bn";
   const online = useOnline();
@@ -31,7 +32,12 @@ export function LearnView() {
 
   return (
     <>
-      <PageHeader title={t("learn.title")} subtitle={t("learn.disclaimer")} />
+      {embedded ? (
+        <p className="text-muted-foreground px-1 pb-4 text-sm">{t("learn.disclaimer")}</p>
+      ) : (
+        <PageHeader title={t("learn.title")} subtitle={t("learn.disclaimer")} />
+      )}
+      <CoachTabs active="learn" />
       <div className="space-y-7 pb-4">
         <div className="grid gap-3 lg:grid-cols-2">
           <section className="balance-panel rise flex items-center gap-5 p-5 sm:p-6">

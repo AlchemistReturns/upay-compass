@@ -1,4 +1,4 @@
-import type { Transaction } from "@compass/shared";
+import type { FeedBatch, FeedContext, Transaction, TransactionFeed } from "@compass/shared";
 import { DEFAULT_DAYS, DEFAULT_SEED, generateTransactions } from "./generate.ts";
 import { todayInDhaka } from "./dates.ts";
 import { PERSONA_CONFIGS, type Persona } from "./personas.ts";
@@ -29,13 +29,11 @@ export function walletOpeningBalance(
   return Math.max(PERSONA_CONFIGS[persona].openingBalance, needed);
 }
 
-/** Swappable feed interface. A real upay API implements this later. */
-export interface TransactionFeed {
-  getTransactions(userId: string, since: Date): Promise<Transaction[]>;
-}
-
 /** Simulated upay feed: deterministic history for one persona, ending today (Dhaka time). */
 export class SimulatedFeed implements TransactionFeed {
+  readonly id = "simulated" as const;
+  readonly simulated = true;
+
   constructor(
     private readonly persona: Persona,
     private readonly options: { seed?: string | number; now?: Date; days?: number } = {},
@@ -48,8 +46,8 @@ export class SimulatedFeed implements TransactionFeed {
     return this.opening ?? PERSONA_CONFIGS[this.persona].openingBalance;
   }
 
-  // The simulated feed ignores userId: every user of a persona sees the same demo history.
-  async getTransactions(_userId: string, since: Date): Promise<Transaction[]> {
+  /** The history as generated, before any `since` filter. */
+  private generate(): Transaction[] {
     const all = generateTransactions({
       persona: this.persona,
       seed: this.options.seed ?? DEFAULT_SEED,
@@ -57,6 +55,16 @@ export class SimulatedFeed implements TransactionFeed {
       endDay: todayInDhaka(this.options.now),
     });
     this.opening = walletOpeningBalance(this.persona, all);
-    return all.filter((t) => new Date(t.occurred_at) >= since);
+    return all;
+  }
+
+  // The simulated feed ignores the user: every user of a persona sees the same demo history.
+  async getTransactions(_userId: string, since: Date): Promise<Transaction[]> {
+    return this.generate().filter((t) => new Date(t.occurred_at) >= since);
+  }
+
+  async pull(_ctx: FeedContext, since: Date): Promise<FeedBatch> {
+    const records = this.generate().filter((t) => new Date(t.occurred_at) >= since);
+    return { records, openingBalance: this.openingBalance };
   }
 }

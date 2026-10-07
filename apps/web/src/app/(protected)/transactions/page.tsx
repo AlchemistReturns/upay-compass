@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Plus, ReceiptText, Search, X } from "lucide-react";
+import { Plus, ReceiptText, Search, Upload, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { PageHeader, TOOLBAR_BUTTON } from "@/components/page-header";
 import { EmptyState, ErrorState, LoadingCards } from "@/components/compass";
@@ -79,15 +79,26 @@ export default function TransactionsPage() {
         back="/"
         subtitle={list.data ? t("transactions.count", { count: list.data.length }) : undefined}
         actions={
-          <Link
-            href="/transactions/new"
-            transitionTypes={NAV_FORWARD}
-            className={TOOLBAR_BUTTON}
-            aria-label={t("transactions.add")}
-            title={t("transactions.add")}
-          >
-            <Plus className="ic-add size-5" aria-hidden />
-          </Link>
+          <>
+            <Link
+              href="/transactions/import"
+              transitionTypes={NAV_FORWARD}
+              className={TOOLBAR_BUTTON}
+              aria-label={t("import.title")}
+              title={t("import.title")}
+            >
+              <Upload className="ic size-5" aria-hidden />
+            </Link>
+            <Link
+              href="/transactions/new"
+              transitionTypes={NAV_FORWARD}
+              className={TOOLBAR_BUTTON}
+              aria-label={t("transactions.add")}
+              title={t("transactions.add")}
+            >
+              <Plus className="ic-add size-5" aria-hidden />
+            </Link>
+          </>
         }
       />
 

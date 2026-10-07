@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { categorize, transactionSchema } from "@compass/shared";
+import { categorize, checkFeedBatch, transactionSchema } from "@compass/shared";
 import {
   PERSONAS,
   PERSONA_CONFIGS,
@@ -97,5 +97,20 @@ describe("SimulatedFeed", () => {
 
   it("exposes the persona's opening balance", () => {
     expect(new SimulatedFeed("salaried").openingBalance).toBe(31400);
+  });
+});
+
+describe("SimulatedFeed as a TransactionFeed", () => {
+  const now = new Date("2026-10-02T12:00:00Z");
+  const ctx = { userId: "u", phone: null };
+
+  it("passes the feed conformance check", async () => {
+    const feed = new SimulatedFeed("student", { now });
+    const batch = await feed.pull(ctx, new Date(0));
+    expect(feed.id).toBe("simulated");
+    expect(feed.simulated).toBe(true);
+    expect(batch.records.length).toBeGreaterThan(0);
+    // the simulator also fills in the rest of today, so check against the end of the day
+    expect(checkFeedBatch(batch, new Date("2026-10-03T00:00:00Z"))).toEqual([]);
   });
 });

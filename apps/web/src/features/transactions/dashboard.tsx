@@ -39,6 +39,7 @@ import { useRealtimeInvalidate } from "@/features/realtime/use-realtime-invalida
 import { useSavings } from "@/features/goals/use-savings";
 import { GetStarted } from "@/features/onboarding/get-started";
 import { VoiceTryButton } from "@/features/voice/voice-command-button";
+import { DailyTip } from "@/features/tips/daily-tip";
 import { InstallPrompt } from "@/features/pwa/install-prompt";
 import { useAutoNudges } from "@/features/nudges/use-auto-nudges";
 import { CategoryBars } from "./category-bars";
@@ -445,6 +446,7 @@ export function Dashboard() {
               <AskCoach />
               <InstallPrompt />
             </div>
+            <DailyTip />
             {hasSimulated && (
               <p className="text-muted-foreground px-1 text-xs">{t("common.simulated_note")}</p>
             )}

@@ -31,6 +31,7 @@ import { useOnline } from "@/features/pwa/use-online";
 import { PasskeyCard } from "@/features/auth/passkey-card";
 import { NAV_FORWARD } from "@/components/page-transition";
 import { AiActivityCard } from "./ai-activity-card";
+import { PrivacyCard } from "./privacy-card";
 import { Avatar, formatPhone } from "./avatar";
 import { useProfile, useUpdateProfile, type Profile } from "./use-profile";
 
@@ -265,6 +266,8 @@ export function ProfileView() {
           <MoreLinks admin={p.role === "admin"} />
 
           <AiActivityCard profile={p} />
+
+          <PrivacyCard />
 
           <Button variant="destructive" className="w-full" onClick={() => void signOut()}>
             <LogOut className="ic-forward size-4" aria-hidden />

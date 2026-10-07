@@ -17,6 +17,7 @@ export function ConsentCard({ onDone }: { onDone: () => void }) {
     { key: "coach.consent_item_numbers", Icon: Check, tone: "bg-positive-soft text-positive" },
     { key: "coach.consent_item_goals", Icon: Check, tone: "bg-positive-soft text-positive" },
     { key: "coach.consent_item_learn", Icon: Check, tone: "bg-positive-soft text-positive" },
+    { key: "coach.consent_item_merchant", Icon: Check, tone: "bg-positive-soft text-positive" },
     { key: "coach.consent_item_never", Icon: EyeOff, tone: "bg-secondary text-primary" },
   ];
   return (

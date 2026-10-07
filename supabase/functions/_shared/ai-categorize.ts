@@ -15,6 +15,23 @@ const BATCH_SIZE = 40;
 const TIMEOUT_MS = 15_000;
 const DEFAULT_MODEL = "gpt-4o-mini";
 
+/**
+ * Whether the person agreed to share data with the AI (the same `coach_consent_at` the coach and
+ * the personalized lessons use). Without it, payments the rules cannot place are not sent to the
+ * model; they are filed under Other and flagged for review. `client` acts as the person (RLS).
+ */
+export async function hasAiConsent(
+  client: { from: (t: string) => any },
+  userId: string,
+): Promise<boolean> {
+  const { data } = await client
+    .from("profiles")
+    .select("coach_consent_at")
+    .eq("id", userId)
+    .single();
+  return Boolean(data?.coach_consent_at);
+}
+
 /** Phone numbers and other long digit runs never leave the server. */
 export function redact(text: string): string {
   return text.replace(/\+?\d[\d\s-]{6,}\d/g, "[number]");

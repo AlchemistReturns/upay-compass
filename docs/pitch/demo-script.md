@@ -4,14 +4,14 @@ Before going on stage: sign in once, open **Home**, and press the **Gig** button
 
 | Time | Say | Do |
 |---|---|---|
-| 0:00 | "Most people in Bangladesh pay with upay but never see where the money goes." | Home: wallet balance and the spending-by-category bars |
-| 0:20 | "Every payment is sorted automatically. When it is wrong, one tap fixes it, and it remembers." | Transactions, open one, change its category, save |
-| 0:40 | "Budgets warn you before you overspend." | Budgets, add Food with a small limit (for example Rs 50), save. The alert appears in the bell |
-| 1:00 | "Goals, with round-ups: every payment rounds up to the next ten and the change goes to your goal." | Goals, create a goal, switch round-ups on |
+| 0:00 | "Most people in Bangladesh pay with upay but never see where the money goes." | Home: wallet balance, then Activity for the spending-by-category bars |
+| 0:20 | "Every payment is sorted automatically. When it is wrong, one tap fixes it, and it remembers." | Activity, open one, change its category, save |
+| 0:40 | "Budgets warn you before you overspend." | Plan > Budgets, add Food with a small limit (for example Rs 50), save. The alert appears in the bell |
+| 1:00 | "Goals, with round-ups: every payment rounds up to the next ten and the change goes to your goal." | Plan > Goals and savings, create a goal, switch round-ups on |
 | 1:20 | "A health score from four simple measures, calculated by code, with the reason for each." | Home, Financial health card, show the breakdown |
 | 1:30 | "Each day it shows one tip from your own numbers, and the coach can explain it." | Home, Tip of the day card: tap Ask your coach |
-| 1:40 | "It looks ahead. This gig worker's balance will dip below the safety line before the bike payment." | Forecast: the warning and the chart |
-| 2:00 | "And a coach that answers in your language, using your real numbers." | Coach, tap I agree, ask in Bangla: "আমি কি ৫,০০০ টাকার একটি ফোন কিনতে পারি?" |
+| 1:40 | "It looks ahead. This gig worker's balance will dip below the safety line before the bike payment." | Home, tap the "Needs attention" forecast card: the warning and the chart |
+| 2:00 | "And a coach that answers in your language, using your real numbers." | Coach > Chat, tap I agree, ask in Bangla: "আমি কি ৫,০০০ টাকার একটি ফোন কিনতে পারি?" |
 | 2:30 | "The app computes the verdict; the AI only explains it. It will not give investment or loan advice." | Point at the answer and the disclaimer |
 | 2:40 | "It installs like an app and still opens with no signal." | Show the install card, switch to airplane mode, reload: the dashboard is still there |
 | 2:50 | "For upay: anonymous insights about groups of people, never one person." | Admin view (sign in as the admin phone, or show the screenshot) |

@@ -318,7 +318,10 @@
     "unlock": "Unlock",
     "wrong_one": "Wrong PIN. 1 attempt left.",
     "signed_out": "Too many wrong attempts. Please sign in again.",
-    "wrong_other": "Wrong PIN. {{count}} attempts left."
+    "wrong_other": "Wrong PIN. {{count}} attempts left.",
+    "wait": "Too many wrong tries. Try again in {{time}}.",
+    "passkey": "Use fingerprint or face",
+    "passkey_failed": "Could not unlock with fingerprint or face. Use your PIN."
   },
   "onboarding": {
     "title": "Let's set you up",
@@ -987,5 +990,15 @@
     "learning_hint": "Average number of lessons finished.",
     "open": "See how you compare",
     "open_hint": "Spending, savings and score, next to everyone's"
+  },
+  "passkey": {
+    "title": "Fingerprint or face unlock",
+    "hint": "Unlock the app with your fingerprint, face or screen lock instead of typing the PIN. Your biometric never leaves this phone, and the PIN still works.",
+    "add": "Turn on for this device",
+    "this_device": "This device",
+    "added": "Added {{date}}",
+    "remove": "Remove",
+    "unsupported": "This browser or device does not support fingerprint or face unlock.",
+    "failed": "Could not set this up. Please try again."
   }
 }

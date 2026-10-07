@@ -13,10 +13,13 @@ import { LOCK_AFTER_HIDDEN_MS } from "@compass/shared";
 import { supabase } from "@/lib/supabase";
 import { readPinFlag, readUnlockFlag, writePinFlag, writeUnlockFlag } from "@/lib/unlock-flag";
 import { useAuth } from "./auth-provider";
+import { authenticateWithPasskey, type PasskeyResult } from "./passkey";
+import { usePasskeys } from "./use-passkeys";
 
 export type UnlockResult =
   | { ok: true }
   | { ok: false; reason: "wrong"; attemptsLeft: number }
+  | { ok: false; reason: "locked"; lockedSeconds: number; attemptsLeft: number }
   | { ok: false; reason: "reset" }
   | { ok: false; reason: "error" };
 
@@ -28,13 +31,22 @@ type LockContextValue = {
   locked: boolean;
   setPin: (pin: string) => Promise<void>;
   unlock: (pin: string) => Promise<UnlockResult>;
+  /** Whether this person has at least one passkey (fingerprint / face unlock) registered. */
+  hasPasskey: boolean;
+  /** Unlock with fingerprint, face or screen lock instead of the PIN. */
+  unlockWithPasskey: () => Promise<PasskeyResult>;
   /** Re-read the PIN state after an error. */
   reload: () => void;
 };
 
 const LockContext = createContext<LockContextValue | null>(null);
 
-type VerifyPinResponse = { ok: boolean; attempts_left: number; reset: boolean };
+type VerifyPinResponse = {
+  ok: boolean;
+  attempts_left: number;
+  reset: boolean;
+  locked_seconds?: number;
+};
 
 export function LockProvider({ children }: { children: React.ReactNode }) {
   const { userId, signOut } = useAuth();
@@ -121,16 +133,31 @@ export function LockProvider({ children }: { children: React.ReactNode }) {
         await signOut();
         return { ok: false, reason: "reset" };
       }
-      return { ok: false, reason: "wrong", attemptsLeft: res.attempts_left };
+      const lockedSeconds = res.locked_seconds ?? 0;
+      return lockedSeconds > 0 && res.attempts_left >= 0
+        ? { ok: false, reason: "locked", lockedSeconds, attemptsLeft: res.attempts_left }
+        : { ok: false, reason: "wrong", attemptsLeft: res.attempts_left };
     },
     [signOut],
   );
 
+  const passkeys = usePasskeys();
+  const hasPasskey = (passkeys.data?.length ?? 0) > 0;
+
+  const unlockWithPasskey = useCallback(async (): Promise<PasskeyResult> => {
+    const result = await authenticateWithPasskey();
+    if (result === "ok") {
+      writeUnlockFlag(true);
+      setLocked(false);
+    }
+    return result;
+  }, []);
+
   const reload = useCallback(() => setReloadKey((k) => k + 1), []);
 
   const value = useMemo(
-    () => ({ pinState, locked, setPin, unlock, reload }),
-    [pinState, locked, setPin, unlock, reload],
+    () => ({ pinState, locked, setPin, unlock, hasPasskey, unlockWithPasskey, reload }),
+    [pinState, locked, setPin, unlock, hasPasskey, unlockWithPasskey, reload],
   );
 
   return <LockContext.Provider value={value}>{children}</LockContext.Provider>;

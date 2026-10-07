@@ -33,5 +33,5 @@ export const otpSchema = z.string().regex(/^\d{6}$/, "invalid_otp");
 
 export const pinSchema = z.string().regex(/^\d{4,6}$/, "invalid_pin");
 
-export const MAX_PIN_ATTEMPTS = 5;
+export const MAX_PIN_ATTEMPTS = 8;
 export const LOCK_AFTER_HIDDEN_MS = 2 * 60 * 1000;

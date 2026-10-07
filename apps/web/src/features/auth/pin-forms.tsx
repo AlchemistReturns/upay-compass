@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Loader2, LockKeyhole } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Fingerprint, Loader2, LockKeyhole } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { pinSchema } from "@compass/shared";
 import { BrandMark } from "@/components/compass";
@@ -138,14 +138,55 @@ export function SetPinForm() {
   );
 }
 
+/** "1:05" style countdown for the wait between PIN tries. */
+function formatWait(seconds: number) {
+  const m = Math.floor(seconds / 60);
+  const s = String(seconds % 60).padStart(2, "0");
+  return `${m}:${s}`;
+}
+
 export function LockScreen() {
   const { t } = useTranslation();
-  const { unlock } = useLock();
+  const { unlock, hasPasskey, unlockWithPasskey } = useLock();
   const { signOut } = useAuth();
   const [pin, setPin] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  // After a few wrong tries the server makes the person wait; count it down here.
+  const [waitUntil, setWaitUntil] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+  const waitLeft = waitUntil ? Math.max(0, Math.ceil((waitUntil - now) / 1000)) : 0;
+
+  useEffect(() => {
+    if (!waitUntil) return;
+    const id = setInterval(() => {
+      const t = Date.now();
+      setNow(t);
+      if (t >= waitUntil) {
+        setWaitUntil(null);
+        setError(null);
+      }
+    }, 500);
+    return () => clearInterval(id);
+  }, [waitUntil]);
+
+  // Offer fingerprint / face as soon as the screen shows (once); the PIN stays as the fallback.
+  const [bioBusy, setBioBusy] = useState(false);
+  const bioTried = useRef(false);
+  async function tryBiometric() {
+    setBioBusy(true);
+    setError(null);
+    const r = await unlockWithPasskey();
+    setBioBusy(false);
+    if (r === "error") setError(t("lock.passkey_failed"));
+  }
+  useEffect(() => {
+    if (!hasPasskey || bioTried.current) return;
+    bioTried.current = true;
+    void tryBiometric();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasPasskey]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -155,7 +196,10 @@ export function LockScreen() {
     setPin("");
     if (result.ok) return;
     setAttempt((n) => n + 1);
-    if (result.reason === "reset") setError(t("lock.signed_out"));
+    if (result.reason === "locked") {
+      setNow(Date.now());
+      setWaitUntil(Date.now() + result.lockedSeconds * 1000);
+    } else if (result.reason === "reset") setError(t("lock.signed_out"));
     else if (result.reason === "wrong") setError(t("lock.wrong", { count: result.attemptsLeft }));
     else setError(t("common.error"));
   }
@@ -186,21 +230,43 @@ export function LockScreen() {
             dark
             invalid={attempt > 0 && Boolean(error)}
           />
-          {error && (
+          {waitLeft > 0 ? (
             <p role="alert" className="text-center text-sm font-semibold text-[#ffb59e]">
-              {error}
+              {t("lock.wait", { time: formatWait(waitLeft) })}
             </p>
+          ) : (
+            error && (
+              <p role="alert" className="text-center text-sm font-semibold text-[#ffb59e]">
+                {error}
+              </p>
+            )
           )}
           <Button
             type="submit"
             variant="lime"
             size="lg"
             className="w-full"
-            disabled={busy || pin.length < 4}
+            disabled={busy || pin.length < 4 || waitLeft > 0}
           >
             {busy && <Loader2 className="animate-spin" aria-hidden />}
             {t("lock.unlock")}
           </Button>
+          {hasPasskey && (
+            <Button
+              type="button"
+              variant="darkGhost"
+              className="w-full"
+              disabled={bioBusy}
+              onClick={() => void tryBiometric()}
+            >
+              {bioBusy ? (
+                <Loader2 className="animate-spin" aria-hidden />
+              ) : (
+                <Fingerprint aria-hidden />
+              )}
+              {t("lock.passkey")}
+            </Button>
+          )}
           <Button
             type="button"
             variant="darkGhost"

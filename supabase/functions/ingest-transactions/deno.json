@@ -3,6 +3,8 @@
     "zod": "npm:zod@3.25.76",
     "@supabase/supabase-js": "npm:@supabase/supabase-js@2",
     "@compass/shared": "../../../packages/shared/src/index.ts",
-    "@compass/upay-sim": "../../../adapters/upay-sim/src/index.ts"
+    "@compass/upay-sim": "../../../adapters/upay-sim/src/index.ts",
+    "@compass/upay-statement": "../../../adapters/upay-statement/src/index.ts",
+    "@compass/upay-api": "../../../adapters/upay-api/src/index.ts"
   }
 }

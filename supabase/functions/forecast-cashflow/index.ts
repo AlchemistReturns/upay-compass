@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
   if (auth instanceof Response) return auth;
 
   try {
-    const { forecast, backtest } = await refreshForecast(auth.client, auth.user.id);
+    const { forecast, backtest, ml } = await refreshForecast(auth.client, auth.user.id);
     return json({
       insufficient: forecast.insufficient,
       confidence: forecast.confidence,
@@ -21,6 +21,7 @@ Deno.serve(async (req) => {
       riskDays: forecast.risks.length,
       lowest: forecast.lowest,
       backtest,
+      ml,
     });
   } catch (e) {
     return json(

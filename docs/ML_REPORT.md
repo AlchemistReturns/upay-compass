@@ -136,6 +136,20 @@ Monitoring: every model run writes an event (`ml-forecast`, `ml-categorize`) wit
 
 The forecast and the categorizer are on unless you switch them off (`supabase secrets set ML_FORECAST=off ML_CATEGORIZE=off`). To check them on real data first, set `shadow`, run the demo, read the stored comparisons, then remove the setting. The migration must be applied before the categorizer runs, because it stores a new category source.
 
+### Checking a deployment
+
+`forecast-cashflow` returns an `ml` field with the mode it ran in and the method that answered. In the browser console on the Forecast page (or in the function logs) it reads:
+
+| `ml` in the response | Meaning |
+|---|---|
+| missing | an old deployment of the function: redeploy (`pnpm deploy:functions`) |
+| `mode: "off"` | the switch is off: remove the `ML_FORECAST=off` secret |
+| `mode: "on", method: "heuristic"` | the model declined (under 42 days of history, or it failed) and the plain forecast was used |
+| `mode: "on", method: "ensemble"` | the model is running; the stored forecast has `details.method` and a `band`, and the chart shows the range |
+| `mode: "shadow"` | the plain forecast is shown; the model's version is in `details.shadow` and `shadowMethod` |
+
+`pnpm deploy:functions` deploys every function in `supabase/functions` to the linked project (log in and link first, and apply new migrations before it).
+
 ## Honest limits
 
 - **Simulated data only.** The ridge model learned from the generator that also made the test people. The shifted split is a partial check, and it is where the gain is smallest (-9%).

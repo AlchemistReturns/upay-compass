@@ -49,6 +49,13 @@ export async function loadFlow(client: SupabaseClient, now: Date = new Date()): 
 export type ForecastSnapshot = {
   forecast: Forecast;
   backtest: ReturnType<typeof backtestForecast>;
+  /**
+   * Which mode the model switch was in and which method produced the forecast. Reported by the
+   * forecast function so a deployment can be checked from the outside: an old deployment has no
+   * such field, `mode: "off"` means the switch is off, and `mode: "on"` with `method: "heuristic"`
+   * means the model declined (too little history, or it failed) and the plain forecast was used.
+   */
+  ml: { mode: string; method: string; shadowMethod?: string };
 };
 
 /**
@@ -134,5 +141,13 @@ export async function refreshForecast(
     const { error } = await admin.from("forecasts").insert(row);
     if (error) throw error;
   }
-  return { forecast, backtest };
+  return {
+    forecast,
+    backtest,
+    ml: {
+      mode,
+      method: forecast.method ?? "heuristic",
+      ...(shadow ? { shadowMethod: shadow.method } : {}),
+    },
+  };
 }

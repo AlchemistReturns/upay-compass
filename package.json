@@ -30,7 +30,8 @@
     "eval:categorize": "node --experimental-transform-types --disable-warning=ExperimentalWarning scripts/ml/eval-categorize.mjs",
     "eval:anomaly:ml": "node --experimental-transform-types --disable-warning=ExperimentalWarning scripts/ml/eval-anomaly-ml.mjs",
     "ux:tasks": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/ux-task-analysis.ts",
-    "ux:personas": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/ux-personas.ts"
+    "ux:personas": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/ux-personas.ts",
+    "deploy:functions": "bash scripts/deploy-functions.sh"
   },
   "devDependencies": {
     "husky": "^9.1.7",

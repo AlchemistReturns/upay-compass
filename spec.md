@@ -31,7 +31,7 @@ Connect → Understand → Plan → Save → Get Guided → Improve
 
 - Operate only on simulated or user-entered data; never move real money.
 - No real credentials or private upay systems.
-- Label simulated data as simulated in the UI.
+- Simulated data is disclosed to evaluators in the presentation, not labelled inside the app.
 - Educational guidance only: no regulated investment, loan, or insurance advice.
 - Send minimal data to the LLM; never phone numbers or raw identifiers.
 - Preserve user control: every automated saving or rule is opt-in and reversible.
@@ -183,7 +183,7 @@ transactions(id uuid pk, user_id uuid, external_id text,  -- id from the upstrea
              amount numeric, direction text, channel text,
              counterparty text, note text, category_id int, category_source text,  -- rule|ai|user
              needs_review boolean,   -- AI unavailable or unsure: filed under Other, flagged for the user
-             is_simulated boolean,   -- labelled "simulated" in the UI
+             is_simulated boolean,   -- true for generated demo data
              occurred_at timestamptz, created_at)
   -- index (user_id, occurred_at desc); unique (user_id, external_id) makes re-ingesting idempotent
 
@@ -590,7 +590,7 @@ Reference data (the 12 categories, and later the learn modules) is inserted by m
 3. **Quality pass:**
    - Accessibility, checked with axe-core on 12 screens in English and Bangla (WCAG 2.0/2.1 A and AA plus best practices): fixed low-contrast muted text (darker token), unnamed progress bars, and every button, input, tab and link now has a tap target of at least 44 px (the shared Button and Input sizes were raised). Result: no violations, no targets under 44 px except two links 39 to 40 px wide that were then widened.
    - Empty, loading and error states exist on every screen; offline and "not saved yet" states were added in Phase 5.
-   - Simulated data is labelled in the app. **Still needed from the team:** a native-speaker review of all Bangla copy (including the 8 learn modules and the coach prompt).
+   - The in-app "simulated data" labels were later removed; the simulation is disclosed in the presentation instead. **Still needed from the team:** a native-speaker review of all Bangla copy (including the 8 learn modules and the coach prompt).
 4. **Hardening** (`pnpm audit:rls`, `pnpm audit:bundle`, `pnpm audit --prod`):
    - `scripts/audit-rls.mjs` checks the local database: RLS on every public table (16), table privileges for `anon`, security definer functions (fixed `search_path`, not callable by `anon`) and which profile columns users can update.
    - It found real problems, fixed by `20261003130000_phase6_hardening.sql`: users could update their own `opening_balance` (their wallet balance) from the browser, `anon` had default table privileges (blocked by RLS, but now removed except for the public category list), and trigger functions were executable. The loading function now writes `opening_balance` with the service role.
@@ -1169,7 +1169,7 @@ CI (`.github/workflows/ci.yml`) runs lint, typecheck, tests and the Prettier che
 - **Numbers come from code, never the LLM.** Score, forecast, categorization rules and "can I afford X" are pure functions in `packages/shared` with unit tests. Edge Functions wrap them. The LLM only explains results.
 - **Migrations are append-only once merged.** Fix mistakes with a new migration. Every new table gets RLS enabled and policies keyed on `auth.uid()`. Reference data (categories, learn modules) is inserted by migrations, not `seed.sql`.
 - **Secrets.** Never commit `.env*` files other than `.env.example`. The service-role key, the DB password and `OPENAI_API_KEY` never go in the repo, in chat, in screenshots or in client code. Share them through a password manager. Edge Function secrets live in `supabase/.env.functions` (gitignored) locally and are set in the cloud with `pnpm sb secrets set`.
-- **Privacy.** No phone numbers or raw identifiers in LLM prompts. Simulated data is labelled as simulated in the UI.
+- **Privacy.** No phone numbers or raw identifiers in LLM prompts. The app does not label simulated data; evaluators are told it is simulated.
 - **Windows login quirk.** `pnpm sb login` and `pnpm sb link` need an interactive terminal. Run them in your own terminal window, not through a tool that runs without a TTY.
 - **Ports.** The web app uses 3000. The optional local Supabase stack uses 54321 (API) and 54322 (DB); stop other local Supabase stacks first.
 - **Stop what you start.** Stop dev servers and the local stack when you are done (`pnpm sb stop`).

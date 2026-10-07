@@ -23,7 +23,6 @@ import {
   EmptyState,
   ErrorState,
   LoadingCards,
-  Pill,
   Ring,
   SectionHeader,
 } from "@/components/compass";
@@ -171,12 +170,10 @@ function BalancePanel({
   balance,
   income,
   expense,
-  simulated,
 }: {
   balance: number | undefined;
   income: number | undefined;
   expense: number | undefined;
-  simulated: boolean;
 }) {
   const savings = useSavings();
   const { t, i18n } = useTranslation();
@@ -200,7 +197,6 @@ function BalancePanel({
           <Wallet className="text-lime size-4" aria-hidden />
           {t("dashboard.balance")}
         </div>
-        {simulated && <Pill tone="dark">{t("demo.simulated_badge")}</Pill>}
       </div>
 
       <div className="mt-2 text-[2.75rem] leading-none font-extrabold tracking-[-0.035em] sm:text-[3.25rem]">
@@ -391,7 +387,6 @@ export function Dashboard() {
   useAutoNudges(recent.isSuccess && recent.data.length > 0);
 
   const noTransactions = recent.isSuccess && recent.data.length === 0;
-  const hasSimulated = recent.data?.some((r) => r.is_simulated) ?? false;
   const firstName = profile.data?.full_name?.trim().split(/\s+/)[0];
 
   return (
@@ -440,16 +435,12 @@ export function Dashboard() {
               balance={balance.data}
               income={month.data?.income}
               expense={month.data?.expense}
-              simulated={hasSimulated}
             />
             <div className="grid gap-3.5 lg:grid-cols-2">
               <AskCoach />
               <InstallPrompt />
             </div>
             <DailyTip />
-            {hasSimulated && (
-              <p className="text-muted-foreground px-1 text-xs">{t("common.simulated_note")}</p>
-            )}
           </div>
 
           <section

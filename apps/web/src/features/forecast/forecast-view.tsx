@@ -191,7 +191,6 @@ export function ForecastView() {
                 {t("forecast.low_confidence")}
               </p>
             )}
-            <p className="text-muted-foreground px-1 text-xs">{t("common.simulated_note")}</p>
           </div>
 
           {!d.insufficient && (

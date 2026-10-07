@@ -313,7 +313,8 @@
     "unlock": "Unlock",
     "wrong_one": "Wrong PIN. 1 attempt left.",
     "signed_out": "Too many wrong attempts. Please sign in again.",
-    "wrong_other": "Wrong PIN. {{count}} attempts left."
+    "wrong_other": "Wrong PIN. {{count}} attempts left.",
+    "wait": "Too many wrong tries. Try again in {{time}}."
   },
   "onboarding": {
     "title": "Let's set you up",

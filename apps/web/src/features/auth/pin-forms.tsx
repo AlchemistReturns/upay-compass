@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Loader2, LockKeyhole } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { pinSchema } from "@compass/shared";
@@ -138,6 +138,13 @@ export function SetPinForm() {
   );
 }
 
+/** "1:05" style countdown for the wait between PIN tries. */
+function formatWait(seconds: number) {
+  const m = Math.floor(seconds / 60);
+  const s = String(seconds % 60).padStart(2, "0");
+  return `${m}:${s}`;
+}
+
 export function LockScreen() {
   const { t } = useTranslation();
   const { unlock } = useLock();
@@ -146,6 +153,23 @@ export function LockScreen() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  // After a few wrong tries the server makes the person wait; count it down here.
+  const [waitUntil, setWaitUntil] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+  const waitLeft = waitUntil ? Math.max(0, Math.ceil((waitUntil - now) / 1000)) : 0;
+
+  useEffect(() => {
+    if (!waitUntil) return;
+    const id = setInterval(() => {
+      const t = Date.now();
+      setNow(t);
+      if (t >= waitUntil) {
+        setWaitUntil(null);
+        setError(null);
+      }
+    }, 500);
+    return () => clearInterval(id);
+  }, [waitUntil]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -155,7 +179,10 @@ export function LockScreen() {
     setPin("");
     if (result.ok) return;
     setAttempt((n) => n + 1);
-    if (result.reason === "reset") setError(t("lock.signed_out"));
+    if (result.reason === "locked") {
+      setNow(Date.now());
+      setWaitUntil(Date.now() + result.lockedSeconds * 1000);
+    } else if (result.reason === "reset") setError(t("lock.signed_out"));
     else if (result.reason === "wrong") setError(t("lock.wrong", { count: result.attemptsLeft }));
     else setError(t("common.error"));
   }
@@ -186,17 +213,23 @@ export function LockScreen() {
             dark
             invalid={attempt > 0 && Boolean(error)}
           />
-          {error && (
+          {waitLeft > 0 ? (
             <p role="alert" className="text-center text-sm font-semibold text-[#ffb59e]">
-              {error}
+              {t("lock.wait", { time: formatWait(waitLeft) })}
             </p>
+          ) : (
+            error && (
+              <p role="alert" className="text-center text-sm font-semibold text-[#ffb59e]">
+                {error}
+              </p>
+            )
           )}
           <Button
             type="submit"
             variant="lime"
             size="lg"
             className="w-full"
-            disabled={busy || pin.length < 4}
+            disabled={busy || pin.length < 4 || waitLeft > 0}
           >
             {busy && <Loader2 className="animate-spin" aria-hidden />}
             {t("lock.unlock")}

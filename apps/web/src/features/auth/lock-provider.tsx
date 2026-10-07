@@ -17,6 +17,7 @@ import { useAuth } from "./auth-provider";
 export type UnlockResult =
   | { ok: true }
   | { ok: false; reason: "wrong"; attemptsLeft: number }
+  | { ok: false; reason: "locked"; lockedSeconds: number; attemptsLeft: number }
   | { ok: false; reason: "reset" }
   | { ok: false; reason: "error" };
 
@@ -34,7 +35,12 @@ type LockContextValue = {
 
 const LockContext = createContext<LockContextValue | null>(null);
 
-type VerifyPinResponse = { ok: boolean; attempts_left: number; reset: boolean };
+type VerifyPinResponse = {
+  ok: boolean;
+  attempts_left: number;
+  reset: boolean;
+  locked_seconds?: number;
+};
 
 export function LockProvider({ children }: { children: React.ReactNode }) {
   const { userId, signOut } = useAuth();
@@ -121,7 +127,10 @@ export function LockProvider({ children }: { children: React.ReactNode }) {
         await signOut();
         return { ok: false, reason: "reset" };
       }
-      return { ok: false, reason: "wrong", attemptsLeft: res.attempts_left };
+      const lockedSeconds = res.locked_seconds ?? 0;
+      return lockedSeconds > 0 && res.attempts_left >= 0
+        ? { ok: false, reason: "locked", lockedSeconds, attemptsLeft: res.attempts_left }
+        : { ok: false, reason: "wrong", attemptsLeft: res.attempts_left };
     },
     [signOut],
   );

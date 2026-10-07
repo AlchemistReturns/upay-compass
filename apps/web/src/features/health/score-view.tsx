@@ -73,10 +73,10 @@ function useActionText() {
             targetPct: p.targetPct,
             amount: formatMoney(p.extraMonthly ?? 0, lang),
           }),
-          href: "/goals",
+          href: "/plan?tab=goals",
         };
       case "set_budgets":
-        return { text: t("score.action_set_budgets"), href: "/budgets" };
+        return { text: t("score.action_set_budgets"), href: "/plan?tab=budgets" };
       case "fix_budget": {
         const cat = categories?.find((c) => c.id === p.categoryId);
         return {
@@ -85,7 +85,7 @@ function useActionText() {
             category: cat ? (lang === "bn" ? cat.name_bn : cat.name_en) : "",
             amount: formatMoney(p.overBy ?? 0, lang),
           }),
-          href: "/budgets",
+          href: "/plan?tab=budgets",
         };
       }
       case "build_buffer":
@@ -95,7 +95,7 @@ function useActionText() {
             target: p.targetMonths,
             amount: formatMoney(p.missing ?? 0, lang),
           }),
-          href: "/goals",
+          href: "/plan?tab=goals",
         };
       case "smooth_income":
         return { text: t("score.action_smooth_income", { pct: p.variationPct }), href: null };

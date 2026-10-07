@@ -1,5 +1,6 @@
-import { GoalsView } from "@/features/goals/goals-view";
+import { redirect } from "next/navigation";
 
+// Goals now live under Plan; old links and bookmarks still work.
 export default function Page() {
-  return <GoalsView />;
+  redirect("/plan?tab=goals");
 }

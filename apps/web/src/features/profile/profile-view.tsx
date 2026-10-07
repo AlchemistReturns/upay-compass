@@ -1,7 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Languages, LogOut, Phone, SunMoon } from "lucide-react";
+import Link from "next/link";
+import {
+  Activity,
+  ChevronRight,
+  Languages,
+  LogOut,
+  Phone,
+  ShieldCheck,
+  SunMoon,
+  Upload,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import { INCOME_TYPES, incomeSchema, type IncomeType } from "@compass/shared";
@@ -19,9 +29,60 @@ import { useAuth } from "@/features/auth/auth-provider";
 import { OfflineNote } from "@/features/pwa/offline-note";
 import { useOnline } from "@/features/pwa/use-online";
 import { PasskeyCard } from "@/features/auth/passkey-card";
+import { NAV_FORWARD } from "@/components/page-transition";
 import { AiActivityCard } from "./ai-activity-card";
 import { Avatar, formatPhone } from "./avatar";
 import { useProfile, useUpdateProfile, type Profile } from "./use-profile";
+
+/** One row that opens another screen. */
+function LinkRow({
+  href,
+  icon: Icon,
+  label,
+  hint,
+}: {
+  href: string;
+  icon: React.ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
+  label: string;
+  hint?: string;
+}) {
+  return (
+    <Link
+      href={href}
+      transitionTypes={NAV_FORWARD}
+      className="tap-soft hover:bg-secondary/60 -mx-2 flex min-h-12 items-center gap-3 rounded-2xl px-2"
+    >
+      <span className="icon-chip">
+        <Icon className="size-[18px]" aria-hidden />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[15px] font-semibold">{label}</span>
+        {hint && <span className="text-muted-foreground block text-xs leading-4">{hint}</span>}
+      </span>
+      <ChevronRight className="ic-forward text-muted-foreground size-4 shrink-0" aria-hidden />
+    </Link>
+  );
+}
+
+/** Things that used to hide in the header menu or the sidebar: importing data, system health, admin tools. */
+function MoreLinks({ admin }: { admin: boolean }) {
+  const { t } = useTranslation();
+  return (
+    <section className="finance-card space-y-1 p-5 sm:p-6" aria-labelledby="profile-more">
+      <h2 id="profile-more" className="mb-1 text-[17px] font-bold">
+        {t("profile.more")}
+      </h2>
+      <LinkRow
+        href="/transactions/import"
+        icon={Upload}
+        label={t("import.title")}
+        hint={t("profile.import_hint")}
+      />
+      <LinkRow href="/system-health" icon={Activity} label={t("monitor.open")} />
+      {admin && <LinkRow href="/admin" icon={ShieldCheck} label={t("admin.open")} />}
+    </section>
+  );
+}
 
 const detailsSchema = incomeSchema.extend({
   full_name: z.string().trim().max(60),
@@ -200,6 +261,8 @@ export function ProfileView() {
           </section>
 
           <PasskeyCard />
+
+          <MoreLinks admin={p.role === "admin"} />
 
           <AiActivityCard profile={p} />
 

@@ -209,7 +209,7 @@ export function LockScreen() {
       <div className="rise w-full max-w-sm text-center">
         <div className="relative mx-auto mb-6 w-fit">
           <BrandMark className="brand-intro size-16 shadow-[0_14px_30px_-12px_rgba(0,0,0,.6)]" />
-          <span className="bg-lime text-brand-ink absolute -right-2 -bottom-2 grid size-8 place-items-center rounded-full ring-4 ring-[#0a3f41]">
+          <span className="bg-lime text-brand-ink absolute -right-2 -bottom-2 grid size-8 place-items-center rounded-full ring-4 ring-[#1e57b8]">
             <LockKeyhole className="size-4" aria-hidden />
           </span>
         </div>

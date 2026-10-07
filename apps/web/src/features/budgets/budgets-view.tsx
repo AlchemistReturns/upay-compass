@@ -54,7 +54,7 @@ function BudgetSummary({ rows }: { rows: BudgetProgress[] }) {
   );
 }
 
-export function BudgetsView() {
+export function BudgetsView({ embedded = false }: { embedded?: boolean } = {}) {
   const { t } = useTranslation();
   const budgets = useBudgetProgress();
   // the sheet keeps showing its form while it animates closed, so `target` outlives `open`
@@ -77,11 +77,12 @@ export function BudgetsView() {
 
   return (
     <>
-      <PageHeader
-        title={t("budgets.title")}
-        subtitle={rows.length > 0 ? t("budgets.count", { count: rows.length }) : undefined}
-        actions={
-          budgets.isSuccess && (
+      {embedded ? (
+        <div className="flex items-center justify-between gap-3 pb-3">
+          <p className="text-muted-foreground px-1 text-sm">
+            {rows.length > 0 ? t("budgets.count", { count: rows.length }) : t("budgets.title")}
+          </p>
+          {budgets.isSuccess && (
             <button
               type="button"
               className={TOOLBAR_BUTTON}
@@ -91,9 +92,27 @@ export function BudgetsView() {
             >
               <Plus className="ic-add size-5" aria-hidden />
             </button>
-          )
-        }
-      />
+          )}
+        </div>
+      ) : (
+        <PageHeader
+          title={t("budgets.title")}
+          subtitle={rows.length > 0 ? t("budgets.count", { count: rows.length }) : undefined}
+          actions={
+            budgets.isSuccess && (
+              <button
+                type="button"
+                className={TOOLBAR_BUTTON}
+                aria-label={t("budgets.add")}
+                title={t("budgets.add")}
+                onClick={() => edit("new")}
+              >
+                <Plus className="ic-add size-5" aria-hidden />
+              </button>
+            )
+          }
+        />
+      )}
 
       {budgets.isPending && <LoadingCards hero rows={3} />}
       {budgets.isError && <ErrorState onRetry={() => void budgets.refetch()} />}

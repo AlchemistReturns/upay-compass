@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   // light by default; lib/theme.ts updates this when the user picks another theme
-  themeColor: "#f1f6ee",
+  themeColor: "#f4f6fa",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

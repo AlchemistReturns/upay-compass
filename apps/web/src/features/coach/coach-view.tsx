@@ -35,6 +35,7 @@ import { haptic } from "@/lib/haptics";
 import { useAuth } from "@/features/auth/auth-provider";
 import { useProfile } from "@/features/profile/use-profile";
 import { RecommendCard } from "./recommend-card";
+import { CoachTabs } from "./coach-tabs";
 import { ConsentCard } from "./consent-card";
 import { useClearChat, useCoachChat, useCoachHistory, type CoachMessage } from "./use-coach";
 import { MicIcon } from "@/features/voice/mic-icon";
@@ -52,7 +53,7 @@ function CoachMark({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "text-lime grid size-8 shrink-0 place-items-center rounded-full bg-[image:var(--gradient-teal)] shadow-[0_6px_14px_-8px_rgba(6,47,49,.8)]",
+        "text-lime grid size-8 shrink-0 place-items-center rounded-full bg-[image:var(--gradient-teal)] shadow-[0_6px_14px_-8px_rgba(18, 58, 128,.8)]",
         className,
       )}
       aria-hidden
@@ -81,7 +82,7 @@ function Bubble({
           "max-w-[85%] px-4 py-3 text-[15px] leading-6 whitespace-pre-wrap sm:max-w-[75%]",
           assistant
             ? "finance-card rounded-[1.4rem] rounded-bl-md"
-            : "text-on-dark rounded-[1.4rem] rounded-br-md bg-[image:var(--gradient-teal)] shadow-[0_10px_24px_-14px_rgba(6,47,49,.8)]",
+            : "text-on-dark rounded-[1.4rem] rounded-br-md bg-[image:var(--gradient-teal)] shadow-[0_10px_24px_-14px_rgba(18, 58, 128,.8)]",
         )}
       >
         {children}
@@ -427,6 +428,8 @@ export function CoachView() {
           )
         }
       />
+
+      <CoachTabs active="chat" />
 
       {profile.isPending && <LoadingCards rows={2} />}
 

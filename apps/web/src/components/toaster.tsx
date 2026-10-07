@@ -68,7 +68,7 @@ function ToastList() {
           "data-limited:opacity-0 data-limited:[transform:translateY(-40%)_scale(.94)] data-limited:blur-[2px]",
         )}
       >
-        <Toast.Content className="text-on-dark flex min-h-12 items-center gap-2.5 rounded-full border border-white/10 bg-[rgba(6,47,49,.86)] dark:bg-[rgba(36,54,55,.86)] dark:border-white/[.12] py-1.5 pr-2 pl-1.5 shadow-[0_18px_40px_-14px_rgba(6,47,49,.7),0_2px_6px_rgba(6,47,49,.2)] backdrop-blur-xl backdrop-saturate-150">
+        <Toast.Content className="text-on-dark flex min-h-12 items-center gap-2.5 rounded-full border border-white/10 bg-[rgba(18, 58, 128,.86)] dark:bg-[rgba(36,54,55,.86)] dark:border-white/[.12] py-1.5 pr-2 pl-1.5 shadow-[0_18px_40px_-14px_rgba(18, 58, 128,.7),0_2px_6px_rgba(18, 58, 128,.2)] backdrop-blur-xl backdrop-saturate-150">
           <span
             className={cn("pop-spring grid size-8 shrink-0 place-items-center rounded-full", cls)}
           >

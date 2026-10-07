@@ -4,21 +4,25 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { BookOpen, Home, MessageCircle, PiggyBank, Target } from "lucide-react";
+import { Home, MessageCircle, ReceiptText, Target } from "lucide-react";
 import { NAV_TAB } from "@/components/page-transition";
 import { haptic } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 
 export const NAV_ITEMS = [
   { href: "/", key: "home", icon: Home },
-  { href: "/budgets", key: "budgets", icon: PiggyBank },
-  { href: "/goals", key: "goals", icon: Target },
+  { href: "/transactions", key: "activity", icon: ReceiptText },
+  { href: "/plan", key: "plan", icon: Target },
   { href: "/coach", key: "coach", icon: MessageCircle },
-  { href: "/learn", key: "learn", icon: BookOpen },
 ] as const;
 
+/** Screens that belong to a tab without living under its path (Learn sits under Coach). */
+const ALSO_UNDER: Record<string, readonly string[]> = { "/coach": ["/learn"] };
+
 export function isActivePath(pathname: string, href: string) {
-  return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
+  if (href === "/") return pathname === "/";
+  const prefixes = [href, ...(ALSO_UNDER[href] ?? [])];
+  return prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
 
 const TYPING =
@@ -63,11 +67,11 @@ export function BottomNav() {
       data-vt="tab-bar"
       className="tab-bar fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+var(--nav-gap))] z-40 px-3 transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] lg:hidden"
     >
-      <div className="relative mx-auto max-w-md rounded-[1.75rem] bg-[image:var(--gradient-teal)] p-1.5 shadow-[var(--shadow-float)] ring-1 ring-white/10">
+      <div className="bg-card ring-hairline-strong relative mx-auto max-w-md rounded-[1.75rem] p-1.5 shadow-[var(--shadow-float)] ring-1">
         <span
           aria-hidden
           className={cn(
-            "bg-lime absolute top-1.5 bottom-1.5 left-1.5 w-[calc((100%-0.75rem)/5)] rounded-[1.35rem] shadow-[0_6px_16px_-6px_rgba(195,234,140,.7)] transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]",
+            "bg-secondary absolute top-1.5 bottom-1.5 left-1.5 w-[calc((100%-0.75rem)/4)] rounded-[1.35rem] transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]",
             index < 0 && "opacity-0",
           )}
           style={{ transform: `translateX(${Math.max(index, 0) * 100}%)` }}
@@ -84,7 +88,7 @@ export function BottomNav() {
                   onClick={() => !active && haptic("light")}
                   className={cn(
                     "flex h-[3.625rem] flex-col items-center justify-center gap-1 rounded-[1.35rem] text-[11px] leading-none font-semibold transition-[color,transform] duration-300 active:scale-90 active:duration-100",
-                    active ? "text-brand-ink" : "text-on-dark-muted hover:text-on-dark",
+                    active ? "text-primary" : "text-muted-foreground hover:text-foreground",
                   )}
                 >
                   <Icon

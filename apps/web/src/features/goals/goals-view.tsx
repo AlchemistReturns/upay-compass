@@ -116,7 +116,7 @@ function NewGoalForm({ onDone }: { onDone: () => void }) {
   );
 }
 
-export function GoalsView() {
+export function GoalsView({ embedded = false }: { embedded?: boolean } = {}) {
   const { t } = useTranslation();
   const goals = useGoals();
   const contributions = useContributions();
@@ -136,18 +136,10 @@ export function GoalsView() {
 
   return (
     <>
-      <PageHeader
-        title={t("goals.title")}
-        subtitle={
-          goals.data && goals.data.length > 0
-            ? t("goals.summary_counts", {
-                active: goals.data.filter((g) => g.status === "active").length,
-                completed: goals.data.filter((g) => g.status === "completed").length,
-              })
-            : undefined
-        }
-        actions={
-          goals.isSuccess && (
+      {embedded ? (
+        <div className="flex items-center justify-between gap-3 pb-3">
+          <p className="text-muted-foreground px-1 text-sm">{t("goals.title")}</p>
+          {goals.isSuccess && (
             <button
               type="button"
               className={TOOLBAR_BUTTON}
@@ -157,9 +149,34 @@ export function GoalsView() {
             >
               <Plus className="ic-add size-5" aria-hidden />
             </button>
-          )
-        }
-      />
+          )}
+        </div>
+      ) : (
+        <PageHeader
+          title={t("goals.title")}
+          subtitle={
+            goals.data && goals.data.length > 0
+              ? t("goals.summary_counts", {
+                  active: goals.data.filter((g) => g.status === "active").length,
+                  completed: goals.data.filter((g) => g.status === "completed").length,
+                })
+              : undefined
+          }
+          actions={
+            goals.isSuccess && (
+              <button
+                type="button"
+                className={TOOLBAR_BUTTON}
+                aria-label={t("goals.new")}
+                title={t("goals.new")}
+                onClick={startNew}
+              >
+                <Plus className="ic-add size-5" aria-hidden />
+              </button>
+            )
+          }
+        />
+      )}
 
       {loading && !failed && <LoadingCards hero rows={2} />}
       {failed && (

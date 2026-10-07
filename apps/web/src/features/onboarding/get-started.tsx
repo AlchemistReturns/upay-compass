@@ -23,8 +23,8 @@ export function GetStarted({ hasTransactions }: { hasTransactions: boolean }) {
 
   const steps: Step[] = [
     { key: "payment", done: hasTransactions, href: "/transactions/new" },
-    { key: "budget", done: budgets.data.length > 0, href: "/budgets" },
-    { key: "goal", done: goals.data.length > 0, href: "/goals" },
+    { key: "budget", done: budgets.data.length > 0, href: "/plan?tab=budgets" },
+    { key: "goal", done: goals.data.length > 0, href: "/plan?tab=goals" },
   ];
   const left = steps.filter((s) => !s.done).length;
   if (left === 0) return null;

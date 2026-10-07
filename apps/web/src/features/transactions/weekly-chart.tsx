@@ -25,7 +25,7 @@ type TooltipProps = {
 
 export function ChartTooltip({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-brand-ink text-on-dark dark:bg-elevated dark:text-foreground min-w-36 dark:ring-1 dark:ring-white/10 rounded-2xl px-3 py-2.5 text-xs shadow-[0_12px_30px_-10px_rgba(6,47,49,.6)]">
+    <div className="bg-brand-ink text-on-dark dark:bg-elevated dark:text-foreground min-w-36 dark:ring-1 dark:ring-white/10 rounded-2xl px-3 py-2.5 text-xs shadow-[0_12px_30px_-10px_rgba(18, 58, 128,.6)]">
       <div className="text-on-dark-muted mb-1.5 font-semibold">{title}</div>
       {children}
     </div>

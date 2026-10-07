@@ -11,13 +11,12 @@
  *    client-rendered shells, so the HTML is the same for every user.
  *  - Anything else: straight to the network.
  */
-const VERSION = "v4";
+const VERSION = "v5";
 const PAGES = `compass-pages-${VERSION}`;
 const ASSETS = `compass-assets-${VERSION}`;
 const ROUTES = [
   "/",
-  "/budgets",
-  "/goals",
+  "/plan",
   "/coach",
   "/learn",
   "/transactions",

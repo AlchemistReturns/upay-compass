@@ -45,7 +45,7 @@ function Choice({
       className={cn(
         "flex min-h-[3.75rem] w-full items-center gap-3.5 rounded-2xl border px-4 text-left text-[15px] tap-soft",
         selected
-          ? "border-primary bg-secondary font-bold shadow-[0_0_0_3px_rgba(195,234,140,.7)]"
+          ? "border-primary bg-secondary font-bold shadow-[0_0_0_3px_rgba(255, 194, 14,.7)]"
           : "bg-card hover:border-primary/30 border-hairline-strong font-semibold",
       )}
     >

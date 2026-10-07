@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Menu } from "@base-ui/react/menu";
-import { Activity, Award, ChevronRight, LogOut, ShieldCheck, Timer, UserRound } from "lucide-react";
+import { ChevronRight, LogOut, Timer, UserRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -94,30 +94,6 @@ export function UserMenu({
               <span className="flex-1">{t("profile.open")}</span>
               <ChevronRight className="ic-forward text-muted-foreground size-4" aria-hidden />
             </Menu.LinkItem>
-            <Menu.LinkItem render={<Link href="/learn" />} className={ITEM}>
-              <Award className="ic-pop text-muted-foreground size-[18px]" aria-hidden />
-              <span className="flex-1">{t("profile.badges")}</span>
-              <ChevronRight className="ic-forward text-muted-foreground size-4" aria-hidden />
-            </Menu.LinkItem>
-            <Menu.LinkItem
-              render={<Link href="/system-health" transitionTypes={NAV_FORWARD} />}
-              className={ITEM}
-            >
-              <Activity className="text-muted-foreground size-[18px]" aria-hidden />
-              <span className="flex-1">{t("monitor.open")}</span>
-              <ChevronRight className="ic-forward text-muted-foreground size-4" aria-hidden />
-            </Menu.LinkItem>
-            {p?.role === "admin" && (
-              <Menu.LinkItem
-                render={<Link href="/admin" transitionTypes={NAV_FORWARD} />}
-                className={ITEM}
-              >
-                <ShieldCheck className="text-muted-foreground size-[18px]" aria-hidden />
-                <span className="flex-1">{t("admin.open")}</span>
-                <ChevronRight className="ic-forward text-muted-foreground size-4" aria-hidden />
-              </Menu.LinkItem>
-            )}
-
             {/* not a menu item: flipping the switch should not close the menu */}
             {p?.role === "admin" && (
               <div className="flex min-h-11 items-center gap-3 px-3 text-sm font-medium">

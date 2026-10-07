@@ -31,10 +31,10 @@ export type TipInputs = {
 };
 
 const ACTION_HREF: Record<ActionId, string> = {
-  save_more: "/goals",
-  set_budgets: "/budgets",
-  fix_budget: "/budgets",
-  build_buffer: "/goals",
+  save_more: "/plan?tab=goals",
+  set_budgets: "/plan?tab=budgets",
+  fix_budget: "/plan?tab=budgets",
+  build_buffer: "/plan?tab=goals",
   smooth_income: "/forecast",
 };
 
@@ -45,9 +45,9 @@ export function dayIndex(day: string): number {
   return h % GENERIC_TIP_COUNT;
 }
 
-export function pickDailyTip(i: TipInputs): DailyTip {
-  const f = i.forecast;
-  // 1. A forecast dip is the most time-sensitive thing to know.
+export function pickDailyTip(i: TipInputs, opts: { skipForecast?: boolean } = {}): DailyTip {
+  const f = opts.skipForecast ? null : i.forecast;
+  // 1. A forecast dip is the most time-sensitive thing to know (unless the screen already shows it).
   if (f && !f.insufficient && f.firstRiskDay && f.lowest) {
     return {
       id: "forecast_dip",

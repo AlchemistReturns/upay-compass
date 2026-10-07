@@ -51,7 +51,7 @@ export function Trends({ snapshot }: { snapshot: HealthSnapshot }) {
   const fc = "suppressed" in snapshot.forecast ? null : snapshot.forecast;
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <Panel
         title={t("monitor.panels.requests")}
         subtitle={per}
@@ -177,7 +177,7 @@ export function Trends({ snapshot }: { snapshot: HealthSnapshot }) {
         />
       </Panel>
 
-      <div className="grid gap-4">
+      <div className="grid grid-cols-1 gap-4">
         <Panel title={t("monitor.panels.filing")} subtitle={t("monitor.panels.filing_sub")}>
           {acc ? (
             <MixBar

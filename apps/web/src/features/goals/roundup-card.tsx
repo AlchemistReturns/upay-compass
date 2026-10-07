@@ -58,7 +58,7 @@ export function RoundupCard({
     <section
       className={cn(
         "rise overflow-hidden rounded-[1.75rem] p-4 transition-[background,box-shadow] duration-500 sm:p-5",
-        enabled ? "surface-lime shadow-[0_16px_34px_-20px_rgba(79,158,58,.9)]" : "finance-card",
+        enabled ? "surface-lime shadow-[0_16px_34px_-20px_rgba(255, 194, 14,.9)]" : "finance-card",
       )}
       style={{ "--i": 3 } as React.CSSProperties}
     >

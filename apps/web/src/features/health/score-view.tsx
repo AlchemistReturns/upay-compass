@@ -286,7 +286,7 @@ export function ScoreView() {
 
           <section aria-labelledby="breakdown">
             <SectionHeader id="breakdown" title={t("score.breakdown")} />
-            <ul className="grid gap-3 sm:grid-cols-2">
+            <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {COMPONENT_KEYS.map((k, i) => {
                 const c = result.components[k];
                 const Icon = COMPONENT_ICON[k];

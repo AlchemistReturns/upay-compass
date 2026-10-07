@@ -35,7 +35,7 @@ export function ForYouSection() {
         <p className="sr-only" role="status">
           {t("common.loading")}
         </p>
-        <div className="grid gap-2.5 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-2">
           <Skeleton className="h-20 rounded-3xl" />
           <Skeleton className="h-20 rounded-3xl" />
         </div>
@@ -71,7 +71,7 @@ export function ForYouSection() {
           {t("learn.foryou.empty")}
         </p>
       ) : (
-        <ul className="grid gap-2.5 lg:grid-cols-2">
+        <ul className="grid grid-cols-1 gap-2.5 lg:grid-cols-2">
           {modules.map((m, i) => (
             <li
               key={m.id}

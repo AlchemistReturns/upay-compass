@@ -17,7 +17,7 @@ import { COACH_PREFILL_KEY } from "@/features/voice/voice-sheet";
  * score (see pickDailyTip), so it is personal when there is something to say and a rotating habit
  * tip otherwise. "Ask your coach" hands the tip to the coach so it can be explained with real numbers.
  */
-export function DailyTip() {
+export function DailyTip({ skipForecast = false }: { skipForecast?: boolean } = {}) {
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const lang = i18n.language;
@@ -26,18 +26,21 @@ export function DailyTip() {
 
   const tip = useMemo(() => {
     const d = forecast.data?.details;
-    return pickDailyTip({
-      today: dhakaDay(new Date()),
-      health: health.data?.[0]?.breakdown ?? null,
-      forecast: d
-        ? {
-            insufficient: d.insufficient,
-            lowest: d.lowest,
-            firstRiskDay: d.firstRiskDay,
-          }
-        : null,
-    });
-  }, [health.data, forecast.data]);
+    return pickDailyTip(
+      {
+        today: dhakaDay(new Date()),
+        health: health.data?.[0]?.breakdown ?? null,
+        forecast: d
+          ? {
+              insufficient: d.insufficient,
+              lowest: d.lowest,
+              firstRiskDay: d.firstRiskDay,
+            }
+          : null,
+      },
+      { skipForecast },
+    );
+  }, [health.data, forecast.data, skipForecast]);
 
   const body = t(`tips.${tip.id}`, {
     day: typeof tip.params.day === "string" ? formatShortDate(tip.params.day, lang) : "",

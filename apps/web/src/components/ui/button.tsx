@@ -4,13 +4,13 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "cn";
 
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-full border border-transparent bg-clip-padding text-sm font-semibold whitespace-nowrap tap [--tap-scale:0.965] outline-none select-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-45 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "group/button inline-flex min-w-0 shrink-0 items-center justify-center rounded-full border border-transparent bg-clip-padding text-sm font-semibold whitespace-nowrap tap [--tap-scale:0.965] outline-none select-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-45 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-[0_1px_2px_rgba(18, 58, 128,.18),0_8px_18px_-8px_rgba(30, 87, 184,.6)] hover:bg-[color-mix(in_oklch,var(--primary),var(--foreground)_16%)] dark:shadow-[0_8px_20px_-10px_rgba(147,216,194,.35)]",
-        lime: "bg-lime text-brand-ink shadow-[0_8px_18px_-10px_rgba(79,158,58,.7)] hover:bg-[#b4e176]",
+          "bg-primary text-primary-foreground shadow-[0_1px_2px_rgba(9, 29, 74,.18),0_8px_18px_-8px_rgba(23, 71, 158,.6)] hover:bg-[color-mix(in_oklch,var(--primary),var(--foreground)_16%)] dark:shadow-[0_8px_20px_-10px_rgba(143, 181, 242,.35)]",
+        lime: "bg-lime text-brand-ink shadow-[0_8px_18px_-10px_rgba(255, 194, 14,.7)] hover:bg-[#ffd24a]",
         outline: "border-border bg-card text-foreground hover:bg-muted aria-expanded:bg-muted",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--primary)_7%)] aria-expanded:bg-secondary",

@@ -39,7 +39,7 @@ export function LearnView({ embedded = false }: { embedded?: boolean } = {}) {
       )}
       <CoachTabs active="learn" />
       <div className="space-y-7 pb-4">
-        <div className="grid gap-3 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           <section className="balance-panel rise flex items-center gap-5 p-5 sm:p-6">
             <Ring value={pct} size={92} stroke={9} track="rgba(255,255,255,.1)" color="var(--lime)">
               <span
@@ -72,7 +72,7 @@ export function LearnView({ embedded = false }: { embedded?: boolean } = {}) {
             <Link
               href={`/learn/${top.mod.slug}`}
               transitionTypes={NAV_FORWARD}
-              className="surface-lime group rise flex flex-col justify-between gap-4 rounded-[2rem] p-5 shadow-[0_16px_34px_-20px_rgba(79,158,58,.9)] tap-soft sm:p-6"
+              className="surface-lime group rise flex flex-col justify-between gap-4 rounded-[2rem] p-5 shadow-[0_16px_34px_-20px_rgba(255, 194, 14,.9)] tap-soft sm:p-6"
               style={{ "--i": 1 } as React.CSSProperties}
             >
               <div>
@@ -103,7 +103,7 @@ export function LearnView({ embedded = false }: { embedded?: boolean } = {}) {
         {alsoFor.length > 0 && (
           <section aria-labelledby="also-heading">
             <SectionHeader id="also-heading" title={t("learn.also_for_you")} />
-            <ul className="grid gap-2.5 sm:grid-cols-2">
+            <ul className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
               {alsoFor.map(({ mod: m, reason }) => (
                 <li key={m.slug}>
                   <Link
@@ -156,7 +156,7 @@ export function LearnView({ embedded = false }: { embedded?: boolean } = {}) {
             <p className="text-muted-foreground -mt-1 mb-3 text-[13px] leading-5">
               {t("learn.course_subtitle")}
             </p>
-            <ul className="grid gap-2.5 lg:grid-cols-2">
+            <ul className="grid grid-cols-1 gap-2.5 lg:grid-cols-2">
               {modules.data.map((m, i) => {
                 const finished = completed.data?.has(m.id) ?? false;
                 return (

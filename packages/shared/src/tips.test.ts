@@ -33,7 +33,27 @@ describe("pickDailyTip", () => {
       health: health({ actions: [{ id: "set_budgets", component: "budget", params: {} }] }),
       forecast: { insufficient: false, lowest: null, firstRiskDay: null },
     });
-    expect(tip).toMatchObject({ id: "health_set_budgets", personal: true, href: "/budgets" });
+    expect(tip).toMatchObject({
+      id: "health_set_budgets",
+      personal: true,
+      href: "/plan?tab=budgets",
+    });
+  });
+
+  it("can leave the forecast dip out when the screen already shows it", () => {
+    const tip = pickDailyTip(
+      {
+        today: "2026-10-07",
+        health: health({ actions: [{ id: "save_more", component: "savings", params: {} }] }),
+        forecast: {
+          insufficient: false,
+          lowest: { day: "2026-10-24", balance: -120 },
+          firstRiskDay: "2026-10-22",
+        },
+      },
+      { skipForecast: true },
+    );
+    expect(tip.id).toBe("health_save_more");
   });
 
   it("ignores an unreliable score and an insufficient forecast", () => {

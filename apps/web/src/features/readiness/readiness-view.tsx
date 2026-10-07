@@ -247,7 +247,7 @@ export function ReadinessView() {
 
             <section aria-labelledby="readiness-breakdown">
               <SectionHeader id="readiness-breakdown" title={t("score.breakdown")} />
-              <ul className="grid gap-3 sm:grid-cols-2">
+              <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {READINESS_KEYS.map((k, i) => {
                   const c = result.components[k];
                   const Icon = COMPONENT_ICON[k];

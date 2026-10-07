@@ -208,7 +208,7 @@ export function GoalsView({ embedded = false }: { embedded?: boolean } = {}) {
           )}
 
           {goals.data.length > 0 && (
-            <div className="grid items-start gap-3 lg:grid-cols-2 [&>*]:min-w-0 [&>*:only-child]:col-span-full">
+            <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-2 [&>*]:min-w-0 [&>*:only-child]:col-span-full">
               {goals.data.map((g, i) => (
                 <GoalCard
                   key={g.id}

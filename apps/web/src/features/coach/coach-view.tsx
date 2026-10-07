@@ -53,7 +53,7 @@ function CoachMark({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "text-lime grid size-8 shrink-0 place-items-center rounded-full bg-[image:var(--gradient-teal)] shadow-[0_6px_14px_-8px_rgba(18, 58, 128,.8)]",
+        "text-lime grid size-8 shrink-0 place-items-center rounded-full bg-[image:var(--gradient-teal)] shadow-[0_6px_14px_-8px_rgba(9, 29, 74,.8)]",
         className,
       )}
       aria-hidden
@@ -82,7 +82,7 @@ function Bubble({
           "max-w-[85%] px-4 py-3 text-[15px] leading-6 whitespace-pre-wrap sm:max-w-[75%]",
           assistant
             ? "finance-card rounded-[1.4rem] rounded-bl-md"
-            : "text-on-dark rounded-[1.4rem] rounded-br-md bg-[image:var(--gradient-teal)] shadow-[0_10px_24px_-14px_rgba(18, 58, 128,.8)]",
+            : "text-on-dark rounded-[1.4rem] rounded-br-md bg-[image:var(--gradient-teal)] shadow-[0_10px_24px_-14px_rgba(9, 29, 74,.8)]",
         )}
       >
         {children}
@@ -214,7 +214,7 @@ function Welcome({ disabled, onPick }: { disabled: boolean; onPick: (q: string) 
       <p className="text-muted-foreground mb-2.5 px-1 text-xs font-bold tracking-wide uppercase">
         {t("coach.try_prompt")}
       </p>
-      <div className="grid gap-2.5 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
         {SUGGESTIONS.map((s, i) => {
           const Icon = SUGGESTION_ICON[s];
           return (
